@@ -21,30 +21,21 @@ function Test-Administrator {
 }
 
 # ------------------------------------------------------------
-# REINICIAR COMO ADMINISTRADOR
+# AVISO CASO NAO ESTEJA COMO ADMINISTRADOR
 # ------------------------------------------------------------
 
 if (-not (Test-Administrator)) {
 
     $resposta = [System.Windows.MessageBox]::Show(
-        "O Cleaner Pro precisa de permissao de Administrador para realizar algumas tarefas.`n`nDeseja reiniciar como Administrador?",
+        "O Cleaner Pro esta sendo executado sem permissao de Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente.`n`nRecomendamos abrir o PowerShell como Administrador.",
         "TECH INFO BELEM - Cleaner Pro",
-        "YesNo",
-        "Information"
+        "OK",
+        "Warning"
     )
-
-    if ($resposta -eq "Yes") {
-
-        Start-Process powershell.exe `
-            -Verb RunAs `
-            -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-
-        exit
-    }
 }
 
 # ============================================================
-# INTERFACE
+# INTERFACE GRAFICA
 # ============================================================
 
 [xml]$XAML = @"
@@ -64,7 +55,9 @@ if (-not (Test-Administrator)) {
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
+        <!-- ================================================= -->
         <!-- MENU LATERAL -->
+        <!-- ================================================= -->
 
         <Border
             Grid.Column="0"
@@ -133,6 +126,14 @@ if (-not (Test-Administrator)) {
                     Foreground="White"/>
 
                 <Button
+                    Name="btnChrisTitus"
+                    Content="WINUTIL - CHRIS TITUS"
+                    Height="45"
+                    Margin="15,5"
+                    Background="#7C3AED"
+                    Foreground="White"/>
+
+                <Button
                     Name="btnSair"
                     Content="SAIR"
                     Height="45"
@@ -144,7 +145,10 @@ if (-not (Test-Administrator)) {
 
         </Border>
 
+
+        <!-- ================================================= -->
         <!-- AREA PRINCIPAL -->
+        <!-- ================================================= -->
 
         <Grid
             Grid.Column="1"
@@ -159,12 +163,18 @@ if (-not (Test-Administrator)) {
 
             </Grid.RowDefinitions>
 
+
+            <!-- TITULO -->
+
             <TextBlock
                 Name="txtTitulo"
                 Text="Painel de Controle"
                 Foreground="White"
                 FontSize="30"
                 FontWeight="Bold"/>
+
+
+            <!-- SUBTITULO -->
 
             <TextBlock
                 Name="txtSubtitulo"
@@ -174,7 +184,10 @@ if (-not (Test-Administrator)) {
                 FontSize="15"
                 Margin="0,5,0,25"/>
 
+
+            <!-- ================================================= -->
             <!-- CARDS -->
+            <!-- ================================================= -->
 
             <Grid
                 Grid.Row="2">
@@ -186,9 +199,15 @@ if (-not (Test-Administrator)) {
 
                 </Grid.ColumnDefinitions>
 
+
+                <!-- COLUNA ESQUERDA -->
+
                 <StackPanel
                     Grid.Column="0"
                     Margin="0,0,10,0">
+
+
+                    <!-- COMPUTADOR -->
 
                     <Border
                         Background="#1F2937"
@@ -214,6 +233,9 @@ if (-not (Test-Administrator)) {
 
                     </Border>
 
+
+                    <!-- WINDOWS -->
+
                     <Border
                         Background="#1F2937"
                         CornerRadius="10"
@@ -232,11 +254,15 @@ if (-not (Test-Administrator)) {
                                 Foreground="White"
                                 FontSize="20"
                                 FontWeight="Bold"
-                                Margin="0,8,0,0"/>
+                                Margin="0,8,0,0"
+                                TextWrapping="Wrap"/>
 
                         </StackPanel>
 
                     </Border>
+
+
+                    <!-- RAM -->
 
                     <Border
                         Background="#1F2937"
@@ -263,9 +289,15 @@ if (-not (Test-Administrator)) {
 
                 </StackPanel>
 
+
+                <!-- COLUNA DIREITA -->
+
                 <StackPanel
                     Grid.Column="1"
                     Margin="10,0,0,0">
+
+
+                    <!-- PROCESSADOR -->
 
                     <Border
                         Background="#1F2937"
@@ -292,6 +324,9 @@ if (-not (Test-Administrator)) {
 
                     </Border>
 
+
+                    <!-- DISCO -->
+
                     <Border
                         Background="#1F2937"
                         CornerRadius="10"
@@ -316,6 +351,9 @@ if (-not (Test-Administrator)) {
 
                     </Border>
 
+
+                    <!-- STATUS -->
+
                     <Border
                         Background="#1F2937"
                         CornerRadius="10"
@@ -334,7 +372,8 @@ if (-not (Test-Administrator)) {
                                 Foreground="#22C55E"
                                 FontSize="20"
                                 FontWeight="Bold"
-                                Margin="0,8,0,0"/>
+                                Margin="0,8,0,0"
+                                TextWrapping="Wrap"/>
 
                         </StackPanel>
 
@@ -344,7 +383,10 @@ if (-not (Test-Administrator)) {
 
             </Grid>
 
+
+            <!-- ================================================= -->
             <!-- RODAPE -->
+            <!-- ================================================= -->
 
             <TextBlock
                 Name="txtRodape"
@@ -361,6 +403,7 @@ if (-not (Test-Administrator)) {
 </Window>
 "@
 
+
 # ============================================================
 # CARREGAR INTERFACE
 # ============================================================
@@ -369,23 +412,42 @@ $reader = New-Object System.Xml.XmlNodeReader $XAML
 
 $Window = [Windows.Markup.XamlReader]::Load($reader)
 
+
 # ============================================================
 # PEGAR CONTROLES
 # ============================================================
 
 $btnInicio = $Window.FindName("btnInicio")
+
 $btnTemporarios = $Window.FindName("btnTemporarios")
+
 $btnNavegadores = $Window.FindName("btnNavegadores")
+
 $btnLixeira = $Window.FindName("btnLixeira")
+
 $btnCompleta = $Window.FindName("btnCompleta")
+
+$btnChrisTitus = $Window.FindName("btnChrisTitus")
+
 $btnSair = $Window.FindName("btnSair")
 
+
 $txtComputador = $Window.FindName("txtComputador")
+
 $txtWindows = $Window.FindName("txtWindows")
+
 $txtRAM = $Window.FindName("txtRAM")
+
 $txtCPU = $Window.FindName("txtCPU")
+
 $txtDisco = $Window.FindName("txtDisco")
+
 $txtStatus = $Window.FindName("txtStatus")
+
+$txtTitulo = $Window.FindName("txtTitulo")
+
+$txtSubtitulo = $Window.FindName("txtSubtitulo")
+
 
 # ============================================================
 # INFORMACOES DO COMPUTADOR
@@ -403,52 +465,61 @@ try {
     $disk = Get-CimInstance Win32_LogicalDisk `
         -Filter "DeviceID='C:'"
 
+
     $ramGB = [math]::Round(
         $computer.TotalPhysicalMemory / 1GB,
         1
     )
+
 
     $freeGB = [math]::Round(
         $disk.FreeSpace / 1GB,
         1
     )
 
+
     $totalGB = [math]::Round(
         $disk.Size / 1GB,
         1
     )
 
-    $txtComputador.Text = $computer.Manufacturer + " " + $computer.Model
 
-    $txtWindows.Text = $os.Caption
+    $txtComputador.Text =
+        $computer.Manufacturer + " " + $computer.Model
 
-    $txtRAM.Text = "$ramGB GB"
 
-    $txtCPU.Text = $cpu.Name
+    $txtWindows.Text =
+        $os.Caption
 
-    $txtDisco.Text = "$freeGB GB livres de $totalGB GB"
+
+    $txtRAM.Text =
+        "$ramGB GB"
+
+
+    $txtCPU.Text =
+        $cpu.Name
+
+
+    $txtDisco.Text =
+        "$freeGB GB livres de $totalGB GB"
 
 }
 catch {
 
-    $txtStatus.Text = "Nao foi possivel obter informacoes"
+    $txtStatus.Text =
+        "Nao foi possivel obter informacoes do sistema"
 
 }
 
 
 # ============================================================
-# FUNCAO LIMPEZA TEMPORARIOS
+# FUNCAO LIMPAR TEMPORARIOS
 # ============================================================
 
 function Limpar-Temporarios {
 
-    $txtStatus.Text = "Limpando temporarios..."
-
-    $Window.Dispatcher.Invoke(
-        [Action]{
-            $txtStatus.Text = "Processando..."
-        }
-    )
+    $txtStatus.Text =
+        "Limpando arquivos temporarios..."
 
     try {
 
@@ -460,6 +531,7 @@ function Limpar-Temporarios {
             -Force `
             -ErrorAction SilentlyContinue
 
+
         Get-ChildItem "$env:SystemRoot\Temp" `
             -Force `
             -ErrorAction SilentlyContinue |
@@ -468,7 +540,10 @@ function Limpar-Temporarios {
             -Force `
             -ErrorAction SilentlyContinue
 
-        $txtStatus.Text = "Limpeza concluida"
+
+        $txtStatus.Text =
+            "Limpeza de temporarios concluida"
+
 
         [System.Windows.MessageBox]::Show(
             "A limpeza dos arquivos temporarios foi concluida.",
@@ -480,19 +555,30 @@ function Limpar-Temporarios {
     }
     catch {
 
-        $txtStatus.Text = "Erro durante a limpeza"
+        $txtStatus.Text =
+            "Erro durante a limpeza dos temporarios"
+
+
+        [System.Windows.MessageBox]::Show(
+            "Ocorreu um erro durante a limpeza dos arquivos temporarios.",
+            "TECH INFO BELEM",
+            "OK",
+            "Error"
+        )
 
     }
 }
 
 
 # ============================================================
-# FUNCAO LIMPEZA LIXEIRA
+# FUNCAO LIMPAR LIXEIRA
 # ============================================================
 
 function Limpar-Lixeira {
 
-    $txtStatus.Text = "Esvaziando lixeira..."
+    $txtStatus.Text =
+        "Esvaziando lixeira..."
+
 
     try {
 
@@ -500,7 +586,10 @@ function Limpar-Lixeira {
             -Force `
             -ErrorAction SilentlyContinue
 
-        $txtStatus.Text = "Lixeira processada"
+
+        $txtStatus.Text =
+            "Lixeira processada com sucesso"
+
 
         [System.Windows.MessageBox]::Show(
             "A lixeira foi processada com sucesso.",
@@ -512,28 +601,94 @@ function Limpar-Lixeira {
     }
     catch {
 
-        $txtStatus.Text = "Erro ao limpar lixeira"
+        $txtStatus.Text =
+            "Erro ao limpar lixeira"
+
+
+        [System.Windows.MessageBox]::Show(
+            "Nao foi possivel esvaziar a lixeira.",
+            "TECH INFO BELEM",
+            "OK",
+            "Error"
+        )
 
     }
 }
 
 
 # ============================================================
-# EVENTOS
+# FUNCAO WINUTIL - CHRIS TITUS
+# ============================================================
+
+function Abrir-ChrisTitus {
+
+    $confirmacao = [System.Windows.MessageBox]::Show(
+        "Deseja abrir o Windows Utility do Chris Titus Tech?`n`nO WinUtil sera executado diretamente a partir do site oficial.",
+        "TECH INFO BELEM - WinUtil",
+        "YesNo",
+        "Question"
+    )
+
+
+    if ($confirmacao -eq "Yes") {
+
+        $txtStatus.Text =
+            "Abrindo Chris Titus WinUtil..."
+
+
+        try {
+
+            Invoke-RestMethod `
+                "https://christitus.com/win" |
+            Invoke-Expression
+
+
+            $txtStatus.Text =
+                "Chris Titus WinUtil iniciado"
+
+        }
+        catch {
+
+            $txtStatus.Text =
+                "Erro ao abrir Chris Titus WinUtil"
+
+
+            [System.Windows.MessageBox]::Show(
+                "Nao foi possivel abrir o Chris Titus WinUtil.`n`nErro:`n$($_.Exception.Message)",
+                "TECH INFO BELEM - Erro",
+                "OK",
+                "Error"
+            )
+
+        }
+
+    }
+}
+
+
+# ============================================================
+# EVENTO - INICIO
 # ============================================================
 
 $btnInicio.Add_Click({
 
-    $txtTitulo.Text = "Painel de Controle"
+    $txtTitulo.Text =
+        "Painel de Controle"
+
 
     $txtSubtitulo.Text =
         "Ferramenta profissional de limpeza e manutencao"
+
 
     $txtStatus.Text =
         "Sistema pronto"
 
 })
 
+
+# ============================================================
+# EVENTO - TEMPORARIOS
+# ============================================================
 
 $btnTemporarios.Add_Click({
 
@@ -542,6 +697,10 @@ $btnTemporarios.Add_Click({
 })
 
 
+# ============================================================
+# EVENTO - LIXEIRA
+# ============================================================
+
 $btnLixeira.Add_Click({
 
     Limpar-Lixeira
@@ -549,10 +708,26 @@ $btnLixeira.Add_Click({
 })
 
 
+# ============================================================
+# EVENTO - NAVEGADORES
+# ============================================================
+
 $btnNavegadores.Add_Click({
 
+    $txtTitulo.Text =
+        "Limpeza de Navegadores"
+
+
+    $txtSubtitulo.Text =
+        "Limpeza de arquivos temporarios dos navegadores"
+
+
+    $txtStatus.Text =
+        "Funcao em desenvolvimento"
+
+
     [System.Windows.MessageBox]::Show(
-        "A limpeza dos navegadores sera adicionada na proxima versao.",
+        "A limpeza dos navegadores sera adicionada na proxima versao do Cleaner Pro.",
         "TECH INFO BELEM - Cleaner Pro",
         "OK",
         "Information"
@@ -561,29 +736,82 @@ $btnNavegadores.Add_Click({
 })
 
 
+# ============================================================
+# EVENTO - LIMPEZA COMPLETA
+# ============================================================
+
 $btnCompleta.Add_Click({
 
     $confirmacao = [System.Windows.MessageBox]::Show(
-        "Deseja iniciar a limpeza completa?",
-        "TECH INFO BELEM - Cleaner Pro",
+        "Deseja iniciar a limpeza completa?`n`nSerão processados:`n`n- Arquivos temporarios`n- Temporarios do Windows`n- Lixeira",
+        "TECH INFO BELEM - Limpeza Completa",
         "YesNo",
         "Question"
     )
 
+
     if ($confirmacao -eq "Yes") {
+
+        $txtStatus.Text =
+            "Iniciando limpeza completa..."
+
 
         Limpar-Temporarios
 
+
+        $txtStatus.Text =
+            "Limpando lixeira..."
+
+
         Limpar-Lixeira
+
+
+        $txtStatus.Text =
+            "Limpeza completa concluida"
+
+
+        [System.Windows.MessageBox]::Show(
+            "A limpeza completa foi finalizada.",
+            "TECH INFO BELEM - Cleaner Pro",
+            "OK",
+            "Information"
+        )
 
     }
 
 })
 
 
+# ============================================================
+# EVENTO - CHRIS TITUS
+# ============================================================
+
+$btnChrisTitus.Add_Click({
+
+    Abrir-ChrisTitus
+
+})
+
+
+# ============================================================
+# EVENTO - SAIR
+# ============================================================
+
 $btnSair.Add_Click({
 
-    $Window.Close()
+    $confirmacao = [System.Windows.MessageBox]::Show(
+        "Deseja fechar o TECH INFO BELEM Cleaner Pro?",
+        "TECH INFO BELEM",
+        "YesNo",
+        "Question"
+    )
+
+
+    if ($confirmacao -eq "Yes") {
+
+        $Window.Close()
+
+    }
 
 })
 
