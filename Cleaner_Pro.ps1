@@ -1959,295 +1959,240 @@ function Abrir-FormularioRelatorio {
 ```powershell
 function Gerar-RelatorioServico {
 
-    try {
-
-        # ============================================================
-        # JANELA DE PREENCHIMENTO DO RELATORIO
-        # ============================================================
-
-        $inputXaml = @"
-<Window
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="TECH INFO BELEM - Dados do Servico"
-    Height="650"
-    Width="750"
-    WindowStartupLocation="CenterScreen"
-    ResizeMode="CanResize"
-    Background="#111827">
-
-    <Grid Margin="25">
-
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-
-        <StackPanel Grid.Row="0">
-
-            <TextBlock
-                Text="RELATORIO DE SERVICO"
-                Foreground="#60A5FA"
-                FontSize="26"
-                FontWeight="Bold"/>
-
-            <TextBlock
-                Text="Preencha os dados do atendimento"
-                Foreground="#9CA3AF"
-                FontSize="14"
-                Margin="0,5,0,20"/>
-
-        </StackPanel>
-
-
-        <ScrollViewer
-            Grid.Row="1"
-            VerticalScrollBarVisibility="Auto">
-
-            <StackPanel>
-
-
-                <TextBlock
-                    Text="CLIENTE"
-                    Foreground="#60A5FA"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
-
-                <TextBox
-                    Name="txtCliente"
-                    Height="35"
-                    Padding="8"
-                    Margin="0,0,0,15"/>
-
-
-                <TextBlock
-                    Text="TELEFONE / CONTATO"
-                    Foreground="#60A5FA"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
-
-                <TextBox
-                    Name="txtTelefone"
-                    Height="35"
-                    Padding="8"
-                    Margin="0,0,0,15"/>
-
-
-                <TextBlock
-                    Text="SERVICO REALIZADO"
-                    Foreground="#60A5FA"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
-
-                <TextBox
-                    Name="txtServico"
-                    Height="100"
-                    Padding="8"
-                    TextWrapping="Wrap"
-                    AcceptsReturn="True"
-                    VerticalScrollBarVisibility="Auto"
-                    Margin="0,0,0,15"/>
-
+    # ============================================================
+    # JANELA DE PREENCHIMENTO
+    # ============================================================
 
-                <TextBlock
-                    Text="VALOR DO SERVICO (R$)"
-                    Foreground="#60A5FA"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "TECH INFO BELEM - Relatorio de Servico"
+    $form.Size = New-Object System.Drawing.Size(650,650)
+    $form.StartPosition = "CenterScreen"
+    $form.BackColor = [System.Drawing.Color]::FromArgb(17,24,39)
+    $form.ForeColor = [System.Drawing.Color]::White
+    $form.FormBorderStyle = "FixedDialog"
+    $form.MaximizeBox = $false
+    $form.MinimizeBox = $false
 
-                <TextBox
-                    Name="txtValor"
-                    Height="35"
-                    Padding="8"
-                    Margin="0,0,0,15"/>
 
+    # ============================================================
+    # TITULO
+    # ============================================================
 
-                <TextBlock
-                    Text="FORMA DE PAGAMENTO"
-                    Foreground="#60A5FA"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
+    $lblTitulo = New-Object System.Windows.Forms.Label
+    $lblTitulo.Text = "RELATORIO DE SERVICO TECH INFO BELEM"
+    $lblTitulo.Location = New-Object System.Drawing.Point(25,20)
+    $lblTitulo.Size = New-Object System.Drawing.Size(580,35)
+    $lblTitulo.Font = New-Object System.Drawing.Font("Arial",16,[System.Drawing.FontStyle]::Bold)
+    $lblTitulo.ForeColor = [System.Drawing.Color]::FromArgb(96,165,250)
 
-                <ComboBox
-                    Name="cmbPagamento"
-                    Height="35"
-                    Margin="0,0,0,15">
+    $form.Controls.Add($lblTitulo)
 
-                    <ComboBoxItem Content="PIX"/>
-                    <ComboBoxItem Content="Dinheiro"/>
-                    <ComboBoxItem Content="Cartao de Credito"/>
-                    <ComboBoxItem Content="Cartao de Debito"/>
-                    <ComboBoxItem Content="Transferencia"/>
-                    <ComboBoxItem Content="Nao informado"/>
 
-                </ComboBox>
+    # ============================================================
+    # CLIENTE
+    # ============================================================
 
+    $lblCliente = New-Object System.Windows.Forms.Label
+    $lblCliente.Text = "CLIENTE"
+    $lblCliente.Location = New-Object System.Drawing.Point(25,75)
+    $lblCliente.Size = New-Object System.Drawing.Size(150,25)
 
-                <TextBlock
-                    Text="OBSERVACOES"
-                    Foreground="#60A5FA"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
+    $form.Controls.Add($lblCliente)
 
-                <TextBox
-                    Name="txtObservacoes"
-                    Height="100"
-                    Padding="8"
-                    TextWrapping="Wrap"
-                    AcceptsReturn="True"
-                    VerticalScrollBarVisibility="Auto"
-                    Margin="0,0,0,20"/>
 
-            </StackPanel>
+    $txtClienteForm = New-Object System.Windows.Forms.TextBox
+    $txtClienteForm.Location = New-Object System.Drawing.Point(25,100)
+    $txtClienteForm.Size = New-Object System.Drawing.Size(580,30)
 
-        </ScrollViewer>
+    $form.Controls.Add($txtClienteForm)
 
 
-        <StackPanel
-            Grid.Row="2"
-            Orientation="Horizontal"
-            HorizontalAlignment="Right">
+    # ============================================================
+    # TELEFONE
+    # ============================================================
 
-            <Button
-                Name="btnCancelarRelatorio"
-                Content="CANCELAR"
-                Width="120"
-                Height="40"
-                Margin="5"
-                Background="#374151"
-                Foreground="White"/>
+    $lblTelefone = New-Object System.Windows.Forms.Label
+    $lblTelefone.Text = "TELEFONE / CONTATO"
+    $lblTelefone.Location = New-Object System.Drawing.Point(25,140)
+    $lblTelefone.Size = New-Object System.Drawing.Size(200,25)
 
-            <Button
-                Name="btnSalvarRelatorio"
-                Content="GERAR RELATORIO"
-                Width="170"
-                Height="40"
-                Margin="5"
-                Background="#0369A1"
-                Foreground="White"
-                FontWeight="Bold"/>
+    $form.Controls.Add($lblTelefone)
 
-        </StackPanel>
 
-    </Grid>
+    $txtTelefoneForm = New-Object System.Windows.Forms.TextBox
+    $txtTelefoneForm.Location = New-Object System.Drawing.Point(25,165)
+    $txtTelefoneForm.Size = New-Object System.Drawing.Size(580,30)
 
-</Window>
-"@
+    $form.Controls.Add($txtTelefoneForm)
 
 
-        [xml]$inputXml = $inputXaml
+    # ============================================================
+    # SERVICO
+    # ============================================================
 
-        $inputReader =
-            New-Object System.Xml.XmlNodeReader $inputXml
+    $lblServico = New-Object System.Windows.Forms.Label
+    $lblServico.Text = "SERVICO REALIZADO"
+    $lblServico.Location = New-Object System.Drawing.Point(25,205)
+    $lblServico.Size = New-Object System.Drawing.Size(200,25)
 
-        $inputWindow =
-            [Windows.Markup.XamlReader]::Load($inputReader)
+    $form.Controls.Add($lblServico)
 
 
-        # ============================================================
-        # CONTROLES DA JANELA
-        # ============================================================
+    $txtServicoForm = New-Object System.Windows.Forms.TextBox
+    $txtServicoForm.Location = New-Object System.Drawing.Point(25,230)
+    $txtServicoForm.Size = New-Object System.Drawing.Size(580,80)
+    $txtServicoForm.Multiline = $true
+    $txtServicoForm.ScrollBars = "Vertical"
 
-        $txtCliente =
-            $inputWindow.FindName("txtCliente")
+    $form.Controls.Add($txtServicoForm)
 
-        $txtTelefone =
-            $inputWindow.FindName("txtTelefone")
 
-        $txtServico =
-            $inputWindow.FindName("txtServico")
+    # ============================================================
+    # VALOR
+    # ============================================================
 
-        $txtValor =
-            $inputWindow.FindName("txtValor")
+    $lblValor = New-Object System.Windows.Forms.Label
+    $lblValor.Text = "VALOR DO SERVICO (R$)"
+    $lblValor.Location = New-Object System.Drawing.Point(25,320)
+    $lblValor.Size = New-Object System.Drawing.Size(200,25)
 
-        $cmbPagamento =
-            $inputWindow.FindName("cmbPagamento")
+    $form.Controls.Add($lblValor)
 
-        $txtObservacoes =
-            $inputWindow.FindName("txtObservacoes")
 
-        $btnCancelarRelatorio =
-            $inputWindow.FindName("btnCancelarRelatorio")
+    $txtValorForm = New-Object System.Windows.Forms.TextBox
+    $txtValorForm.Location = New-Object System.Drawing.Point(25,345)
+    $txtValorForm.Size = New-Object System.Drawing.Size(200,30)
 
-        $btnSalvarRelatorio =
-            $inputWindow.FindName("btnSalvarRelatorio")
+    $form.Controls.Add($txtValorForm)
 
 
-        # ============================================================
-        # VALOR PADRAO
-        # ============================================================
+    # ============================================================
+    # PAGAMENTO
+    # ============================================================
 
-        $cmbPagamento.SelectedIndex = 0
+    $lblPagamento = New-Object System.Windows.Forms.Label
+    $lblPagamento.Text = "FORMA DE PAGAMENTO"
+    $lblPagamento.Location = New-Object System.Drawing.Point(250,320)
+    $lblPagamento.Size = New-Object System.Drawing.Size(200,25)
 
+    $form.Controls.Add($lblPagamento)
 
-        # ============================================================
-        # CANCELAR
-        # ============================================================
 
-        $btnCancelarRelatorio.Add_Click({
+    $cmbPagamentoForm = New-Object System.Windows.Forms.ComboBox
+    $cmbPagamentoForm.Location = New-Object System.Drawing.Point(250,345)
+    $cmbPagamentoForm.Size = New-Object System.Drawing.Size(355,30)
+    $cmbPagamentoForm.DropDownStyle = "DropDownList"
 
-            $inputWindow.DialogResult = $false
+    [void]$cmbPagamentoForm.Items.Add("PIX")
+    [void]$cmbPagamentoForm.Items.Add("Dinheiro")
+    [void]$cmbPagamentoForm.Items.Add("Cartao de Credito")
+    [void]$cmbPagamentoForm.Items.Add("Cartao de Debito")
+    [void]$cmbPagamentoForm.Items.Add("Transferencia")
+    [void]$cmbPagamentoForm.Items.Add("Nao informado")
 
-            $inputWindow.Close()
+    $cmbPagamentoForm.SelectedIndex = 0
 
-        })
+    $form.Controls.Add($cmbPagamentoForm)
 
 
-        # ============================================================
-        # GERAR RELATORIO
-        # ============================================================
+    # ============================================================
+    # OBSERVACOES
+    # ============================================================
 
-        $btnSalvarRelatorio.Add_Click({
+    $lblObservacoes = New-Object System.Windows.Forms.Label
+    $lblObservacoes.Text = "OBSERVACOES TECNICAS"
+    $lblObservacoes.Location = New-Object System.Drawing.Point(25,390)
+    $lblObservacoes.Size = New-Object System.Drawing.Size(250,25)
 
-            if ([string]::IsNullOrWhiteSpace($txtServico.Text)) {
+    $form.Controls.Add($lblObservacoes)
 
-                [System.Windows.MessageBox]::Show(
 
-                    "Informe o servico realizado antes de gerar o relatorio.",
+    $txtObservacoesForm = New-Object System.Windows.Forms.TextBox
+    $txtObservacoesForm.Location = New-Object System.Drawing.Point(25,415)
+    $txtObservacoesForm.Size = New-Object System.Drawing.Size(580,70)
+    $txtObservacoesForm.Multiline = $true
+    $txtObservacoesForm.ScrollBars = "Vertical"
 
-                    "TECH INFO BELEM",
+    $form.Controls.Add($txtObservacoesForm)
 
-                    "OK",
 
-                    "Warning"
+    # ============================================================
+    # BOTAO CANCELAR
+    # ============================================================
 
-                )
+    $btnCancelarForm = New-Object System.Windows.Forms.Button
+    $btnCancelarForm.Text = "CANCELAR"
+    $btnCancelarForm.Location = New-Object System.Drawing.Point(350,520)
+    $btnCancelarForm.Size = New-Object System.Drawing.Size(120,40)
+    $btnCancelarForm.BackColor = [System.Drawing.Color]::FromArgb(55,65,81)
+    $btnCancelarForm.ForeColor = [System.Drawing.Color]::White
 
-                return
+    $btnCancelarForm.Add_Click({
 
-            }
+        $form.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+        $form.Close()
 
+    })
 
-            $inputWindow.DialogResult = $true
+    $form.Controls.Add($btnCancelarForm)
 
-            $inputWindow.Close()
 
-        })
+    # ============================================================
+    # BOTAO GERAR
+    # ============================================================
 
+    $btnGerarForm = New-Object System.Windows.Forms.Button
+    $btnGerarForm.Text = "GERAR RELATORIO"
+    $btnGerarForm.Location = New-Object System.Drawing.Point(480,520)
+    $btnGerarForm.Size = New-Object System.Drawing.Size(125,40)
+    $btnGerarForm.BackColor = [System.Drawing.Color]::FromArgb(3,105,161)
+    $btnGerarForm.ForeColor = [System.Drawing.Color]::White
 
-        # ============================================================
-        # ABRIR JANELA
-        # ============================================================
+    $btnGerarForm.Add_Click({
 
-        $resultadoJanela =
-            $inputWindow.ShowDialog()
+        if ([string]::IsNullOrWhiteSpace($txtServicoForm.Text)) {
 
-
-        if ($resultadoJanela -ne $true) {
-
-            $txtStatus.Text =
-                "Geracao do relatorio cancelada"
+            [System.Windows.Forms.MessageBox]::Show(
+                "Digite o servico realizado.",
+                "TECH INFO BELEM",
+                "OK",
+                "Warning"
+            )
 
             return
 
         }
 
+        $form.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        $form.Close()
 
-        # ============================================================
-        # COLETAR INFORMACOES DO COMPUTADOR
-        # ============================================================
+    })
+
+    $form.Controls.Add($btnGerarForm)
+
+
+    # ============================================================
+    # ABRIR FORMULARIO
+    # ============================================================
+
+    $resultado =
+        $form.ShowDialog()
+
+
+    if ($resultado -ne [System.Windows.Forms.DialogResult]::OK) {
+
+        $txtStatus.Text = "Geracao do relatorio cancelada"
+
+        return
+
+    }
+
+
+    # ============================================================
+    # COLETAR DADOS DO COMPUTADOR
+    # ============================================================
+
+    try {
 
         $txtStatus.Text =
             "Coletando informacoes para o relatorio..."
@@ -2292,76 +2237,93 @@ function Gerar-RelatorioServico {
             )
 
 
-        # ============================================================
-        # DISCOS FISICOS
-        # ============================================================
-
-        $physicalDisks = @()
-
-
-        try {
-
-            $physicalDisks =
-                @(Get-PhysicalDisk)
-
-        }
-        catch {
-
-            $physicalDisks =
-                @()
-
-        }
-
-
-        # ============================================================
-        # PLACA DE VIDEO
-        # ============================================================
-
         $gpu =
             @(Get-CimInstance Win32_VideoController)
 
 
-        # ============================================================
-        # DATA E HORA
-        # ============================================================
+        $physicalDisks =
+            @(Get-PhysicalDisk -ErrorAction SilentlyContinue)
+
 
         $data =
             Get-Date -Format "dd/MM/yyyy HH:mm"
 
 
-        # ============================================================
-        # CRIAR PASTA NO DISCO C:
-        # ============================================================
+        # ========================================================
+        # DADOS DIGITADOS
+        # ========================================================
+
+        $cliente =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtClienteForm.Text
+            )
+
+
+        $telefone =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtTelefoneForm.Text
+            )
+
+
+        $servico =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtServicoForm.Text
+            )
+
+
+        $valor =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtValorForm.Text
+            )
+
+
+        $pagamento =
+            [System.Net.WebUtility]::HtmlEncode(
+                $cmbPagamentoForm.SelectedItem.ToString()
+            )
+
+
+        $observacoes =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtObservacoesForm.Text
+            )
+
+
+        $servico =
+            $servico -replace "`r`n","<br>"
+        $servico =
+            $servico -replace "`n","<br>"
+
+
+        $observacoes =
+            $observacoes -replace "`r`n","<br>"
+        $observacoes =
+            $observacoes -replace "`n","<br>"
+
+
+        # ========================================================
+        # CRIAR PASTA
+        # ========================================================
 
         $reportFolder =
             "C:\Relatorio Tech Info Belem"
 
 
-        if (-not (Test-Path -LiteralPath $reportFolder)) {
+        if (!(Test-Path -LiteralPath $reportFolder)) {
 
             New-Item `
                 -Path $reportFolder `
                 -ItemType Directory `
-                -Force |
+                -Force `
+                -ErrorAction Stop |
                 Out-Null
 
         }
 
 
-        # ============================================================
-        # VALIDAR PASTA
-        # ============================================================
-
-        if (-not (Test-Path -LiteralPath $reportFolder)) {
-
-            throw "Nao foi possivel criar ou acessar a pasta: $reportFolder"
-
-        }
-
-
-        # ============================================================
-        # NOME DO ARQUIVO
-        # ============================================================
+        # ========================================================
+        # ARQUIVO
+        # ========================================================
 
         $safeComputerName =
             $env:COMPUTERNAME -replace '[\\/:*?"<>|]', '_'
@@ -2374,124 +2336,79 @@ function Gerar-RelatorioServico {
         $reportFile =
             Join-Path `
             $reportFolder `
-            "Relatorio_Servico_${safeComputerName}_${timestamp}.html"
+            "Relatorio_${safeComputerName}_${timestamp}.html"
 
 
-        # ============================================================
-        # DADOS PREENCHIDOS PELO TECNICO
-        # ============================================================
+        # ========================================================
+        # GPU
+        # ========================================================
 
-        $cliente =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$txtCliente.Text
-            )
+        $gpuHtml = ""
 
 
-        $telefone =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$txtTelefone.Text
-            )
+        foreach ($video in $gpu) {
 
-
-        $servico =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$txtServico.Text
-            )
-
-
-        $valor =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$txtValor.Text
-            )
-
-
-        $pagamento = ""
-
-        if ($cmbPagamento.SelectedItem) {
-
-            $pagamento =
+            $gpuName =
                 [System.Net.WebUtility]::HtmlEncode(
-                    [string]$cmbPagamento.SelectedItem.Content
+                    $video.Name
                 )
 
-        }
-        else {
 
-            $pagamento =
-                "Nao informado"
+            $gpuHtml +=
+                "<li>$gpuName</li>"
 
         }
 
 
-        $observacoes =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$txtObservacoes.Text
-            )
+        if (!$gpuHtml) {
+
+            $gpuHtml =
+                "<li>Informacao nao disponivel</li>"
+
+        }
 
 
-        # ============================================================
-        # FORMATAR SERVICO E OBSERVACOES
-        # ============================================================
-
-        $servicoHtml =
-            $servico -replace "`r`n", "<br>"
-
-
-        $servicoHtml =
-            $servicoHtml -replace "`n", "<br>"
-
-
-        $observacoesHtml =
-            $observacoes -replace "`r`n", "<br>"
-
-
-        $observacoesHtml =
-            $observacoesHtml -replace "`n", "<br>"
-
-
-        # ============================================================
-        # SAUDE DOS DISCOS
-        # ============================================================
+        # ========================================================
+        # DISCOS
+        # ========================================================
 
         $diskHealthHtml = ""
 
 
-        if ($physicalDisks.Count -gt 0) {
+        foreach ($pd in $physicalDisks) {
 
-            foreach ($physicalDisk in $physicalDisks) {
-
-                $modelo =
-                    [System.Net.WebUtility]::HtmlEncode(
-                        [string]$physicalDisk.FriendlyName
-                    )
+            $modelo =
+                [System.Net.WebUtility]::HtmlEncode(
+                    [string]$pd.FriendlyName
+                )
 
 
-                $tipo =
-                    [System.Net.WebUtility]::HtmlEncode(
-                        [string]$physicalDisk.MediaType
-                    )
+            $tipo =
+                [System.Net.WebUtility]::HtmlEncode(
+                    [string]$pd.MediaType
+                )
 
 
-                $capacidade =
-                    [math]::Round(
-                        $physicalDisk.Size / 1GB,
-                        1
-                    )
+            $capacidade =
+                [math]::Round(
+                    $pd.Size / 1GB,
+                    1
+                )
 
 
-                $saude =
-                    [System.Net.WebUtility]::HtmlEncode(
-                        [string]$physicalDisk.HealthStatus
-                    )
+            $saude =
+                [System.Net.WebUtility]::HtmlEncode(
+                    [string]$pd.HealthStatus
+                )
 
 
-                $status =
-                    [System.Net.WebUtility]::HtmlEncode(
-                        [string]$physicalDisk.OperationalStatus
-                    )
+            $status =
+                [System.Net.WebUtility]::HtmlEncode(
+                    [string]$pd.OperationalStatus
+                )
 
 
-                $diskHealthHtml += @"
+            $diskHealthHtml += @"
 
 <tr>
 <td>$modelo</td>
@@ -2503,10 +2420,10 @@ function Gerar-RelatorioServico {
 
 "@
 
-            }
-
         }
-        else {
+
+
+        if (!$diskHealthHtml) {
 
             $diskHealthHtml = @"
 
@@ -2521,38 +2438,9 @@ Informacoes de saude dos discos nao disponiveis.
         }
 
 
-        # ============================================================
-        # PLACA DE VIDEO
-        # ============================================================
-
-        $gpuHtml = ""
-
-
-        foreach ($video in $gpu) {
-
-            $gpuName =
-                [System.Net.WebUtility]::HtmlEncode(
-                    [string]$video.Name
-                )
-
-
-            $gpuHtml +=
-                "<li>$gpuName</li>"
-
-        }
-
-
-        if ([string]::IsNullOrWhiteSpace($gpuHtml)) {
-
-            $gpuHtml =
-                "<li>Informacao nao disponivel</li>"
-
-        }
-
-
-        # ============================================================
-        # HTML DO RELATORIO
-        # ============================================================
+        # ========================================================
+        # HTML
+        # ========================================================
 
         $html = @"
 <!DOCTYPE html>
@@ -2568,128 +2456,94 @@ Informacoes de saude dos discos nao disponiveis.
 <style>
 
 body {
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f3f4f6;
-    margin: 0;
-    padding: 30px;
-    color: #1f2937;
+font-family: Arial;
+background:#f3f4f6;
+padding:30px;
+color:#1f2937;
 }
 
 .container {
-    max-width: 1000px;
-    margin: auto;
-    background: white;
-    padding: 35px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+max-width:1000px;
+margin:auto;
+background:white;
+padding:35px;
 }
 
 .header {
-    border-bottom: 3px solid #2563eb;
-    padding-bottom: 20px;
-    margin-bottom: 25px;
+border-bottom:3px solid #2563eb;
+padding-bottom:20px;
 }
 
 .header h1 {
-    margin: 0;
-    color: #1d4ed8;
-}
-
-.header p {
-    margin: 5px 0;
-    color: #6b7280;
+color:#1d4ed8;
 }
 
 h2 {
-    background: #1f2937;
-    color: white;
-    padding: 10px;
-    font-size: 18px;
+background:#1f2937;
+color:white;
+padding:10px;
 }
 
 .info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
 }
 
 .card {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    padding: 12px;
+background:#f9fafb;
+border:1px solid #ddd;
+padding:15px;
 }
 
 .label {
-    font-weight: bold;
-    color: #374151;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-th {
-    background: #2563eb;
-    color: white;
-    padding: 10px;
-    text-align: left;
-}
-
-td {
-    border: 1px solid #d1d5db;
-    padding: 10px;
-}
-
-ul {
-    background: #f9fafb;
-    padding: 20px 40px;
-}
-
-.servico {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    padding: 20px;
-    min-height: 80px;
-    line-height: 1.6;
+font-weight:bold;
 }
 
 .valor {
-    font-size: 24px;
-    font-weight: bold;
-    color: #166534;
+font-size:24px;
+font-weight:bold;
+color:#166534;
+}
+
+table {
+width:100%;
+border-collapse:collapse;
+}
+
+th {
+background:#2563eb;
+color:white;
+padding:10px;
+}
+
+td {
+border:1px solid #ddd;
+padding:10px;
+}
+
+.servico {
+background:#f9fafb;
+border:1px solid #ddd;
+padding:20px;
+min-height:80px;
 }
 
 .footer {
-    margin-top: 40px;
-    border-top: 1px solid #d1d5db;
-    padding-top: 15px;
-    color: #6b7280;
-    font-size: 12px;
-}
-
-@media print {
-
-    body {
-        background: white;
-        padding: 0;
-    }
-
-    .container {
-        box-shadow: none;
-    }
-
+margin-top:40px;
+border-top:1px solid #ddd;
+padding-top:15px;
+font-size:12px;
+color:#666;
 }
 
 </style>
 
 </head>
 
-
 <body>
 
 <div class="container">
-
 
 <div class="header">
 
@@ -2702,61 +2556,28 @@ ul {
 </div>
 
 
-<h2>INFORMACOES DO ATENDIMENTO</h2>
+<h2>ATENDIMENTO</h2>
 
 <div class="info">
 
 <div class="card">
-
 <span class="label">Cliente:</span><br>
-
 $cliente
-
 </div>
 
-
 <div class="card">
-
-<span class="label">Telefone / Contato:</span><br>
-
+<span class="label">Telefone:</span><br>
 $telefone
-
 </div>
 
-
 <div class="card">
-
-<span class="label">Data e hora:</span><br>
-
+<span class="label">Data:</span><br>
 $data
-
 </div>
 
-
 <div class="card">
-
 <span class="label">Computador:</span><br>
-
 $([System.Net.WebUtility]::HtmlEncode("$($computer.Manufacturer) $($computer.Model)"))
-
-</div>
-
-
-<div class="card">
-
-<span class="label">Nome do equipamento:</span><br>
-
-$([System.Net.WebUtility]::HtmlEncode($env:COMPUTERNAME))
-
-</div>
-
-
-<div class="card">
-
-<span class="label">Sistema operacional:</span><br>
-
-$([System.Net.WebUtility]::HtmlEncode($os.Caption))
-
 </div>
 
 </div>
@@ -2766,7 +2587,7 @@ $([System.Net.WebUtility]::HtmlEncode($os.Caption))
 
 <div class="servico">
 
-$servicoHtml
+$servico
 
 </div>
 
@@ -2777,7 +2598,7 @@ $servicoHtml
 
 <div class="card">
 
-<span class="label">Valor do servico:</span>
+<span class="label">Valor:</span>
 
 <div class="valor">
 
@@ -2787,10 +2608,9 @@ R$ $valor
 
 </div>
 
-
 <div class="card">
 
-<span class="label">Forma de pagamento:</span><br><br>
+<span class="label">Pagamento:</span><br><br>
 
 $pagamento
 
@@ -2799,9 +2619,17 @@ $pagamento
 </div>
 
 
-<h2>HARDWARE</h2>
+<h2>INFORMACOES DO COMPUTADOR</h2>
 
 <div class="info">
+
+<div class="card">
+
+<span class="label">Sistema:</span><br>
+
+$([System.Net.WebUtility]::HtmlEncode($os.Caption))
+
+</div>
 
 <div class="card">
 
@@ -2811,7 +2639,6 @@ $([System.Net.WebUtility]::HtmlEncode($cpu.Name))
 
 </div>
 
-
 <div class="card">
 
 <span class="label">Memoria RAM:</span><br>
@@ -2820,21 +2647,11 @@ $ramGB GB
 
 </div>
 
-
 <div class="card">
 
-<span class="label">Disco principal:</span><br>
+<span class="label">Armazenamento:</span><br>
 
-C:
-
-</div>
-
-
-<div class="card">
-
-<span class="label">Espaco livre:</span><br>
-
-$freeGB GB de $totalGB GB
+$freeGB GB livres de $totalGB GB
 
 </div>
 
@@ -2873,11 +2690,11 @@ $diskHealthHtml
 </table>
 
 
-<h2>OBSERVACOES TECNICAS</h2>
+<h2>OBSERVACOES</h2>
 
 <div class="servico">
 
-$observacoesHtml
+$observacoes
 
 </div>
 
@@ -2890,7 +2707,6 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
 
 </div>
 
-
 </div>
 
 </body>
@@ -2899,93 +2715,66 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
 "@
 
 
-        # ============================================================
-        # SALVAR ARQUIVO
-        # ============================================================
+        # ========================================================
+        # SALVAR
+        # ========================================================
 
         Set-Content `
             -LiteralPath $reportFile `
             -Value $html `
             -Encoding UTF8 `
-            -Force
+            -Force `
+            -ErrorAction Stop
 
 
-        # ============================================================
-        # VALIDAR SE ARQUIVO FOI CRIADO
-        # ============================================================
+        # ========================================================
+        # VERIFICAR
+        # ========================================================
 
-        if (-not (Test-Path -LiteralPath $reportFile)) {
+        if (!(Test-Path -LiteralPath $reportFile)) {
 
-            throw "O arquivo do relatorio nao foi criado em: $reportFile"
+            throw "O arquivo nao foi criado."
 
         }
 
 
-        $arquivoInfo =
+        $fileInfo =
             Get-Item `
             -LiteralPath $reportFile `
             -ErrorAction Stop
 
 
-        if ($arquivoInfo.Length -le 100) {
+        if ($fileInfo.Length -lt 100) {
 
-            throw "O arquivo foi criado, mas parece estar vazio ou incompleto."
+            throw "O arquivo foi criado, mas esta vazio."
 
         }
 
-
-        # ============================================================
-        # ATUALIZAR INTERFACE
-        # ============================================================
 
         $txtStatus.Text =
-            "Relatorio salvo com sucesso"
+            "Relatorio criado com sucesso"
 
 
-        $txtTitulo.Text =
-            "Relatorio de Servico"
+        # ========================================================
+        # ABRIR
+        # ========================================================
+
+        Start-Process `
+            -FilePath $reportFile
 
 
-        $txtSubtitulo.Text =
-            "Relatorio salvo em C:\Relatorio Tech Info Belem"
+        [System.Windows.MessageBox]::Show(
 
+            "Relatorio criado com sucesso!`n`n" +
+            "Arquivo:`n$reportFile",
 
-        # ============================================================
-        # CONFIRMACAO
-        # ============================================================
+            "TECH INFO BELEM",
 
-        $confirmacao =
-            [System.Windows.MessageBox]::Show(
+            "OK",
 
-                "RELATORIO GERADO COM SUCESSO!`n`n" +
+            "Information"
 
-                "Cliente: $($txtCliente.Text)`n" +
-
-                "Servico: $($txtServico.Text)`n`n" +
-
-                "Valor: R$ $($txtValor.Text)`n`n" +
-
-                "Arquivo salvo em:`n" +
-
-                "$reportFile`n`n" +
-
-                "Deseja abrir o relatorio agora?",
-
-                "TECH INFO BELEM - Relatorio",
-
-                "YesNo",
-
-                "Information"
-
-            )
-
-
-        if ($confirmacao -eq "Yes") {
-
-            Start-Process `
-                -FilePath $reportFile
-
-        }
+        )
 
     }
     catch {
@@ -2996,13 +2785,8 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
 
         [System.Windows.MessageBox]::Show(
 
-            "NAO FOI POSSIVEL GERAR O RELATORIO.`n`n" +
-
-            "Detalhes do erro:`n" +
-
-            "$($_.Exception.Message)`n`n" +
-
-            "Verifique se a pasta C:\Relatorio Tech Info Belem pode ser criada e se o script esta sendo executado como Administrador.",
+            "ERRO AO GERAR RELATORIO:`n`n" +
+            "$($_.Exception.Message)",
 
             "TECH INFO BELEM - Erro",
 
@@ -3015,6 +2799,8 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
     }
 
 }
+```
+
 ```
 
 
