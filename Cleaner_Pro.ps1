@@ -1958,7 +1958,7 @@ function Abrir-FormularioRelatorio {
 ```powershell
 # ============================================================
 
-# RELATORIO DE SERVICO - VERSAO CORRIGIDA
+# RELATORIO DE SERVICO - SALVAMENTO NO DISCO C:
 
 # ============================================================
 
@@ -1976,21 +1976,25 @@ try {
     # ====================================================
 
     $computer =
-        Get-CimInstance Win32_ComputerSystem
+        Get-CimInstance Win32_ComputerSystem `
+        -ErrorAction Stop
 
 
     $os =
-        Get-CimInstance Win32_OperatingSystem
+        Get-CimInstance Win32_OperatingSystem `
+        -ErrorAction Stop
 
 
     $cpu =
-        Get-CimInstance Win32_Processor |
+        Get-CimInstance Win32_Processor `
+        -ErrorAction Stop |
         Select-Object -First 1
 
 
     $disk =
         Get-CimInstance Win32_LogicalDisk `
-        -Filter "DeviceID='C:'"
+        -Filter "DeviceID='C:'" `
+        -ErrorAction Stop
 
 
     $ramGB =
@@ -2024,7 +2028,7 @@ try {
     try {
 
         $physicalDisks =
-            @(Get-PhysicalDisk)
+            @(Get-PhysicalDisk -ErrorAction SilentlyContinue)
 
     }
     catch {
@@ -2039,8 +2043,22 @@ try {
     # PLACA DE VIDEO
     # ====================================================
 
-    $gpu =
-        @(Get-CimInstance Win32_VideoController)
+    $gpu = @()
+
+
+    try {
+
+        $gpu =
+            @(Get-CimInstance Win32_VideoController `
+            -ErrorAction SilentlyContinue)
+
+    }
+    catch {
+
+        $gpu =
+            @()
+
+    }
 
 
     # ====================================================
@@ -2064,34 +2082,15 @@ try {
 
 
     # ====================================================
-    # LOCAL DE SALVAMENTO
-    #
-    # DOCUMENTOS\Relatorio Tech Info Belem
-    #
-    # A PASTA SERA CRIADA AUTOMATICAMENTE
+    # PASTA DE RELATORIOS
     # ====================================================
-
-    $documentsFolder =
-        [Environment]::GetFolderPath(
-            [Environment+SpecialFolder]::MyDocuments
-        )
-
-
-    if ([string]::IsNullOrWhiteSpace($documentsFolder)) {
-
-        throw "Nao foi possivel localizar a pasta Documentos do usuario."
-
-    }
-
 
     $reportFolder =
-        Join-Path `
-        $documentsFolder `
-        "Relatorio Tech Info Belem"
+        "C:\Relatorio Tech Info Belem"
 
 
     # ====================================================
-    # CRIAR PASTA CASO NAO EXISTA
+    # CRIAR PASTA AUTOMATICAMENTE
     # ====================================================
 
     if (-not (Test-Path -LiteralPath $reportFolder)) {
@@ -2107,12 +2106,12 @@ try {
 
 
     # ====================================================
-    # CONFIRMAR QUE A PASTA FOI CRIADA
+    # CONFIRMAR EXISTENCIA DA PASTA
     # ====================================================
 
     if (-not (Test-Path -LiteralPath $reportFolder)) {
 
-        throw "A pasta de relatorios nao foi criada corretamente:`n$reportFolder"
+        throw "Nao foi possivel criar a pasta:`n$reportFolder"
 
     }
 
@@ -2128,7 +2127,7 @@ try {
 
 
     # ====================================================
-    # PREPARAR SAUDE DOS DISCOS
+    # SAUDE DOS DISCOS
     # ====================================================
 
     $diskHealthHtml = ""
@@ -2204,7 +2203,7 @@ Informacoes de saude dos discos nao disponiveis.
 
 
     # ====================================================
-    # PREPARAR PLACA DE VIDEO
+    # PLACA DE VIDEO
     # ====================================================
 
     $gpuHtml = ""
@@ -2300,6 +2299,7 @@ h2 {
     background: #f9fafb;
     border: 1px solid #e5e7eb;
     padding: 12px;
+    margin-bottom: 10px;
 }
 
 .label {
@@ -2369,10 +2369,6 @@ button {
     cursor: pointer;
 }
 
-button:hover {
-    background: #1d4ed8;
-}
-
 .footer {
     margin-top: 40px;
     border-top: 1px solid #d1d5db;
@@ -2435,7 +2431,6 @@ Nome do cliente:
 
 <input
 type="text"
-id="cliente"
 placeholder="Digite o nome do cliente">
 
 </div>
@@ -2448,7 +2443,6 @@ Telefone:
 
 <input
 type="text"
-id="telefone"
 placeholder="Digite o telefone">
 
 </div>
@@ -2509,9 +2503,9 @@ $([System.Net.WebUtility]::HtmlEncode($os.Caption))
 Tipo de servico:
 </span>
 
-<select id="tipoServico">
+<select>
 
-<option value="">
+<option>
 Selecione o servico realizado
 </option>
 
@@ -2580,7 +2574,6 @@ Descricao do servico realizado:
 </span>
 
 <textarea
-id="descricao"
 placeholder="Descreva detalhadamente o que foi realizado no equipamento..."></textarea>
 
 </div>
@@ -2740,7 +2733,6 @@ Analise de hardware
 <div class="card">
 
 <textarea
-id="observacoes"
 placeholder="Digite observacoes, recomendacoes ou informacoes adicionais..."></textarea>
 
 </div>
@@ -2756,7 +2748,6 @@ Preco / Valor cobrado:
 <input
 class="price"
 type="text"
-id="preco"
 placeholder="Ex.: R$ 150,00">
 
 </div>
@@ -2789,24 +2780,27 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
 
 ```
     # ====================================================
-    # SALVAR ARQUIVO
+    # SALVAR ARQUIVO NO C:
     # ====================================================
 
-    Set-Content `
-        -LiteralPath $reportFile `
-        -Value $html `
-        -Encoding UTF8 `
-        -Force `
-        -ErrorAction Stop
+    $txtStatus.Text =
+        "Salvando relatorio..."
+
+
+    [System.IO.File]::WriteAllText(
+        $reportFile,
+        $html,
+        [System.Text.UTF8Encoding]::new($false)
+    )
 
 
     # ====================================================
-    # VERIFICAR SE O ARQUIVO FOI REALMENTE CRIADO
+    # VERIFICAR SE O ARQUIVO EXISTE
     # ====================================================
 
-    if (-not (Test-Path -LiteralPath $reportFile)) {
+    if (-not [System.IO.File]::Exists($reportFile)) {
 
-        throw "O arquivo HTML nao foi criado corretamente."
+        throw "O arquivo nao foi encontrado apos a gravacao."
 
     }
 
@@ -2816,24 +2810,22 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
     # ====================================================
 
     $fileInfo =
-        Get-Item `
-        -LiteralPath $reportFile `
-        -ErrorAction Stop
+        [System.IO.FileInfo]$reportFile
 
 
-    if ($fileInfo.Length -lt 100) {
+    if ($fileInfo.Length -eq 0) {
 
-        throw "O arquivo de relatorio foi criado, mas esta vazio ou incompleto."
+        throw "O arquivo foi criado, mas esta vazio."
 
     }
 
 
     # ====================================================
-    # ATUALIZAR STATUS
+    # STATUS
     # ====================================================
 
     $txtStatus.Text =
-        "Relatorio de servico gerado com sucesso"
+        "Relatorio gerado com sucesso"
 
 
     $txtTitulo.Text =
@@ -2841,7 +2833,7 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
 
 
     $txtSubtitulo.Text =
-        "Relatorio salvo em Documentos"
+        "Relatorio salvo em C:\Relatorio Tech Info Belem"
 
 
     # ====================================================
@@ -2853,11 +2845,9 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
 
             "RELATORIO GERADO COM SUCESSO!`n`n" +
 
-            "O arquivo foi salvo em:`n`n" +
+            "Arquivo salvo em:`n" +
 
             "$reportFile`n`n" +
-
-            "A pasta foi criada automaticamente, se necessario.`n`n" +
 
             "Deseja abrir o relatorio agora?",
 
@@ -2886,13 +2876,15 @@ catch {
 
     [System.Windows.MessageBox]::Show(
 
-        "NAO FOI POSSIVEL GERAR O RELATORIO.`n`n" +
+        "ERRO AO GERAR O RELATORIO`n`n" +
 
-        "Detalhes do erro:`n" +
+        "Mensagem:`n" +
 
         "$($_.Exception.Message)`n`n" +
 
-        "Verifique se a pasta Documentos esta acessivel.",
+        "Caminho esperado:`n" +
+
+        "C:\Relatorio Tech Info Belem",
 
         "TECH INFO BELEM - Erro",
 
@@ -2906,6 +2898,7 @@ catch {
 ```
 
 }
+
 
 
 
