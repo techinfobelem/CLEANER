@@ -1952,91 +1952,528 @@ function Abrir-FormularioRelatorio {
 }
 
 # ============================================================
-# GERAR RELATORIO DE SERVICO
+# RELATORIO DE SERVICO - TECH INFO BELEM
 # ============================================================
 
 function Gerar-RelatorioServico {
 
     try {
 
-        $dados =
-            Abrir-FormularioRelatorio
+        # ========================================================
+        # COLETAR INFORMACOES AUTOMATICAS DO COMPUTADOR
+        # ========================================================
+
+        $txtStatus.Text = "Coletando informacoes do computador..."
+
+        $computer = Get-CimInstance Win32_ComputerSystem
+
+        $os = Get-CimInstance Win32_OperatingSystem
+
+        $cpu = Get-CimInstance Win32_Processor |
+            Select-Object -First 1
+
+        $disk = Get-CimInstance Win32_LogicalDisk `
+            -Filter "DeviceID='C:'"
+
+        $ramGB = [math]::Round(
+            $computer.TotalPhysicalMemory / 1GB,
+            1
+        )
+
+        $freeGB = [math]::Round(
+            $disk.FreeSpace / 1GB,
+            1
+        )
+
+        $totalGB = [math]::Round(
+            $disk.Size / 1GB,
+            1
+        )
+
+        $physicalDisks = @()
+
+        try {
+            $physicalDisks = @(Get-PhysicalDisk)
+        }
+        catch {
+            $physicalDisks = @()
+        }
+
+        $gpu = @(Get-CimInstance Win32_VideoController)
+
+        $data = Get-Date -Format "dd/MM/yyyy HH:mm"
 
 
-        if ($null -eq $dados) {
+        # ========================================================
+        # JANELA DE PREENCHIMENTO MANUAL
+        # ========================================================
+
+        [xml]$ReportXAML = @"
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="TECH INFO BELEM - Dados do Atendimento"
+    Height="720"
+    Width="850"
+    WindowStartupLocation="CenterScreen"
+    Background="#111827"
+    ResizeMode="CanResize">
+
+    <Grid Margin="25">
+
+        <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+
+
+        <StackPanel Grid.Row="0">
+
+            <TextBlock
+                Text="RELATORIO DE SERVICO"
+                Foreground="#60A5FA"
+                FontSize="28"
+                FontWeight="Bold"/>
+
+            <TextBlock
+                Text="TECH INFO BELEM"
+                Foreground="White"
+                FontSize="18"
+                FontWeight="Bold"
+                Margin="0,5,0,5"/>
+
+            <TextBlock
+                Text="Preencha os dados do atendimento antes de gerar o relatorio."
+                Foreground="#9CA3AF"
+                FontSize="14"
+                Margin="0,0,0,20"/>
+
+        </StackPanel>
+
+
+        <ScrollViewer
+            Grid.Row="1"
+            VerticalScrollBarVisibility="Auto">
+
+            <StackPanel>
+
+
+                <TextBlock
+                    Text="DADOS DO CLIENTE"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,8"/>
+
+
+                <TextBlock
+                    Text="Nome do cliente"
+                    Foreground="White"/>
+
+                <TextBox
+                    Name="txtCliente"
+                    Height="35"
+                    Margin="0,5,0,12"
+                    Padding="8"/>
+
+
+                <TextBlock
+                    Text="Telefone / WhatsApp"
+                    Foreground="White"/>
+
+                <TextBox
+                    Name="txtTelefone"
+                    Height="35"
+                    Margin="0,5,0,15"
+                    Padding="8"/>
+
+
+                <TextBlock
+                    Text="TIPO DE SERVICO"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,8"/>
+
+
+                <ComboBox
+                    Name="cmbServico"
+                    Height="35"
+                    Margin="0,5,0,15">
+
+                    <ComboBoxItem Content="Instalacao do Windows"/>
+
+                    <ComboBoxItem Content="Formatacao e instalacao do Windows"/>
+
+                    <ComboBoxItem Content="Montagem de PC Gamer"/>
+
+                    <ComboBoxItem Content="Montagem de computador"/>
+
+                    <ComboBoxItem Content="Manutencao preventiva"/>
+
+                    <ComboBoxItem Content="Limpeza e otimizacao"/>
+
+                    <ComboBoxItem Content="Reparo do Windows"/>
+
+                    <ComboBoxItem Content="Diagnostico tecnico"/>
+
+                    <ComboBoxItem Content="Manutencao de notebook"/>
+
+                    <ComboBoxItem Content="Manutencao de computador"/>
+
+                    <ComboBoxItem Content="Outro"/>
+
+                </ComboBox>
+
+
+                <TextBlock
+                    Text="DESCRICAO DO SERVICO REALIZADO"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,8"/>
+
+
+                <TextBox
+                    Name="txtDescricao"
+                    Height="100"
+                    Margin="0,5,0,15"
+                    Padding="8"
+                    AcceptsReturn="True"
+                    TextWrapping="Wrap"
+                    VerticalScrollBarVisibility="Auto"/>
+
+
+                <TextBlock
+                    Text="PECAS / COMPONENTES INSTALADOS OU SUBSTITUIDOS"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,8"/>
+
+
+                <TextBox
+                    Name="txtPecas"
+                    Height="80"
+                    Margin="0,5,0,15"
+                    Padding="8"
+                    AcceptsReturn="True"
+                    TextWrapping="Wrap"
+                    VerticalScrollBarVisibility="Auto"/>
+
+
+                <TextBlock
+                    Text="OBSERVACOES TECNICAS"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,8"/>
+
+
+                <TextBox
+                    Name="txtObservacoes"
+                    Height="100"
+                    Margin="0,5,0,15"
+                    Padding="8"
+                    AcceptsReturn="True"
+                    TextWrapping="Wrap"
+                    VerticalScrollBarVisibility="Auto"/>
+
+
+                <TextBlock
+                    Text="VALOR DO SERVICO"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,8"/>
+
+
+                <TextBox
+                    Name="txtValor"
+                    Height="35"
+                    Margin="0,5,0,15"
+                    Padding="8"/>
+
+
+                <TextBlock
+                    Text="FORMA DE PAGAMENTO"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,8"/>
+
+
+                <ComboBox
+                    Name="cmbPagamento"
+                    Height="35"
+                    Margin="0,5,0,20">
+
+                    <ComboBoxItem Content="PIX"/>
+
+                    <ComboBoxItem Content="Dinheiro"/>
+
+                    <ComboBoxItem Content="Cartao de credito"/>
+
+                    <ComboBoxItem Content="Cartao de debito"/>
+
+                    <ComboBoxItem Content="Transferencia bancaria"/>
+
+                    <ComboBoxItem Content="Outro"/>
+
+                </ComboBox>
+
+            </StackPanel>
+
+        </ScrollViewer>
+
+
+        <StackPanel
+            Grid.Row="2"
+            Orientation="Horizontal"
+            HorizontalAlignment="Right"
+            Margin="0,20,0,0">
+
+
+            <Button
+                Name="btnCancelarRelatorio"
+                Content="CANCELAR"
+                Width="120"
+                Height="40"
+                Margin="0,0,10,0"
+                Background="#374151"
+                Foreground="White"/>
+
+
+            <Button
+                Name="btnGerarRelatorioFinal"
+                Content="GERAR RELATORIO"
+                Width="180"
+                Height="40"
+                Background="#0369A1"
+                Foreground="White"/>
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>
+"@
+
+
+        $reportReader =
+            New-Object System.Xml.XmlNodeReader $ReportXAML
+
+        $ReportWindow =
+            [Windows.Markup.XamlReader]::Load($reportReader)
+
+
+        # ========================================================
+        # CONTROLES DA JANELA
+        # ========================================================
+
+        $txtCliente =
+            $ReportWindow.FindName("txtCliente")
+
+        $txtTelefone =
+            $ReportWindow.FindName("txtTelefone")
+
+        $cmbServico =
+            $ReportWindow.FindName("cmbServico")
+
+        $txtDescricao =
+            $ReportWindow.FindName("txtDescricao")
+
+        $txtPecas =
+            $ReportWindow.FindName("txtPecas")
+
+        $txtObservacoes =
+            $ReportWindow.FindName("txtObservacoes")
+
+        $txtValor =
+            $ReportWindow.FindName("txtValor")
+
+        $cmbPagamento =
+            $ReportWindow.FindName("cmbPagamento")
+
+        $btnCancelarRelatorio =
+            $ReportWindow.FindName("btnCancelarRelatorio")
+
+        $btnGerarRelatorioFinal =
+            $ReportWindow.FindName("btnGerarRelatorioFinal")
+
+
+        # ========================================================
+        # SELECIONAR PRIMEIRO ITEM DOS COMBOS
+        # ========================================================
+
+        $cmbServico.SelectedIndex = 0
+
+        $cmbPagamento.SelectedIndex = 0
+
+
+        # ========================================================
+        # VARIAVEL DE CONTROLE
+        # ========================================================
+
+        $script:RelatorioConfirmado = $false
+
+
+        # ========================================================
+        # BOTAO CANCELAR
+        # ========================================================
+
+        $btnCancelarRelatorio.Add_Click({
+
+            $script:RelatorioConfirmado = $false
+
+            $ReportWindow.Close()
+
+        })
+
+
+        # ========================================================
+        # BOTAO GERAR
+        # ========================================================
+
+        $btnGerarRelatorioFinal.Add_Click({
+
+            if (
+                [string]::IsNullOrWhiteSpace(
+                    $txtCliente.Text
+                )
+            ) {
+
+                [System.Windows.MessageBox]::Show(
+
+                    "Informe o nome do cliente.",
+
+                    "TECH INFO BELEM",
+
+                    "OK",
+
+                    "Warning"
+
+                )
+
+                return
+
+            }
+
+
+            if (
+                [string]::IsNullOrWhiteSpace(
+                    $txtDescricao.Text
+                )
+            ) {
+
+                [System.Windows.MessageBox]::Show(
+
+                    "Descreva o servico realizado.",
+
+                    "TECH INFO BELEM",
+
+                    "OK",
+
+                    "Warning"
+
+                )
+
+                return
+
+            }
+
+
+            if (
+                [string]::IsNullOrWhiteSpace(
+                    $txtValor.Text
+                )
+            ) {
+
+                [System.Windows.MessageBox]::Show(
+
+                    "Informe o valor do servico.",
+
+                    "TECH INFO BELEM",
+
+                    "OK",
+
+                    "Warning"
+
+                )
+
+                return
+
+            }
+
+
+            $script:RelatorioConfirmado = $true
+
+            $ReportWindow.Close()
+
+        })
+
+
+        # ========================================================
+        # ABRIR JANELA DE PREENCHIMENTO
+        # ========================================================
+
+        $ReportWindow.ShowDialog() | Out-Null
+
+
+        if (-not $script:RelatorioConfirmado) {
+
+            $txtStatus.Text =
+                "Geracao do relatorio cancelada"
 
             return
 
         }
 
 
-        $txtStatus.Text =
-            "Coletando informacoes para o relatorio..."
+        # ========================================================
+        # OBTER DADOS MANUAIS
+        # ========================================================
 
+        $cliente =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtCliente.Text
+            )
 
-        $computer =
-            Get-CimInstance Win32_ComputerSystem
+        $telefone =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtTelefone.Text
+            )
 
+        $servico =
+            [System.Net.WebUtility]::HtmlEncode(
+                [string]$cmbServico.Text
+            )
 
-        $os =
-            Get-CimInstance Win32_OperatingSystem
+        $descricao =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtDescricao.Text
+            )
 
+        $pecas =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtPecas.Text
+            )
 
-        $cpu =
-            Get-CimInstance Win32_Processor |
-            Select-Object -First 1
+        $observacoes =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtObservacoes.Text
+            )
 
+        $valor =
+            [System.Net.WebUtility]::HtmlEncode(
+                $txtValor.Text
+            )
 
-        $disk =
-            Get-CimInstance Win32_LogicalDisk `
-            -Filter "DeviceID='C:'"
-
-
-        $ramGB =
-            [math]::Round(
-                $computer.TotalPhysicalMemory / 1GB,
-                1
+        $pagamento =
+            [System.Net.WebUtility]::HtmlEncode(
+                [string]$cmbPagamento.Text
             )
 
 
-        $freeGB =
-            [math]::Round(
-                $disk.FreeSpace / 1GB,
-                1
-            )
-
-
-        $totalGB =
-            [math]::Round(
-                $disk.Size / 1GB,
-                1
-            )
-
-
-        $physicalDisks = @()
-
-
-        try {
-
-            $physicalDisks =
-                @(Get-PhysicalDisk)
-
-        }
-        catch {
-
-            $physicalDisks =
-                @()
-
-        }
-
-
-        $gpu =
-            @(Get-CimInstance Win32_VideoController)
-
-
-        $data =
-            Get-Date -Format "dd/MM/yyyy HH:mm"
-
+        # ========================================================
+        # PREPARAR NOME DO ARQUIVO
+        # ========================================================
 
         $safeComputerName =
             $env:COMPUTERNAME -replace '[\\/:*?"<>|]', '_'
@@ -2046,9 +2483,9 @@ function Gerar-RelatorioServico {
             Get-Date -Format "yyyyMMdd_HHmmss"
 
 
-        # ====================================================
+        # ========================================================
         # PASTA DOCUMENTOS
-        # ====================================================
+        # ========================================================
 
         $documents =
             [Environment]::GetFolderPath(
@@ -2079,67 +2516,9 @@ function Gerar-RelatorioServico {
             "Relatorio_Servico_${safeComputerName}_${timestamp}.html"
 
 
-        # ====================================================
-        # ESCAPAR HTML
-        # ====================================================
-
-        $clienteHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$dados.Cliente
-            )
-
-
-        $tipoServicoHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$dados.TipoServico
-            )
-
-
-        $servicoHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$dados.Servico
-            )
-
-
-        $observacoesHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$dados.Observacoes
-            )
-
-
-        $tecnicoHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$dados.Tecnico
-            )
-
-
-        $computadorHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                "$($computer.Manufacturer) $($computer.Model)"
-            )
-
-
-        $nomeEquipamentoHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                $env:COMPUTERNAME
-            )
-
-
-        $windowsHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                $os.Caption
-            )
-
-
-        $cpuHtml =
-            [System.Net.WebUtility]::HtmlEncode(
-                $cpu.Name
-            )
-
-
-        # ====================================================
-        # DISCO
-        # ====================================================
+        # ========================================================
+        # DISCO - RELATORIO
+        # ========================================================
 
         $diskHealthHtml = ""
 
@@ -2209,9 +2588,9 @@ Informacoes de saude dos discos nao disponiveis.
         }
 
 
-        # ====================================================
+        # ========================================================
         # GPU
-        # ====================================================
+        # ========================================================
 
         $gpuHtml = ""
 
@@ -2230,11 +2609,7 @@ Informacoes de saude dos discos nao disponiveis.
         }
 
 
-        if (
-            [string]::IsNullOrWhiteSpace(
-                $gpuHtml
-            )
-        ) {
+        if ([string]::IsNullOrWhiteSpace($gpuHtml)) {
 
             $gpuHtml =
                 "<li>Informacao nao disponivel</li>"
@@ -2242,25 +2617,9 @@ Informacoes de saude dos discos nao disponiveis.
         }
 
 
-        # ====================================================
-        # OBSERVACOES
-        # ====================================================
-
-        if (
-            [string]::IsNullOrWhiteSpace(
-                $observacoesHtml
-            )
-        ) {
-
-            $observacoesHtml =
-                "Nenhuma observacao registrada."
-
-        }
-
-
-        # ====================================================
+        # ========================================================
         # HTML FINAL
-        # ====================================================
+        # ========================================================
 
         $html = @"
 <!DOCTYPE html>
@@ -2276,197 +2635,114 @@ Informacoes de saude dos discos nao disponiveis.
 <style>
 
 body {
-
     font-family: Arial, Helvetica, sans-serif;
-
     background: #f3f4f6;
-
     margin: 0;
-
     padding: 30px;
-
     color: #1f2937;
-
 }
 
 .container {
-
     max-width: 1000px;
-
     margin: auto;
-
     background: white;
-
     padding: 35px;
-
     box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-
 }
 
 .header {
-
     border-bottom: 3px solid #2563eb;
-
     padding-bottom: 20px;
-
     margin-bottom: 25px;
-
 }
 
 .header h1 {
-
     margin: 0;
-
     color: #1d4ed8;
-
 }
 
 .header p {
-
     margin: 5px 0;
-
     color: #6b7280;
-
 }
 
 h2 {
-
     background: #1f2937;
-
     color: white;
-
     padding: 10px;
-
     font-size: 18px;
-
 }
 
 .info {
-
     display: grid;
-
     grid-template-columns: 1fr 1fr;
-
     gap: 10px;
-
 }
 
 .card {
-
     background: #f9fafb;
-
     border: 1px solid #e5e7eb;
-
     padding: 12px;
-
-    white-space: pre-wrap;
-
 }
 
 .label {
-
     font-weight: bold;
-
     color: #374151;
-
 }
 
-.servico {
-
-    background: #eff6ff;
-
-    border: 2px solid #2563eb;
-
-    padding: 20px;
-
-    font-size: 16px;
-
-    line-height: 1.6;
-
-    white-space: pre-wrap;
-
-}
-
-.observacoes {
-
+.service {
     background: #f9fafb;
-
-    border: 1px solid #d1d5db;
-
+    border: 1px solid #e5e7eb;
     padding: 20px;
-
-    min-height: 100px;
-
     white-space: pre-wrap;
+}
 
+.price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #16a34a;
 }
 
 table {
-
     width: 100%;
-
     border-collapse: collapse;
-
     margin-top: 10px;
-
 }
 
 th {
-
     background: #2563eb;
-
     color: white;
-
     padding: 10px;
-
     text-align: left;
-
 }
 
 td {
-
     border: 1px solid #d1d5db;
-
     padding: 10px;
-
 }
 
 ul {
-
     background: #f9fafb;
-
     padding: 20px 40px;
-
 }
 
 .footer {
-
     margin-top: 40px;
-
     border-top: 1px solid #d1d5db;
-
     padding-top: 15px;
-
     color: #6b7280;
-
     font-size: 12px;
-
 }
 
 @media print {
 
     body {
-
         background: white;
-
         padding: 0;
-
     }
 
     .container {
-
         box-shadow: none;
-
     }
 
 }
@@ -2479,122 +2755,229 @@ ul {
 
 <div class="container">
 
+
 <div class="header">
 
 <h1>TECH INFO BELEM</h1>
 
 <p>RELATORIO DE SERVICO TECNICO</p>
 
-<p>Cleaner Pro v0.6</p>
+<p>Cleaner Pro v0.5</p>
 
 </div>
 
 
-<h2>INFORMACOES DO ATENDIMENTO</h2>
+<h2>DADOS DO ATENDIMENTO</h2>
 
 <div class="info">
 
-<div class="card">
-
-<span class="label">Cliente:</span><br>
-
-$clienteHtml
-
-</div>
 
 <div class="card">
 
-<span class="label">Tipo de servico:</span><br>
+<span class="label">
+Data e hora:
+</span>
 
-$tipoServicoHtml
-
-</div>
-
-<div class="card">
-
-<span class="label">Data e hora:</span><br>
+<br>
 
 $data
 
 </div>
 
+
 <div class="card">
 
-<span class="label">Tecnico responsavel:</span><br>
+<span class="label">
+Cliente:
+</span>
 
-$tecnicoHtml
+<br>
+
+$cliente
 
 </div>
 
+
+<div class="card">
+
+<span class="label">
+Telefone / WhatsApp:
+</span>
+
+<br>
+
+$telefone
+
 </div>
 
 
-<h2>EQUIPAMENTO</h2>
+<div class="card">
+
+<span class="label">
+Tipo de servico:
+</span>
+
+<br>
+
+$servico
+
+</div>
+
+
+</div>
+
+
+<h2>DESCRICAO DO SERVICO</h2>
+
+<div class="service">
+
+$descricao
+
+</div>
+
+
+<h2>PECAS / COMPONENTES</h2>
+
+<div class="service">
+
+$pecas
+
+</div>
+
+
+<h2>VALOR E PAGAMENTO</h2>
 
 <div class="info">
 
-<div class="card">
-
-<span class="label">Computador:</span><br>
-
-$computadorHtml
-
-</div>
 
 <div class="card">
 
-<span class="label">Nome do equipamento:</span><br>
+<span class="label">
+Valor do servico:
+</span>
 
-$nomeEquipamentoHtml
+<br>
+
+<div class="price">
+
+R$ $valor
 
 </div>
+
+</div>
+
 
 <div class="card">
 
-<span class="label">Sistema operacional:</span><br>
+<span class="label">
+Forma de pagamento:
+</span>
 
-$windowsHtml
+<br>
+
+$pagamento
 
 </div>
 
+
 </div>
 
 
-<h2>HARDWARE</h2>
+<h2>INFORMACOES DO COMPUTADOR</h2>
 
 <div class="info">
 
+
 <div class="card">
 
-<span class="label">Processador:</span><br>
+<span class="label">
+Fabricante / Modelo:
+</span>
 
-$cpuHtml
+<br>
+
+$([System.Net.WebUtility]::HtmlEncode("$($computer.Manufacturer) $($computer.Model)"))
 
 </div>
 
+
 <div class="card">
 
-<span class="label">Memoria RAM:</span><br>
+<span class="label">
+Nome do equipamento:
+</span>
+
+<br>
+
+$([System.Net.WebUtility]::HtmlEncode($env:COMPUTERNAME))
+
+</div>
+
+
+<div class="card">
+
+<span class="label">
+Sistema operacional:
+</span>
+
+<br>
+
+$([System.Net.WebUtility]::HtmlEncode($os.Caption))
+
+</div>
+
+
+<div class="card">
+
+<span class="label">
+Processador:
+</span>
+
+<br>
+
+$([System.Net.WebUtility]::HtmlEncode($cpu.Name))
+
+</div>
+
+
+<div class="card">
+
+<span class="label">
+Memoria RAM:
+</span>
+
+<br>
 
 $ramGB GB
 
 </div>
 
+
 <div class="card">
 
-<span class="label">Disco principal:</span><br>
+<span class="label">
+Disco principal:
+</span>
+
+<br>
 
 C:
 
 </div>
 
+
 <div class="card">
 
-<span class="label">Espaco livre:</span><br>
+<span class="label">
+Espaco livre:
+</span>
+
+<br>
 
 $freeGB GB de $totalGB GB
 
 </div>
+
 
 </div>
 
@@ -2631,24 +3014,11 @@ $diskHealthHtml
 </table>
 
 
-<h2>SERVICO REALIZADO</h2>
-
-<div class="servico">
-
-<strong>$tipoServicoHtml</strong>
-
-<br><br>
-
-$servicoHtml
-
-</div>
-
-
 <h2>OBSERVACOES TECNICAS</h2>
 
-<div class="observacoes">
+<div class="service">
 
-$observacoesHtml
+$observacoes
 
 </div>
 
@@ -2657,9 +3027,9 @@ $observacoesHtml
 
 TECH INFO BELEM - Assistencia Tecnica em Computadores, Notebooks e Celulares<br>
 
-Relatorio gerado automaticamente pelo Cleaner Pro v0.6.<br>
+Relatorio gerado automaticamente pelo Cleaner Pro v0.5.<br>
 
-Documento tecnico gerado em $data.
+Data de geracao: $data
 
 </div>
 
@@ -2672,14 +3042,45 @@ Documento tecnico gerado em $data.
 "@
 
 
+        # ========================================================
+        # SALVAR ARQUIVO
+        # ========================================================
+
+        $txtStatus.Text =
+            "Salvando relatorio..."
+
+
         Set-Content `
             -Path $reportFile `
             -Value $html `
-            -Encoding UTF8
+            -Encoding UTF8 `
+            -Force
+
+
+        # ========================================================
+        # CONFIRMAR QUE O ARQUIVO EXISTE
+        # ========================================================
+
+        if (-not (Test-Path $reportFile)) {
+
+            throw "O arquivo do relatorio nao foi criado corretamente."
+
+        }
+
+
+        $fileInfo =
+            Get-Item $reportFile
+
+
+        if ($fileInfo.Length -le 0) {
+
+            throw "O arquivo do relatorio foi criado vazio."
+
+        }
 
 
         $txtStatus.Text =
-            "Relatorio de servico gerado"
+            "Relatorio salvo com sucesso"
 
 
         $txtTitulo.Text =
@@ -2687,17 +3088,23 @@ Documento tecnico gerado em $data.
 
 
         $txtSubtitulo.Text =
-            "Relatorio salvo em Documentos - Relatorio Tech Info Belem"
+            "Relatorio salvo em Documentos"
 
+
+        # ========================================================
+        # ABRIR RELATORIO
+        # ========================================================
 
         $confirmacao =
             [System.Windows.MessageBox]::Show(
 
-                "RELATORIO DE SERVICO GERADO COM SUCESSO!`n`n" +
+                "RELATORIO GERADO COM SUCESSO!`n`n" +
 
-                "Cliente: $($dados.Cliente)`n" +
+                "Cliente: $($txtCliente.Text)`n" +
 
-                "Servico: $($dados.TipoServico)`n`n" +
+                "Servico: $($cmbServico.Text)`n" +
+
+                "Valor: R$ $($txtValor.Text)`n`n" +
 
                 "Arquivo salvo em:`n" +
 
@@ -2717,7 +3124,7 @@ Documento tecnico gerado em $data.
         if ($confirmacao -eq "Yes") {
 
             Start-Process `
-                $reportFile
+                -FilePath $reportFile
 
         }
 
@@ -2730,7 +3137,11 @@ Documento tecnico gerado em $data.
 
         [System.Windows.MessageBox]::Show(
 
-            "Nao foi possivel gerar o relatorio.`n`nErro:`n$($_.Exception.Message)",
+            "Nao foi possivel gerar o relatorio.`n`n" +
+
+            "Erro:`n" +
+
+            "$($_.Exception.Message)",
 
             "TECH INFO BELEM - Erro",
 
