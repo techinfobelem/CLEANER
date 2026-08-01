@@ -1438,19 +1438,7 @@ Registrar-Servico `
 
 }
 
-# ============================================================
-
-# FIM DA PARTE 1
-
-# A PARTE 2 DEVE SER COLADA IMEDIATAMENTE ABAIXO
-
-# ============================================================
-
-# ============================================================
-
-# EVENTO - INICIO
-
-# ============================================================$btnInicio.Add_Click({
+$btnInicio.Add_Click({
 
 ```
 $txtTitulo.Text =
@@ -2479,4 +2467,3 @@ if ($confirmacao -eq "Yes") {
 Atualizar-Informacoes
 
 $Window.ShowDialog() | Out-Null
-
