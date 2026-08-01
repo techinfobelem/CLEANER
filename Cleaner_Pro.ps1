@@ -5,8 +5,14 @@ $ErrorActionPreference = "SilentlyContinue"
 
 # ============================================================
 # TECH INFO BELEM - CLEANER PRO
-# VERSAO 0.4
+# VERSAO 0.5
 # ============================================================
+
+# ============================================================
+# VARIAVEIS GLOBAIS
+# ============================================================
+
+$script:ProcedimentosRealizados = New-Object System.Collections.ArrayList
 
 # ============================================================
 # VERIFICAR ADMINISTRADOR
@@ -23,7 +29,6 @@ function Test-Administrator {
     )
 }
 
-
 # ============================================================
 # AVISO DE ADMINISTRADOR
 # ============================================================
@@ -32,12 +37,11 @@ if (-not (Test-Administrator)) {
 
     [System.Windows.MessageBox]::Show(
         "O Cleaner Pro nao esta sendo executado como Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente.`n`nRecomendamos executar o PowerShell como Administrador.",
-        "TECH INFO BELEM - Cleaner Pro v0.4",
+        "TECH INFO BELEM - Cleaner Pro v0.5",
         "OK",
         "Warning"
     )
 }
-
 
 # ============================================================
 # INTERFACE GRAFICA
@@ -47,19 +51,18 @@ if (-not (Test-Administrator)) {
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="TECH INFO BELEM - Cleaner Pro v0.4"
-    Height="760"
-    Width="1200"
+    Title="TECH INFO BELEM - Cleaner Pro v0.5"
+    Height="800"
+    Width="1250"
     WindowStartupLocation="CenterScreen"
     Background="#111827">
 
     <Grid>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="260"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-
 
         <!-- ================================================= -->
         <!-- MENU LATERAL -->
@@ -221,6 +224,43 @@ if (-not (Test-Administrator)) {
                         Height="40"
                         Margin="15,3"
                         Background="#1F2937"
+                        Foreground="White"/>
+
+
+                    <!-- UTILITARIOS -->
+
+                    <TextBlock
+                        Text="UTILITARIOS"
+                        Foreground="#6B7280"
+                        FontSize="11"
+                        FontWeight="Bold"
+                        Margin="20,20,10,5"/>
+
+
+                    <Button
+                        Name="btnWifi"
+                        Content="SENHA DO WI-FI"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#1F2937"
+                        Foreground="White"/>
+
+
+                    <Button
+                        Name="btnXbox"
+                        Content="REMOVER XBOX"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#991B1B"
+                        Foreground="White"/>
+
+
+                    <Button
+                        Name="btnRelatorio"
+                        Content="RELATORIO DE SERVICO"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#0369A1"
                         Foreground="White"/>
 
 
@@ -606,7 +646,7 @@ if (-not (Test-Administrator)) {
             <TextBlock
                 Name="txtRodape"
                 Grid.Row="3"
-                Text="TECH INFO BELEM - Cleaner Pro v0.4"
+                Text="TECH INFO BELEM - Cleaner Pro v0.5"
                 Foreground="#6B7280"
                 HorizontalAlignment="Right"
                 Margin="0,20,0,0"/>
@@ -645,6 +685,10 @@ $btnRepararWindows = $Window.FindName("btnRepararWindows")
 $btnDiscos = $Window.FindName("btnDiscos")
 $btnMemoria = $Window.FindName("btnMemoria")
 $btnHardware = $Window.FindName("btnHardware")
+
+$btnWifi = $Window.FindName("btnWifi")
+$btnXbox = $Window.FindName("btnXbox")
+$btnRelatorio = $Window.FindName("btnRelatorio")
 
 $btnChrisTitus = $Window.FindName("btnChrisTitus")
 $btnSair = $Window.FindName("btnSair")
@@ -788,6 +832,28 @@ function Get-FolderSize {
 
 
     return $total
+
+}
+
+
+# ============================================================
+# REGISTRAR PROCEDIMENTO
+# ============================================================
+
+function Registrar-Procedimento {
+
+    param(
+        [string]$Nome
+    )
+
+    if (
+        -not [string]::IsNullOrWhiteSpace($Nome) -and
+        -not $script:ProcedimentosRealizados.Contains($Nome)
+    ) {
+
+        [void]$script:ProcedimentosRealizados.Add($Nome)
+
+    }
 
 }
 
@@ -1148,6 +1214,9 @@ function Limpar-Temporarios {
             -ErrorAction SilentlyContinue
 
 
+        Registrar-Procedimento "Limpeza de arquivos temporarios"
+
+
         $txtStatus.Text =
             "Temporarios limpos"
 
@@ -1253,6 +1322,9 @@ function Limpar-Navegadores {
     }
 
 
+    Registrar-Procedimento "Limpeza de cache dos navegadores"
+
+
     $txtStatus.Text =
         "Caches dos navegadores limpos"
 
@@ -1277,6 +1349,9 @@ function Limpar-Lixeira {
         Clear-RecycleBin `
             -Force `
             -ErrorAction SilentlyContinue
+
+
+        Registrar-Procedimento "Esvaziamento da Lixeira do Windows"
 
 
         $txtStatus.Text =
@@ -1393,6 +1468,9 @@ function Limpeza-Completa {
         "Limpeza completa concluida"
 
 
+    Registrar-Procedimento "Limpeza completa do sistema"
+
+
     [System.Windows.MessageBox]::Show(
 
         "LIMPEZA COMPLETA FINALIZADA`n`n" +
@@ -1402,7 +1480,7 @@ function Limpeza-Completa {
 
         "O Cleaner Pro concluiu a manutencao.",
 
-        "TECH INFO BELEM - Cleaner Pro v0.4",
+        "TECH INFO BELEM - Cleaner Pro v0.5",
 
         "OK",
 
@@ -1443,6 +1521,9 @@ function Diagnosticar-Windows {
         -Wait `
         -PassThru `
         -WindowStyle Hidden
+
+
+    Registrar-Procedimento "Diagnostico de integridade do Windows (DISM e SFC)"
 
 
     $txtStatus.Text =
@@ -1527,6 +1608,9 @@ function Reparar-Windows {
         -ArgumentList "/scannow" `
         -Wait `
         -PassThru
+
+
+    Registrar-Procedimento "Reparacao do Windows (DISM RestoreHealth e SFC Scannow)"
 
 
     $txtStatus.Text =
@@ -1629,6 +1713,9 @@ function Verificar-SaudeDiscos {
             "Diagnostico de armazenamento concluido"
 
 
+        Registrar-Procedimento "Verificacao de saude do SSD / HD"
+
+
         [System.Windows.MessageBox]::Show(
 
             $resultado,
@@ -1722,6 +1809,9 @@ function Testar-Memoria {
         "Diagnostico de memoria aberto"
 
 
+    Registrar-Procedimento "Agendamento de diagnostico da memoria RAM"
+
+
     [System.Windows.MessageBox]::Show(
 
         "O Diagnostico de Memoria do Windows foi aberto.`n`nEscolha uma das opcoes disponiveis para iniciar o teste.`n`nO resultado sera apresentado pelo Windows apos a verificacao.",
@@ -1794,6 +1884,9 @@ function Mostrar-Hardware {
             "Informacoes de hardware coletadas"
 
 
+        Registrar-Procedimento "Levantamento de informacoes de hardware"
+
+
         [System.Windows.MessageBox]::Show(
 
             $resultado,
@@ -1818,6 +1911,249 @@ function Mostrar-Hardware {
 
 
 # ============================================================
+# SENHA DO WI-FI
+# ============================================================
+
+function Mostrar-SenhaWifi {
+
+    $txtStatus.Text =
+        "Consultando rede Wi-Fi conectada..."
+
+
+    try {
+
+        $wifi =
+            netsh wlan show interfaces
+
+
+        $ssid =
+            ($wifi |
+            Select-String "^\s*SSID\s*:" |
+            Select-Object -First 1).ToString()
+
+
+        if ([string]::IsNullOrWhiteSpace($ssid)) {
+
+            [System.Windows.MessageBox]::Show(
+
+                "Nenhuma rede Wi-Fi conectada foi identificada.",
+
+                "TECH INFO BELEM - Wi-Fi",
+
+                "OK",
+
+                "Warning"
+
+            )
+
+            $txtStatus.Text =
+                "Nenhuma rede Wi-Fi conectada"
+
+            return
+
+        }
+
+
+        $nomeRede =
+            ($ssid -split ":",2)[1].Trim()
+
+
+        $perfil =
+            netsh wlan show profile name="$nomeRede" key=clear
+
+
+        $linhaSenha =
+            $perfil |
+            Select-String "Key Content"
+
+
+        if ($linhaSenha) {
+
+            $senha =
+                ($linhaSenha.ToString() -split ":",2)[1].Trim()
+
+        }
+        else {
+
+            $senha =
+                "Senha nao disponivel ou rede sem senha."
+
+        }
+
+
+        $resultado =
+
+            "REDE WI-FI ATUAL`n`n" +
+
+            "Nome da rede: $nomeRede`n`n" +
+
+            "Senha: $senha"
+
+
+        $txtStatus.Text =
+            "Senha Wi-Fi consultada"
+
+
+        [System.Windows.MessageBox]::Show(
+
+            $resultado,
+
+            "TECH INFO BELEM - Senha Wi-Fi",
+
+            "OK",
+
+            "Information"
+
+        )
+
+    }
+    catch {
+
+        $txtStatus.Text =
+            "Erro ao consultar Wi-Fi"
+
+
+        [System.Windows.MessageBox]::Show(
+
+            "Nao foi possivel consultar a senha da rede Wi-Fi.`n`nExecute o Cleaner Pro como Administrador e tente novamente.",
+
+            "TECH INFO BELEM - Wi-Fi",
+
+            "OK",
+
+            "Warning"
+
+        )
+
+    }
+
+}
+
+
+# ============================================================
+# REMOVER XBOX
+# ============================================================
+
+function Remover-Xbox {
+
+    $confirmacao =
+        [System.Windows.MessageBox]::Show(
+
+            "Deseja remover os aplicativos Xbox deste usuario?`n`n" +
+
+            "Esta operacao pode remover componentes como:`n" +
+
+            "- Xbox App`n" +
+
+            "- Xbox Gaming App`n" +
+
+            "- Xbox Identity Provider`n" +
+
+            "- Xbox Speech To Text Overlay`n`n" +
+
+            "O Windows Game Bar nao sera removido automaticamente.`n`n" +
+
+            "Deseja continuar?",
+
+            "TECH INFO BELEM - Remover Xbox",
+
+            "YesNo",
+
+            "Warning"
+
+        )
+
+
+    if ($confirmacao -ne "Yes") {
+
+        return
+
+    }
+
+
+    $txtStatus.Text =
+        "Removendo aplicativos Xbox..."
+
+
+    try {
+
+        $pacotes = @(
+
+            "Microsoft.XboxApp",
+
+            "Microsoft.Xbox.TCUI",
+
+            "Microsoft.XboxGamingOverlay",
+
+            "Microsoft.XboxGameOverlay",
+
+            "Microsoft.XboxIdentityProvider",
+
+            "Microsoft.XboxSpeechToTextOverlay",
+
+            "Microsoft.GamingApp"
+
+        )
+
+
+        foreach ($pacote in $pacotes) {
+
+            Get-AppxPackage `
+                -Name $pacote `
+                -ErrorAction SilentlyContinue |
+
+            Remove-AppxPackage `
+                -ErrorAction SilentlyContinue
+
+        }
+
+
+        Registrar-Procedimento "Remocao dos aplicativos Xbox do Windows"
+
+
+        $txtStatus.Text =
+            "Aplicativos Xbox removidos"
+
+
+        [System.Windows.MessageBox]::Show(
+
+            "O processo de remocao dos aplicativos Xbox foi concluido.`n`n" +
+
+            "Alguns componentes podem permanecer caso sejam protegidos pelo Windows ou estejam instalados para outros usuarios.",
+
+            "TECH INFO BELEM - Xbox",
+
+            "OK",
+
+            "Information"
+
+        )
+
+    }
+    catch {
+
+        $txtStatus.Text =
+            "Erro ao remover Xbox"
+
+
+        [System.Windows.MessageBox]::Show(
+
+            "Ocorreu um erro durante a remocao dos aplicativos Xbox.`n`nTente executar o Cleaner Pro como Administrador.",
+
+            "TECH INFO BELEM - Xbox",
+
+            "OK",
+
+            "Warning"
+
+        )
+
+    }
+
+}
+
+
+# ============================================================
 # CHRIS TITUS WINUTIL
 # ============================================================
 
@@ -1826,7 +2162,9 @@ function Abrir-ChrisTitus {
     $confirmacao =
         [System.Windows.MessageBox]::Show(
 
-            "Deseja abrir o Windows Utility do Chris Titus Tech?`n`nO WinUtil sera executado diretamente a partir do site oficial.",
+            "Deseja abrir o Windows Utility do Chris Titus Tech?`n`n" +
+
+            "O WinUtil sera executado diretamente a partir do site oficial.",
 
             "TECH INFO BELEM - WinUtil",
 
@@ -1877,10 +2215,7 @@ function Abrir-ChrisTitus {
 
     }
 
-}
-
-
-# ============================================================
+}# ============================================================
 # EVENTO - INICIO
 # ============================================================
 
@@ -1889,14 +2224,11 @@ $btnInicio.Add_Click({
     $txtTitulo.Text =
         "Painel de Controle"
 
-
     $txtSubtitulo.Text =
         "Ferramenta profissional de limpeza, diagnostico e manutencao"
 
-
     $txtStatus.Text =
         "Sistema pronto"
-
 
     Atualizar-Informacoes
 
@@ -1904,7 +2236,7 @@ $btnInicio.Add_Click({
 
 
 # ============================================================
-# EVENTO - ANALISAR
+# EVENTO - ANALISAR SISTEMA
 # ============================================================
 
 $btnAnalisar.Add_Click({
@@ -1912,10 +2244,8 @@ $btnAnalisar.Add_Click({
     $txtTitulo.Text =
         "Analise do Sistema"
 
-
     $txtSubtitulo.Text =
         "Verificando arquivos temporarios, caches e lixeira"
-
 
     Analisar-Sistema
 
@@ -1923,7 +2253,7 @@ $btnAnalisar.Add_Click({
 
 
 # ============================================================
-# EVENTO - TEMPORARIOS
+# EVENTO - LIMPAR TEMPORARIOS
 # ============================================================
 
 $btnTemporarios.Add_Click({
@@ -1952,7 +2282,7 @@ $btnTemporarios.Add_Click({
 
 
 # ============================================================
-# EVENTO - NAVEGADORES
+# EVENTO - LIMPAR NAVEGADORES
 # ============================================================
 
 $btnNavegadores.Add_Click({
@@ -1960,7 +2290,8 @@ $btnNavegadores.Add_Click({
     $confirmacao =
         [System.Windows.MessageBox]::Show(
 
-            "Deseja limpar os caches dos navegadores instalados?`n`nCookies, senhas, favoritos e historico nao serao removidos.",
+            "Deseja limpar os caches dos navegadores instalados?`n`n" +
+            "Cookies, senhas, favoritos e historico nao serao removidos.",
 
             "TECH INFO BELEM - Navegadores",
 
@@ -2029,10 +2360,8 @@ $btnDiagnosticoWindows.Add_Click({
     $txtTitulo.Text =
         "Diagnostico do Windows"
 
-
     $txtSubtitulo.Text =
         "Verificando integridade da imagem e arquivos do sistema"
-
 
     Diagnosticar-Windows
 
@@ -2048,10 +2377,8 @@ $btnRepararWindows.Add_Click({
     $txtTitulo.Text =
         "Reparacao do Windows"
 
-
     $txtSubtitulo.Text =
         "DISM RestoreHealth seguido de SFC Scannow"
-
 
     Reparar-Windows
 
@@ -2067,10 +2394,8 @@ $btnDiscos.Add_Click({
     $txtTitulo.Text =
         "Saude do Armazenamento"
 
-
     $txtSubtitulo.Text =
         "Consultando status dos discos fisicos"
-
 
     Verificar-SaudeDiscos
 
@@ -2078,7 +2403,7 @@ $btnDiscos.Add_Click({
 
 
 # ============================================================
-# EVENTO - MEMORIA RAM
+# EVENTO - TESTE DE MEMORIA RAM
 # ============================================================
 
 $btnMemoria.Add_Click({
@@ -2086,10 +2411,8 @@ $btnMemoria.Add_Click({
     $txtTitulo.Text =
         "Diagnostico de Memoria RAM"
 
-
     $txtSubtitulo.Text =
         "Teste utilizando o Diagnostico de Memoria do Windows"
-
 
     Testar-Memoria
 
@@ -2097,7 +2420,7 @@ $btnMemoria.Add_Click({
 
 
 # ============================================================
-# EVENTO - HARDWARE
+# EVENTO - INFORMACOES DE HARDWARE
 # ============================================================
 
 $btnHardware.Add_Click({
@@ -2105,10 +2428,8 @@ $btnHardware.Add_Click({
     $txtTitulo.Text =
         "Informacoes do Hardware"
 
-
     $txtSubtitulo.Text =
         "Informacoes basicas do hardware instalado"
-
 
     Mostrar-Hardware
 
@@ -2116,12 +2437,63 @@ $btnHardware.Add_Click({
 
 
 # ============================================================
-# EVENTO - CHRIS TITUS
+# EVENTO - CHRIS TITUS WINUTIL
 # ============================================================
 
 $btnChrisTitus.Add_Click({
 
     Abrir-ChrisTitus
+
+})
+
+
+# ============================================================
+# EVENTO - MOSTRAR SENHA WIFI
+# ============================================================
+
+$btnWifi.Add_Click({
+
+    $txtTitulo.Text =
+        "Senha da Rede Wi-Fi"
+
+    $txtSubtitulo.Text =
+        "Consultando a rede sem fio atualmente conectada"
+
+    Mostrar-SenhaWiFi
+
+})
+
+
+# ============================================================
+# EVENTO - REMOVER XBOX
+# ============================================================
+
+$btnXbox.Add_Click({
+
+    $txtTitulo.Text =
+        "Remover Aplicativos Xbox"
+
+    $txtSubtitulo.Text =
+        "Removendo aplicativos Xbox instalados para o usuario atual"
+
+    Remover-Xbox
+
+})
+
+
+# ============================================================
+# EVENTO - RELATORIO DE SERVICO
+# ============================================================
+
+$btnRelatorio.Add_Click({
+
+    $txtTitulo.Text =
+        "Relatorio Pos-Servico"
+
+    $txtSubtitulo.Text =
+        "Gerando relatorio profissional dos servicos realizados"
+
+    Gerar-Relatorio
 
 })
 
@@ -2156,9 +2528,14 @@ $btnSair.Add_Click({
 
 
 # ============================================================
-# INICIALIZAR
+# INICIALIZAR SISTEMA
 # ============================================================
 
 Atualizar-Informacoes
+
+
+# ============================================================
+# EXIBIR JANELA
+# ============================================================
 
 $Window.ShowDialog() | Out-Null
