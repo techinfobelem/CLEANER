@@ -1,629 +1,654 @@
-# ============================================================
-
-# TECH INFO BELEM - CLEANER PRO
-
-# VERSAO 0.5
-
-# PARTE 1 DE 2
-
-# ============================================================
-
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
 
 $ErrorActionPreference = "SilentlyContinue"
 
 # ============================================================
+# TECH INFO BELEM - CLEANER PRO
+# VERSAO 0.5
+# ============================================================
 
+# ============================================================
 # VERIFICAR ADMINISTRADOR
-
 # ============================================================
 
 function Test-Administrator {
 
-```
-$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 
-$principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
 
-return $principal.IsInRole(
-    [Security.Principal.WindowsBuiltInRole]::Administrator
-)
-```
-
+    return $principal.IsInRole(
+        [Security.Principal.WindowsBuiltInRole]::Administrator
+    )
 }
 
+
 # ============================================================
-
 # AVISO DE ADMINISTRADOR
-
 # ============================================================
 
 if (-not (Test-Administrator)) {
 
-```
-[System.Windows.MessageBox]::Show(
-    "O Cleaner Pro nao esta sendo executado como Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente.`n`nRecomendamos executar o PowerShell como Administrador.",
-    "TECH INFO BELEM - Cleaner Pro v0.5",
-    "OK",
-    "Warning"
-)
-```
-
+    [System.Windows.MessageBox]::Show(
+        "O Cleaner Pro nao esta sendo executado como Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente.`n`nRecomendamos executar o PowerShell como Administrador.",
+        "TECH INFO BELEM - Cleaner Pro v0.5",
+        "OK",
+        "Warning"
+    )
 }
 
-# ============================================================
 
+# ============================================================
 # INTERFACE GRAFICA
-
 # ============================================================
 
-[xml]$XAML = @" <Window
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
- xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="TECH INFO BELEM - Cleaner Pro v0.5"
- Height="760"
- Width="1200"
- WindowStartupLocation="CenterScreen"
- Background="#111827">
+[xml]$XAML = @"
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="TECH INFO BELEM - Cleaner Pro v0.5"
+    Height="760"
+    Width="1200"
+    WindowStartupLocation="CenterScreen"
+    Background="#111827">
 
-```
-<Grid>
+    <Grid>
 
-    <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="250"/>
-        <ColumnDefinition Width="*"/>
-    </Grid.ColumnDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-    <!-- MENU LATERAL -->
 
-    <Border
-        Grid.Column="0"
-        Background="#0B1220">
+        <!-- ================================================= -->
+        <!-- MENU LATERAL -->
+        <!-- ================================================= -->
 
-        <ScrollViewer
-            VerticalScrollBarVisibility="Auto">
+        <Border
+            Grid.Column="0"
+            Background="#0B1220">
 
-            <StackPanel>
+            <ScrollViewer
+                VerticalScrollBarVisibility="Auto">
 
-                <TextBlock
-                    Text="TECH INFO"
-                    Foreground="#60A5FA"
-                    FontSize="25"
-                    FontWeight="Bold"
-                    Margin="25,25,10,0"/>
+                <StackPanel>
 
-                <TextBlock
-                    Text="BELEM"
-                    Foreground="#EF4444"
-                    FontSize="25"
-                    FontWeight="Bold"
-                    Margin="25,0,10,5"/>
+                    <TextBlock
+                        Text="TECH INFO"
+                        Foreground="#60A5FA"
+                        FontSize="25"
+                        FontWeight="Bold"
+                        Margin="25,25,10,0"/>
 
-                <TextBlock
-                    Text="CLEANER PRO"
-                    Foreground="White"
-                    FontSize="14"
-                    Margin="25,0,10,25"/>
+                    <TextBlock
+                        Text="BELEM"
+                        Foreground="#EF4444"
+                        FontSize="25"
+                        FontWeight="Bold"
+                        Margin="25,0,10,5"/>
 
-                <!-- MANUTENCAO -->
+                    <TextBlock
+                        Text="CLEANER PRO"
+                        Foreground="White"
+                        FontSize="14"
+                        Margin="25,0,10,25"/>
 
-                <TextBlock
-                    Text="MANUTENCAO"
-                    Foreground="#6B7280"
-                    FontSize="11"
-                    FontWeight="Bold"
-                    Margin="20,5,10,5"/>
 
-                <Button
-                    Name="btnInicio"
-                    Content="INICIO"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#1D4ED8"
-                    Foreground="White"/>
+                    <!-- MANUTENCAO -->
 
-                <Button
-                    Name="btnAnalisar"
-                    Content="ANALISAR SISTEMA"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#047857"
-                    Foreground="White"/>
+                    <TextBlock
+                        Text="MANUTENCAO"
+                        Foreground="#6B7280"
+                        FontSize="11"
+                        FontWeight="Bold"
+                        Margin="20,5,10,5"/>
 
-                <Button
-                    Name="btnTemporarios"
-                    Content="LIMPAR TEMPORARIOS"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#1F2937"
-                    Foreground="White"/>
 
-                <Button
-                    Name="btnNavegadores"
-                    Content="LIMPAR NAVEGADORES"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#1F2937"
-                    Foreground="White"/>
+                    <Button
+                        Name="btnInicio"
+                        Content="INICIO"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#1D4ED8"
+                        Foreground="White"/>
 
-                <Button
-                    Name="btnLixeira"
-                    Content="ESVAZIAR LIXEIRA"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#1F2937"
-                    Foreground="White"/>
 
-                <Button
-                    Name="btnCompleta"
-                    Content="LIMPEZA COMPLETA"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#991B1B"
-                    Foreground="White"/>
+                    <Button
+                        Name="btnAnalisar"
+                        Content="ANALISAR SISTEMA"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#047857"
+                        Foreground="White"/>
 
-                <!-- WINDOWS -->
 
-                <TextBlock
-                    Text="REPARACAO DO WINDOWS"
-                    Foreground="#6B7280"
-                    FontSize="11"
-                    FontWeight="Bold"
-                    Margin="20,20,10,5"/>
-
-                <Button
-                    Name="btnDiagnosticoWindows"
-                    Content="DIAGNOSTICAR WINDOWS"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#1F2937"
-                    Foreground="White"/>
-
-                <Button
-                    Name="btnRepararWindows"
-                    Content="REPARAR WINDOWS"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#92400E"
-                    Foreground="White"/>
-
-                <!-- HARDWARE -->
-
-                <TextBlock
-                    Text="DIAGNOSTICO DE HARDWARE"
-                    Foreground="#6B7280"
-                    FontSize="11"
-                    FontWeight="Bold"
-                    Margin="20,20,10,5"/>
-
-                <Button
-                    Name="btnDiscos"
-                    Content="SAUDE SSD / HD"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#1F2937"
-                    Foreground="White"/>
-
-                <Button
-                    Name="btnMemoria"
-                    Content="TESTE DE MEMORIA RAM"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#1F2937"
-                    Foreground="White"/>
-
-                <Button
-                    Name="btnHardware"
-                    Content="INFORMACOES DO HARDWARE"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#1F2937"
-                    Foreground="White"/>
-
-                <!-- RELATORIO -->
-
-                <TextBlock
-                    Text="ATENDIMENTO"
-                    Foreground="#6B7280"
-                    FontSize="11"
-                    FontWeight="Bold"
-                    Margin="20,20,10,5"/>
-
-                <Button
-                    Name="btnRelatorio"
-                    Content="GERAR RELATORIO DE SERVICO"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#2563EB"
-                    Foreground="White"/>
-
-                <!-- FERRAMENTAS -->
-
-                <TextBlock
-                    Text="FERRAMENTAS"
-                    Foreground="#6B7280"
-                    FontSize="11"
-                    FontWeight="Bold"
-                    Margin="20,20,10,5"/>
-
-                <Button
-                    Name="btnChrisTitus"
-                    Content="WINUTIL - CHRIS TITUS"
-                    Height="40"
-                    Margin="15,3"
-                    Background="#7C3AED"
-                    Foreground="White"/>
-
-                <Button
-                    Name="btnSair"
-                    Content="SAIR"
-                    Height="40"
-                    Margin="15,25,15,20"
-                    Background="#374151"
-                    Foreground="White"/>
-
-            </StackPanel>
-
-        </ScrollViewer>
-
-    </Border>
-
-    <!-- AREA PRINCIPAL -->
-
-    <Grid
-        Grid.Column="1"
-        Margin="35">
-
-        <Grid.RowDefinitions>
-
-            <RowDefinition Height="Auto"/>
-
-            <RowDefinition Height="Auto"/>
-
-            <RowDefinition Height="*"/>
-
-            <RowDefinition Height="Auto"/>
-
-        </Grid.RowDefinitions>
-
-        <!-- TITULO -->
-
-        <TextBlock
-            Name="txtTitulo"
-            Text="Painel de Controle"
-            Foreground="White"
-            FontSize="30"
-            FontWeight="Bold"/>
-
-        <!-- SUBTITULO -->
-
-        <TextBlock
-            Name="txtSubtitulo"
-            Grid.Row="1"
-            Text="Ferramenta profissional de limpeza, diagnostico e manutencao"
-            Foreground="#9CA3AF"
-            FontSize="15"
-            Margin="0,5,0,20"/>
-
-        <!-- INFORMACOES -->
-
-        <ScrollViewer
-            Grid.Row="2"
-            VerticalScrollBarVisibility="Auto">
-
-            <Grid>
-
-                <Grid.ColumnDefinitions>
-
-                    <ColumnDefinition Width="*"/>
-
-                    <ColumnDefinition Width="*"/>
-
-                </Grid.ColumnDefinitions>
-
-                <!-- COLUNA ESQUERDA -->
-
-                <StackPanel
-                    Grid.Column="0"
-                    Margin="0,0,10,0">
-
-                    <Border
+                    <Button
+                        Name="btnTemporarios"
+                        Content="LIMPAR TEMPORARIOS"
+                        Height="40"
+                        Margin="15,3"
                         Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20"
-                        Margin="0,0,0,12">
+                        Foreground="White"/>
 
-                        <StackPanel>
 
-                            <TextBlock
-                                Text="COMPUTADOR"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
-
-                            <TextBlock
-                                Name="txtComputador"
-                                Foreground="White"
-                                FontSize="19"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"
-                                TextWrapping="Wrap"/>
-
-                        </StackPanel>
-
-                    </Border>
-
-                    <Border
+                    <Button
+                        Name="btnNavegadores"
+                        Content="LIMPAR NAVEGADORES"
+                        Height="40"
+                        Margin="15,3"
                         Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20"
-                        Margin="0,0,0,12">
+                        Foreground="White"/>
 
-                        <StackPanel>
 
-                            <TextBlock
-                                Text="SISTEMA OPERACIONAL"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
-
-                            <TextBlock
-                                Name="txtWindows"
-                                Foreground="White"
-                                FontSize="18"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"
-                                TextWrapping="Wrap"/>
-
-                        </StackPanel>
-
-                    </Border>
-
-                    <Border
+                    <Button
+                        Name="btnLixeira"
+                        Content="ESVAZIAR LIXEIRA"
+                        Height="40"
+                        Margin="15,3"
                         Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20"
-                        Margin="0,0,0,12">
+                        Foreground="White"/>
 
-                        <StackPanel>
 
-                            <TextBlock
-                                Text="PROCESSADOR"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
+                    <Button
+                        Name="btnCompleta"
+                        Content="LIMPEZA COMPLETA"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#991B1B"
+                        Foreground="White"/>
 
-                            <TextBlock
-                                Name="txtCPU"
-                                Foreground="White"
-                                FontSize="17"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"
-                                TextWrapping="Wrap"/>
 
-                        </StackPanel>
+                    <!-- WINDOWS -->
 
-                    </Border>
+                    <TextBlock
+                        Text="REPARACAO DO WINDOWS"
+                        Foreground="#6B7280"
+                        FontSize="11"
+                        FontWeight="Bold"
+                        Margin="20,20,10,5"/>
 
-                    <Border
+
+                    <Button
+                        Name="btnDiagnosticoWindows"
+                        Content="DIAGNOSTICAR WINDOWS"
+                        Height="40"
+                        Margin="15,3"
                         Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20"
-                        Margin="0,0,0,12">
+                        Foreground="White"/>
 
-                        <StackPanel>
 
-                            <TextBlock
-                                Text="MEMORIA RAM"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
+                    <Button
+                        Name="btnRepararWindows"
+                        Content="REPARAR WINDOWS"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#92400E"
+                        Foreground="White"/>
 
-                            <TextBlock
-                                Name="txtRAM"
-                                Foreground="White"
-                                FontSize="20"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"/>
 
-                        </StackPanel>
+                    <!-- HARDWARE -->
 
-                    </Border>
+                    <TextBlock
+                        Text="DIAGNOSTICO DE HARDWARE"
+                        Foreground="#6B7280"
+                        FontSize="11"
+                        FontWeight="Bold"
+                        Margin="20,20,10,5"/>
 
-                    <Border
+
+                    <Button
+                        Name="btnDiscos"
+                        Content="SAUDE SSD / HD"
+                        Height="40"
+                        Margin="15,3"
                         Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20">
+                        Foreground="White"/>
 
-                        <StackPanel>
 
-                            <TextBlock
-                                Text="STATUS DA MEMORIA"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
+                    <Button
+                        Name="btnMemoria"
+                        Content="TESTE DE MEMORIA RAM"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#1F2937"
+                        Foreground="White"/>
 
-                            <TextBlock
-                                Name="txtStatusMemoria"
-                                Text="Teste nao realizado"
-                                Foreground="White"
-                                FontSize="17"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"
-                                TextWrapping="Wrap"/>
 
-                        </StackPanel>
+                    <Button
+                        Name="btnHardware"
+                        Content="INFORMACOES DO HARDWARE"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#1F2937"
+                        Foreground="White"/>
 
-                    </Border>
+
+                    <!-- RELATORIO -->
+
+                    <TextBlock
+                        Text="ATENDIMENTO"
+                        Foreground="#6B7280"
+                        FontSize="11"
+                        FontWeight="Bold"
+                        Margin="20,20,10,5"/>
+
+
+                    <Button
+                        Name="btnRelatorio"
+                        Content="RELATORIO DE SERVICO"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#0369A1"
+                        Foreground="White"/>
+
+
+                    <!-- FERRAMENTAS -->
+
+                    <TextBlock
+                        Text="FERRAMENTAS"
+                        Foreground="#6B7280"
+                        FontSize="11"
+                        FontWeight="Bold"
+                        Margin="20,20,10,5"/>
+
+
+                    <Button
+                        Name="btnChrisTitus"
+                        Content="WINUTIL - CHRIS TITUS"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#7C3AED"
+                        Foreground="White"/>
+
+
+                    <Button
+                        Name="btnSair"
+                        Content="SAIR"
+                        Height="40"
+                        Margin="15,25,15,20"
+                        Background="#374151"
+                        Foreground="White"/>
 
                 </StackPanel>
 
-                <!-- COLUNA DIREITA -->
+            </ScrollViewer>
 
-                <StackPanel
-                    Grid.Column="1"
-                    Margin="10,0,0,0">
+        </Border>
 
-                    <Border
-                        Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20"
-                        Margin="0,0,0,12">
 
-                        <StackPanel>
+        <!-- ================================================= -->
+        <!-- AREA PRINCIPAL -->
+        <!-- ================================================= -->
 
-                            <TextBlock
-                                Text="DISCO PRINCIPAL"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
+        <Grid
+            Grid.Column="1"
+            Margin="35">
 
-                            <TextBlock
-                                Name="txtDisco"
-                                Foreground="White"
-                                FontSize="18"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"
-                                TextWrapping="Wrap"/>
+            <Grid.RowDefinitions>
 
-                        </StackPanel>
+                <RowDefinition Height="Auto"/>
 
-                    </Border>
+                <RowDefinition Height="Auto"/>
 
-                    <Border
-                        Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20"
-                        Margin="0,0,0,12">
+                <RowDefinition Height="*"/>
 
-                        <StackPanel>
+                <RowDefinition Height="Auto"/>
 
-                            <TextBlock
-                                Text="ESPACO DISPONIVEL"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
+            </Grid.RowDefinitions>
 
-                            <TextBlock
-                                Name="txtEspaco"
-                                Foreground="White"
-                                FontSize="20"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"/>
 
-                        </StackPanel>
+            <!-- TITULO -->
 
-                    </Border>
+            <TextBlock
+                Name="txtTitulo"
+                Text="Painel de Controle"
+                Foreground="White"
+                FontSize="30"
+                FontWeight="Bold"/>
 
-                    <Border
-                        Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20"
-                        Margin="0,0,0,12">
 
-                        <StackPanel>
+            <!-- SUBTITULO -->
 
-                            <TextBlock
-                                Text="SAUDE DO ARMAZENAMENTO"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
+            <TextBlock
+                Name="txtSubtitulo"
+                Grid.Row="1"
+                Text="Ferramenta profissional de limpeza, diagnostico e manutencao"
+                Foreground="#9CA3AF"
+                FontSize="15"
+                Margin="0,5,0,20"/>
 
-                            <TextBlock
-                                Name="txtSaudeDisco"
-                                Text="Nao analisado"
-                                Foreground="White"
-                                FontSize="17"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"
-                                TextWrapping="Wrap"/>
 
-                        </StackPanel>
+            <!-- ================================================= -->
+            <!-- INFORMACOES -->
+            <!-- ================================================= -->
 
-                    </Border>
+            <ScrollViewer
+                Grid.Row="2"
+                VerticalScrollBarVisibility="Auto">
 
-                    <Border
-                        Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20"
-                        Margin="0,0,0,12">
+                <Grid>
 
-                        <StackPanel>
+                    <Grid.ColumnDefinitions>
 
-                            <TextBlock
-                                Text="ANALISE DE LIMPEZA"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
+                        <ColumnDefinition Width="*"/>
 
-                            <TextBlock
-                                Name="txtAnalise"
-                                Text="Nenhuma analise realizada"
-                                Foreground="White"
-                                FontSize="17"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"
-                                TextWrapping="Wrap"/>
+                        <ColumnDefinition Width="*"/>
 
-                        </StackPanel>
+                    </Grid.ColumnDefinitions>
 
-                    </Border>
 
-                    <Border
-                        Background="#1F2937"
-                        CornerRadius="10"
-                        Padding="20">
+                    <!-- COLUNA ESQUERDA -->
 
-                        <StackPanel>
+                    <StackPanel
+                        Grid.Column="0"
+                        Margin="0,0,10,0">
 
-                            <TextBlock
-                                Text="STATUS"
-                                Foreground="#60A5FA"
-                                FontSize="13"/>
 
-                            <TextBlock
-                                Name="txtStatus"
-                                Text="Sistema pronto"
-                                Foreground="#22C55E"
-                                FontSize="18"
-                                FontWeight="Bold"
-                                Margin="0,7,0,0"
-                                TextWrapping="Wrap"/>
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20"
+                            Margin="0,0,0,12">
 
-                        </StackPanel>
+                            <StackPanel>
 
-                    </Border>
+                                <TextBlock
+                                    Text="COMPUTADOR"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
 
-                </StackPanel>
+                                <TextBlock
+                                    Name="txtComputador"
+                                    Foreground="White"
+                                    FontSize="19"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"
+                                    TextWrapping="Wrap"/>
 
-            </Grid>
+                            </StackPanel>
 
-        </ScrollViewer>
+                        </Border>
 
-        <!-- RODAPE -->
 
-        <TextBlock
-            Name="txtRodape"
-            Grid.Row="3"
-            Text="TECH INFO BELEM - Cleaner Pro v0.5"
-            Foreground="#6B7280"
-            HorizontalAlignment="Right"
-            Margin="0,20,0,0"/>
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20"
+                            Margin="0,0,0,12">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="SISTEMA OPERACIONAL"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtWindows"
+                                    Foreground="White"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"
+                                    TextWrapping="Wrap"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20"
+                            Margin="0,0,0,12">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="PROCESSADOR"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtCPU"
+                                    Foreground="White"
+                                    FontSize="17"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"
+                                    TextWrapping="Wrap"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20"
+                            Margin="0,0,0,12">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="MEMORIA RAM"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtRAM"
+                                    Foreground="White"
+                                    FontSize="20"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="STATUS DA MEMORIA"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtStatusMemoria"
+                                    Text="Teste nao realizado"
+                                    Foreground="White"
+                                    FontSize="17"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"
+                                    TextWrapping="Wrap"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                    </StackPanel>
+
+
+                    <!-- COLUNA DIREITA -->
+
+                    <StackPanel
+                        Grid.Column="1"
+                        Margin="10,0,0,0">
+
+
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20"
+                            Margin="0,0,0,12">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="DISCO PRINCIPAL"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtDisco"
+                                    Foreground="White"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"
+                                    TextWrapping="Wrap"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20"
+                            Margin="0,0,0,12">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="ESPACO DISPONIVEL"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtEspaco"
+                                    Foreground="White"
+                                    FontSize="20"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20"
+                            Margin="0,0,0,12">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="SAUDE DO ARMAZENAMENTO"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtSaudeDisco"
+                                    Text="Nao analisado"
+                                    Foreground="White"
+                                    FontSize="17"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"
+                                    TextWrapping="Wrap"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20"
+                            Margin="0,0,0,12">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="ANALISE DE LIMPEZA"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtAnalise"
+                                    Text="Nenhuma analise realizada"
+                                    Foreground="White"
+                                    FontSize="17"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"
+                                    TextWrapping="Wrap"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+
+                        <Border
+                            Background="#1F2937"
+                            CornerRadius="10"
+                            Padding="20">
+
+                            <StackPanel>
+
+                                <TextBlock
+                                    Text="STATUS"
+                                    Foreground="#60A5FA"
+                                    FontSize="13"/>
+
+                                <TextBlock
+                                    Name="txtStatus"
+                                    Text="Sistema pronto"
+                                    Foreground="#22C55E"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Margin="0,7,0,0"
+                                    TextWrapping="Wrap"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                    </StackPanel>
+
+                </Grid>
+
+            </ScrollViewer>
+
+
+            <!-- RODAPE -->
+
+            <TextBlock
+                Name="txtRodape"
+                Grid.Row="3"
+                Text="TECH INFO BELEM - Cleaner Pro v0.5"
+                Foreground="#6B7280"
+                HorizontalAlignment="Right"
+                Margin="0,20,0,0"/>
+
+        </Grid>
 
     </Grid>
-
-</Grid>
-```
 
 </Window>
 "@
 
+
 # ============================================================
-
 # CARREGAR INTERFACE
-
 # ============================================================
 
 $reader = New-Object System.Xml.XmlNodeReader $XAML
 
 $Window = [Windows.Markup.XamlReader]::Load($reader)
 
+
 # ============================================================
-
 # CONTROLES
-
 # ============================================================
 
 $btnInicio = $Window.FindName("btnInicio")
@@ -645,6 +670,7 @@ $btnRelatorio = $Window.FindName("btnRelatorio")
 $btnChrisTitus = $Window.FindName("btnChrisTitus")
 $btnSair = $Window.FindName("btnSair")
 
+
 $txtComputador = $Window.FindName("txtComputador")
 $txtWindows = $Window.FindName("txtWindows")
 $txtCPU = $Window.FindName("txtCPU")
@@ -661,136 +687,351 @@ $txtStatus = $Window.FindName("txtStatus")
 $txtTitulo = $Window.FindName("txtTitulo")
 $txtSubtitulo = $Window.FindName("txtSubtitulo")
 
-# ============================================================
-
-# HISTORICO DE SERVICOS
 
 # ============================================================
-
-$global:HistoricoServico = New-Object System.Collections.ArrayList
-
-function Registrar-Servico {
-
-```
-param(
-    [string]$Servico,
-    [string]$Resultado
-)
-
-$registro = [PSCustomObject]@{
-    Data = Get-Date -Format "dd/MM/yyyy"
-    Hora = Get-Date -Format "HH:mm:ss"
-    Servico = $Servico
-    Resultado = $Resultado
-}
-
-[void]$global:HistoricoServico.Add($registro)
-```
-
-}
-
-# ============================================================
-
 # ATUALIZAR INFORMACOES DO COMPUTADOR
-
 # ============================================================
 
 function Atualizar-Informacoes {
 
-```
-try {
+    try {
 
-    $computer =
-        Get-CimInstance Win32_ComputerSystem
+        $computer =
+            Get-CimInstance Win32_ComputerSystem
 
-    $os =
-        Get-CimInstance Win32_OperatingSystem
+        $os =
+            Get-CimInstance Win32_OperatingSystem
 
-    $cpu =
-        Get-CimInstance Win32_Processor |
-        Select-Object -First 1
+        $cpu =
+            Get-CimInstance Win32_Processor |
+            Select-Object -First 1
 
-    $disk =
-        Get-CimInstance Win32_LogicalDisk `
-        -Filter "DeviceID='C:'"
+        $disk =
+            Get-CimInstance Win32_LogicalDisk `
+            -Filter "DeviceID='C:'"
 
-    $ramGB =
-        [math]::Round(
-            $computer.TotalPhysicalMemory / 1GB,
-            1
-        )
 
-    $freeGB =
-        [math]::Round(
-            $disk.FreeSpace / 1GB,
-            1
-        )
+        $ramGB =
+            [math]::Round(
+                $computer.TotalPhysicalMemory / 1GB,
+                1
+            )
 
-    $totalGB =
-        [math]::Round(
-            $disk.Size / 1GB,
-            1
-        )
 
-    $txtComputador.Text =
-        "$($computer.Manufacturer) $($computer.Model)"
+        $freeGB =
+            [math]::Round(
+                $disk.FreeSpace / 1GB,
+                1
+            )
 
-    $txtWindows.Text =
-        $os.Caption
 
-    $txtCPU.Text =
-        $cpu.Name
+        $totalGB =
+            [math]::Round(
+                $disk.Size / 1GB,
+                1
+            )
 
-    $txtRAM.Text =
-        "$ramGB GB"
 
-    $txtDisco.Text =
-        "$freeGB GB livres de $totalGB GB"
+        $txtComputador.Text =
+            "$($computer.Manufacturer) $($computer.Model)"
 
-    $txtEspaco.Text =
-        "$freeGB GB livres"
+
+        $txtWindows.Text =
+            $os.Caption
+
+
+        $txtCPU.Text =
+            $cpu.Name
+
+
+        $txtRAM.Text =
+            "$ramGB GB"
+
+
+        $txtDisco.Text =
+            "$freeGB GB livres de $totalGB GB"
+
+
+        $txtEspaco.Text =
+            "$freeGB GB livres"
+
+
+    }
+    catch {
+
+        $txtStatus.Text =
+            "Erro ao obter informacoes do sistema"
+
+    }
 
 }
-catch {
 
-    $txtStatus.Text =
-        "Erro ao obter informacoes do sistema"
-
-}
-```
-
-}
 
 # ============================================================
-
 # TAMANHO DE PASTA
-
 # ============================================================
 
 function Get-FolderSize {
 
-```
-param(
-    [string]$Path
-)
+    param(
+        [string]$Path
+    )
 
-$total = 0
 
-if (Test-Path $Path) {
+    $total = 0
+
+
+    if (Test-Path $Path) {
+
+        try {
+
+            $files =
+                Get-ChildItem `
+                -Path $Path `
+                -File `
+                -Recurse `
+                -Force `
+                -ErrorAction SilentlyContinue
+
+
+            foreach ($file in $files) {
+
+                $total += $file.Length
+
+            }
+
+        }
+        catch {
+
+        }
+
+    }
+
+
+    return $total
+
+}
+
+
+# ============================================================
+# DETECTAR NAVEGADORES
+# ============================================================
+
+function Get-BrowserCachePaths {
+
+    $paths = @()
+
+
+    $chrome =
+        "$env:LOCALAPPDATA\Google\Chrome\User Data"
+
+    if (Test-Path $chrome) {
+
+        $paths += [PSCustomObject]@{
+            Name = "Google Chrome"
+            Path = $chrome
+        }
+
+    }
+
+
+    $edge =
+        "$env:LOCALAPPDATA\Microsoft\Edge\User Data"
+
+    if (Test-Path $edge) {
+
+        $paths += [PSCustomObject]@{
+            Name = "Microsoft Edge"
+            Path = $edge
+        }
+
+    }
+
+
+    $brave =
+        "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data"
+
+    if (Test-Path $brave) {
+
+        $paths += [PSCustomObject]@{
+            Name = "Brave"
+            Path = $brave
+        }
+
+    }
+
+
+    $opera =
+        "$env:APPDATA\Opera Software\Opera Stable"
+
+    if (Test-Path $opera) {
+
+        $paths += [PSCustomObject]@{
+            Name = "Opera"
+            Path = $opera
+        }
+
+    }
+
+
+    $operaGX =
+        "$env:APPDATA\Opera Software\Opera GX Stable"
+
+    if (Test-Path $operaGX) {
+
+        $paths += [PSCustomObject]@{
+            Name = "Opera GX"
+            Path = $operaGX
+        }
+
+    }
+
+
+    $firefox =
+        "$env:APPDATA\Mozilla\Firefox\Profiles"
+
+    if (Test-Path $firefox) {
+
+        $profiles =
+            Get-ChildItem `
+            $firefox `
+            -Directory `
+            -ErrorAction SilentlyContinue
+
+
+        foreach ($profile in $profiles) {
+
+            $paths += [PSCustomObject]@{
+                Name = "Firefox"
+                Path = $profile.FullName
+            }
+
+        }
+
+    }
+
+
+    return $paths
+
+}
+
+
+# ============================================================
+# TAMANHO CACHE NAVEGADORES
+# ============================================================
+
+function Get-BrowserCacheSize {
+
+    $total = 0
+
+
+    $browsers =
+        Get-BrowserCachePaths
+
+
+    foreach ($browser in $browsers) {
+
+        if ($browser.Name -eq "Firefox") {
+
+            $cache =
+                Join-Path `
+                $browser.Path `
+                "cache2"
+
+
+            $total +=
+                Get-FolderSize $cache
+
+        }
+        else {
+
+            $folders = @(
+
+                "Default\Cache",
+
+                "Default\Code Cache",
+
+                "Default\GPUCache"
+
+            )
+
+
+            foreach ($folder in $folders) {
+
+                $cache =
+                    Join-Path `
+                    $browser.Path `
+                    $folder
+
+
+                $total +=
+                    Get-FolderSize $cache
+
+            }
+
+        }
+
+    }
+
+
+    return $total
+
+}
+
+
+# ============================================================
+# TEMPORARIOS
+# ============================================================
+
+function Get-TemporarySize {
+
+    $total = 0
+
+
+    $total +=
+        Get-FolderSize $env:TEMP
+
+
+    $total +=
+        Get-FolderSize "$env:SystemRoot\Temp"
+
+
+    $total +=
+        Get-FolderSize "$env:LOCALAPPDATA\Microsoft\Windows\INetCache"
+
+
+    return $total
+
+}
+
+
+# ============================================================
+# LIXEIRA
+# ============================================================
+
+function Get-RecycleBinSize {
+
+    $total = 0
+
 
     try {
 
-        $files =
+        $items =
             Get-ChildItem `
-            -Path $Path `
-            -File `
-            -Recurse `
+            'C:\$Recycle.Bin' `
             -Force `
+            -Recurse `
             -ErrorAction SilentlyContinue
 
-        foreach ($file in $files) {
 
-            $total += $file.Length
+        foreach ($item in $items) {
+
+            if (-not $item.PSIsContainer) {
+
+                $total +=
+                    $item.Length
+
+            }
 
         }
 
@@ -799,442 +1040,182 @@ if (Test-Path $Path) {
 
     }
 
-}
 
-return $total
-```
+    return $total
 
 }
+
 
 # ============================================================
-
-# DETECTAR NAVEGADORES
-
-# ============================================================
-
-function Get-BrowserCachePaths {
-
-```
-$paths = @()
-
-$chrome =
-    "$env:LOCALAPPDATA\Google\Chrome\User Data"
-
-if (Test-Path $chrome) {
-
-    $paths += [PSCustomObject]@{
-        Name = "Google Chrome"
-        Path = $chrome
-    }
-
-}
-
-$edge =
-    "$env:LOCALAPPDATA\Microsoft\Edge\User Data"
-
-if (Test-Path $edge) {
-
-    $paths += [PSCustomObject]@{
-        Name = "Microsoft Edge"
-        Path = $edge
-    }
-
-}
-
-$brave =
-    "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data"
-
-if (Test-Path $brave) {
-
-    $paths += [PSCustomObject]@{
-        Name = "Brave"
-        Path = $brave
-    }
-
-}
-
-$opera =
-    "$env:APPDATA\Opera Software\Opera Stable"
-
-if (Test-Path $opera) {
-
-    $paths += [PSCustomObject]@{
-        Name = "Opera"
-        Path = $opera
-    }
-
-}
-
-$operaGX =
-    "$env:APPDATA\Opera Software\Opera GX Stable"
-
-if (Test-Path $operaGX) {
-
-    $paths += [PSCustomObject]@{
-        Name = "Opera GX"
-        Path = $operaGX
-    }
-
-}
-
-$firefox =
-    "$env:APPDATA\Mozilla\Firefox\Profiles"
-
-if (Test-Path $firefox) {
-
-    $profiles =
-        Get-ChildItem `
-        $firefox `
-        -Directory `
-        -ErrorAction SilentlyContinue
-
-    foreach ($profile in $profiles) {
-
-        $paths += [PSCustomObject]@{
-            Name = "Firefox"
-            Path = $profile.FullName
-        }
-
-    }
-
-}
-
-return $paths
-```
-
-}
-
-# ============================================================
-
-# TAMANHO CACHE NAVEGADORES
-
-# ============================================================
-
-function Get-BrowserCacheSize {
-
-```
-$total = 0
-
-$browsers =
-    Get-BrowserCachePaths
-
-foreach ($browser in $browsers) {
-
-    if ($browser.Name -eq "Firefox") {
-
-        $cache =
-            Join-Path `
-            $browser.Path `
-            "cache2"
-
-        $total +=
-            Get-FolderSize $cache
-
-    }
-    else {
-
-        $folders = @(
-
-            "Default\Cache",
-
-            "Default\Code Cache",
-
-            "Default\GPUCache"
-
-        )
-
-        foreach ($folder in $folders) {
-
-            $cache =
-                Join-Path `
-                $browser.Path `
-                $folder
-
-            $total +=
-                Get-FolderSize $cache
-
-        }
-
-    }
-
-}
-
-return $total
-```
-
-}
-
-# ============================================================
-
-# TEMPORARIOS
-
-# ============================================================
-
-function Get-TemporarySize {
-
-```
-$total = 0
-
-$total +=
-    Get-FolderSize $env:TEMP
-
-$total +=
-    Get-FolderSize "$env:SystemRoot\Temp"
-
-$total +=
-    Get-FolderSize "$env:LOCALAPPDATA\Microsoft\Windows\INetCache"
-
-return $total
-```
-
-}
-
-# ============================================================
-
-# LIXEIRA
-
-# ============================================================
-
-function Get-RecycleBinSize {
-
-```
-$total = 0
-
-try {
-
-    $items =
-        Get-ChildItem `
-        'C:\$Recycle.Bin' `
-        -Force `
-        -Recurse `
-        -ErrorAction SilentlyContinue
-
-    foreach ($item in $items) {
-
-        if (-not $item.PSIsContainer) {
-
-            $total +=
-                $item.Length
-
-        }
-
-    }
-
-}
-catch {
-
-}
-
-return $total
-```
-
-}
-
-# ============================================================
-
 # ANALISAR SISTEMA
-
 # ============================================================
 
 function Analisar-Sistema {
 
-```
-$txtStatus.Text =
-    "Analisando arquivos temporarios..."
+    $txtStatus.Text =
+        "Analisando arquivos temporarios..."
 
-$tempSize =
-    Get-TemporarySize
 
-$txtStatus.Text =
-    "Analisando caches dos navegadores..."
+    $tempSize =
+        Get-TemporarySize
 
-$browserSize =
-    Get-BrowserCacheSize
 
-$txtStatus.Text =
-    "Analisando lixeira..."
+    $txtStatus.Text =
+        "Analisando caches dos navegadores..."
 
-$recycleSize =
-    Get-RecycleBinSize
 
-$total =
-    $tempSize +
-    $browserSize +
-    $recycleSize
+    $browserSize =
+        Get-BrowserCacheSize
 
-$totalGB =
-    [math]::Round(
-        $total / 1GB,
-        2
+
+    $txtStatus.Text =
+        "Analisando lixeira..."
+
+
+    $recycleSize =
+        Get-RecycleBinSize
+
+
+    $total =
+        $tempSize +
+        $browserSize +
+        $recycleSize
+
+
+    $totalGB =
+        [math]::Round(
+            $total / 1GB,
+            2
+        )
+
+
+    $txtAnalise.Text =
+        "$totalGB GB potencialmente recuperaveis"
+
+
+    $txtStatus.Text =
+        "Analise concluida"
+
+
+    [System.Windows.MessageBox]::Show(
+
+        "ANALISE CONCLUIDA`n`n" +
+
+        "Arquivos temporarios: " +
+        "$([math]::Round($tempSize / 1MB, 2)) MB`n`n" +
+
+        "Cache dos navegadores: " +
+        "$([math]::Round($browserSize / 1MB, 2)) MB`n`n" +
+
+        "Lixeira: " +
+        "$([math]::Round($recycleSize / 1MB, 2)) MB`n`n" +
+
+        "Total potencialmente recuperavel: " +
+        "$totalGB GB",
+
+        "TECH INFO BELEM - Analise",
+
+        "OK",
+
+        "Information"
+
     )
-
-$txtAnalise.Text =
-    "$totalGB GB potencialmente recuperaveis"
-
-$txtStatus.Text =
-    "Analise concluida"
-
-Registrar-Servico `
-    "Analise de limpeza do sistema" `
-    "Concluido - $totalGB GB potencialmente recuperaveis"
-
-[System.Windows.MessageBox]::Show(
-
-    "ANALISE CONCLUIDA`n`n" +
-
-    "Arquivos temporarios: " +
-    "$([math]::Round($tempSize / 1MB, 2)) MB`n`n" +
-
-    "Cache dos navegadores: " +
-    "$([math]::Round($browserSize / 1MB, 2)) MB`n`n" +
-
-    "Lixeira: " +
-    "$([math]::Round($recycleSize / 1MB, 2)) MB`n`n" +
-
-    "Total potencialmente recuperavel: " +
-    "$totalGB GB",
-
-    "TECH INFO BELEM - Analise",
-
-    "OK",
-
-    "Information"
-
-)
-```
 
 }
 
+
 # ============================================================
-
 # LIMPAR TEMPORARIOS
-
 # ============================================================
 
 function Limpar-Temporarios {
 
-```
-$txtStatus.Text =
-    "Limpando arquivos temporarios..."
-
-try {
-
-    Get-ChildItem `
-        $env:TEMP `
-        -Force `
-        -ErrorAction SilentlyContinue |
-
-    Remove-Item `
-        -Recurse `
-        -Force `
-        -ErrorAction SilentlyContinue
-
-    Get-ChildItem `
-        "$env:SystemRoot\Temp" `
-        -Force `
-        -ErrorAction SilentlyContinue |
-
-    Remove-Item `
-        -Recurse `
-        -Force `
-        -ErrorAction SilentlyContinue
-
-    Get-ChildItem `
-        "$env:LOCALAPPDATA\Microsoft\Windows\INetCache" `
-        -Force `
-        -ErrorAction SilentlyContinue |
-
-    Remove-Item `
-        -Recurse `
-        -Force `
-        -ErrorAction SilentlyContinue
-
     $txtStatus.Text =
-        "Temporarios limpos"
+        "Limpando arquivos temporarios..."
 
-    Registrar-Servico `
-        "Limpeza de arquivos temporarios" `
-        "Concluido"
 
-    return $true
+    try {
+
+        Get-ChildItem `
+            $env:TEMP `
+            -Force `
+            -ErrorAction SilentlyContinue |
+
+        Remove-Item `
+            -Recurse `
+            -Force `
+            -ErrorAction SilentlyContinue
+
+
+        Get-ChildItem `
+            "$env:SystemRoot\Temp" `
+            -Force `
+            -ErrorAction SilentlyContinue |
+
+        Remove-Item `
+            -Recurse `
+            -Force `
+            -ErrorAction SilentlyContinue
+
+
+        Get-ChildItem `
+            "$env:LOCALAPPDATA\Microsoft\Windows\INetCache" `
+            -Force `
+            -ErrorAction SilentlyContinue |
+
+        Remove-Item `
+            -Recurse `
+            -Force `
+            -ErrorAction SilentlyContinue
+
+
+        $txtStatus.Text =
+            "Temporarios limpos"
+
+
+        return $true
+
+    }
+    catch {
+
+        $txtStatus.Text =
+            "Erro ao limpar temporarios"
+
+
+        return $false
+
+    }
 
 }
-catch {
 
-    $txtStatus.Text =
-        "Erro ao limpar temporarios"
-
-    Registrar-Servico `
-        "Limpeza de arquivos temporarios" `
-        "Erro"
-
-    return $false
-
-}
-```
-
-}
 
 # ============================================================
-
 # LIMPAR NAVEGADORES
-
 # ============================================================
 
 function Limpar-Navegadores {
 
-```
-$txtStatus.Text =
-    "Limpando caches dos navegadores..."
-
-$browsers =
-    Get-BrowserCachePaths
-
-foreach ($browser in $browsers) {
-
     $txtStatus.Text =
-        "Limpando $($browser.Name)..."
+        "Limpando caches dos navegadores..."
 
-    if ($browser.Name -eq "Firefox") {
 
-        $cache =
-            Join-Path `
-            $browser.Path `
-            "cache2"
+    $browsers =
+        Get-BrowserCachePaths
 
-        if (Test-Path $cache) {
 
-            Get-ChildItem `
-                $cache `
-                -Force `
-                -ErrorAction SilentlyContinue |
+    foreach ($browser in $browsers) {
 
-            Remove-Item `
-                -Recurse `
-                -Force `
-                -ErrorAction SilentlyContinue
+        $txtStatus.Text =
+            "Limpando $($browser.Name)..."
 
-        }
 
-    }
-    else {
-
-        $folders = @(
-
-            "Default\Cache",
-
-            "Default\Code Cache",
-
-            "Default\GPUCache"
-
-        )
-
-        foreach ($folder in $folders) {
+        if ($browser.Name -eq "Firefox") {
 
             $cache =
                 Join-Path `
                 $browser.Path `
-                $folder
+                "cache2"
+
 
             if (Test-Path $cache) {
 
@@ -1251,824 +1232,116 @@ foreach ($browser in $browsers) {
             }
 
         }
+        else {
 
-    }
+            $folders = @(
 
-}
+                "Default\Cache",
 
-$txtStatus.Text =
-    "Caches dos navegadores limpos"
+                "Default\Code Cache",
 
-Registrar-Servico `
-    "Limpeza de cache dos navegadores" `
-    "Concluido"
+                "Default\GPUCache"
 
-return $true
-```
-
-}
-
-# ============================================================
-
-# LIMPAR LIXEIRA
-
-# ============================================================
-
-function Limpar-Lixeira {
-
-```
-$txtStatus.Text =
-    "Esvaziando lixeira..."
-
-try {
-
-    Clear-RecycleBin `
-        -Force `
-        -ErrorAction SilentlyContinue
-
-    $txtStatus.Text =
-        "Lixeira esvaziada"
-
-    Registrar-Servico `
-        "Esvaziamento da Lixeira" `
-        "Concluido"
-
-    return $true
-
-}
-catch {
-
-    $txtStatus.Text =
-        "Erro ao esvaziar lixeira"
-
-    Registrar-Servico `
-        "Esvaziamento da Lixeira" `
-        "Erro"
-
-    return $false
-
-}
-```
-
-}
-
-# ============================================================
-
-# LIMPEZA COMPLETA
-
-# ============================================================
-
-function Limpeza-Completa {
-
-```
-$confirmacao =
-    [System.Windows.MessageBox]::Show(
-
-        "Deseja iniciar a limpeza completa?`n`n" +
-
-        "Serão processados:`n" +
-
-        "- Arquivos temporarios`n" +
-
-        "- Cache seguro dos navegadores`n" +
-
-        "- Lixeira`n`n" +
-
-        "Cookies, senhas, favoritos e historico nao serao removidos.",
-
-        "TECH INFO BELEM - Limpeza Completa",
-
-        "YesNo",
-
-        "Question"
-
-    )
-
-if ($confirmacao -ne "Yes") {
-
-    return
-
-}
-
-$diskBefore =
-    Get-CimInstance Win32_LogicalDisk `
-    -Filter "DeviceID='C:'"
-
-$freeBefore =
-    $diskBefore.FreeSpace
-
-$tempResult =
-    Limpar-Temporarios
-
-$browserResult =
-    Limpar-Navegadores
-
-$recycleResult =
-    Limpar-Lixeira
-
-$diskAfter =
-    Get-CimInstance Win32_LogicalDisk `
-    -Filter "DeviceID='C:'"
-
-$freeAfter =
-    $diskAfter.FreeSpace
-
-$freed =
-    $freeAfter -
-    $freeBefore
-
-$freedMB =
-    [math]::Round(
-        $freed / 1MB,
-        2
-    )
-
-$freedGB =
-    [math]::Round(
-        $freed / 1GB,
-        2
-    )
-
-Atualizar-Informacoes
-
-$txtAnalise.Text =
-    "$freedGB GB liberados"
-
-$txtStatus.Text =
-    "Limpeza completa concluida"
-
-if (
-    $tempResult -and
-    $browserResult -and
-    $recycleResult
-) {
-
-    $resultadoLimpeza =
-        "Concluido - $freedGB GB liberados"
-
-}
-else {
-
-    $resultadoLimpeza =
-        "Concluido com ocorrencias - $freedGB GB liberados"
-
-}
-
-Registrar-Servico `
-    "Limpeza completa do sistema" `
-    $resultadoLimpeza
-
-[System.Windows.MessageBox]::Show(
-
-    "LIMPEZA COMPLETA FINALIZADA`n`n" +
-
-    "Espaco liberado: " +
-    "$freedMB MB`n`n" +
-
-    "O Cleaner Pro concluiu a manutencao.",
-
-    "TECH INFO BELEM - Cleaner Pro v0.5",
-
-    "OK",
-
-    "Information"
-
-)
-```
-
-}
-
-# ============================================================
-
-# FIM DA PARTE 1
-
-# A PARTE 2 DEVE SER COLADA IMEDIATAMENTE ABAIXO
-
-# ============================================================
-
-# ============================================================
-
-# EVENTO - INICIO
-
-# ============================================================
-$btnInicio.Add_Click({
-
-```
-$txtTitulo.Text =
-    "Painel de Controle"
-
-$txtSubtitulo.Text =
-    "Ferramenta profissional de limpeza, diagnostico e manutencao"
-
-$txtStatus.Text =
-    "Sistema pronto"
-
-Atualizar-Informacoes
-```
-
-})
-
-# ============================================================
-
-# DIAGNOSTICO DO WINDOWS
-
-# ============================================================
-
-function Diagnosticar-Windows {
-
-```
-$txtStatus.Text =
-    "Executando DISM /ScanHealth..."
-
-$dism =
-    Start-Process `
-    "DISM.exe" `
-    -ArgumentList "/Online /Cleanup-Image /ScanHealth" `
-    -Wait `
-    -PassThru `
-    -WindowStyle Hidden
-
-$txtStatus.Text =
-    "Executando SFC /VerifyOnly..."
-
-$sfc =
-    Start-Process `
-    "sfc.exe" `
-    -ArgumentList "/verifyonly" `
-    -Wait `
-    -PassThru `
-    -WindowStyle Hidden
-
-$txtStatus.Text =
-    "Diagnostico do Windows concluido"
-
-Registrar-Servico `
-    "Diagnostico do Windows - DISM ScanHealth e SFC VerifyOnly" `
-    "Concluido - DISM ExitCode: $($dism.ExitCode) / SFC ExitCode: $($sfc.ExitCode)"
-
-[System.Windows.MessageBox]::Show(
-
-    "O diagnostico do Windows foi concluido.`n`n" +
-
-    "DISM ExitCode: $($dism.ExitCode)`n" +
-
-    "SFC ExitCode: $($sfc.ExitCode)`n`n" +
-
-    "Para uma analise detalhada, consulte os logs do Windows.",
-
-    "TECH INFO BELEM - Diagnostico Windows",
-
-    "OK",
-
-    "Information"
-
-)
-```
-
-}
-
-# ============================================================
-
-# REPARAR WINDOWS
-
-# ============================================================
-
-function Reparar-Windows {
-
-```
-$confirmacao =
-    [System.Windows.MessageBox]::Show(
-
-        "O processo executara:`n`n" +
-
-        "1. DISM /RestoreHealth`n" +
-
-        "2. SFC /scannow`n`n" +
-
-        "O processo pode levar varios minutos.`n`n" +
-
-        "Deseja continuar?",
-
-        "TECH INFO BELEM - Reparar Windows",
-
-        "YesNo",
-
-        "Warning"
-
-    )
-
-if ($confirmacao -ne "Yes") {
-
-    return
-
-}
-
-$txtStatus.Text =
-    "Reparando imagem do Windows com DISM..."
-
-$dism =
-    Start-Process `
-    "DISM.exe" `
-    -ArgumentList "/Online /Cleanup-Image /RestoreHealth" `
-    -Wait `
-    -PassThru
-
-$txtStatus.Text =
-    "Executando SFC /scannow..."
-
-$sfc =
-    Start-Process `
-    "sfc.exe" `
-    -ArgumentList "/scannow" `
-    -Wait `
-    -PassThru
-
-$txtStatus.Text =
-    "Reparo do Windows concluido"
-
-Registrar-Servico `
-    "Reparo do Windows - DISM RestoreHealth e SFC Scannow" `
-    "Concluido - DISM ExitCode: $($dism.ExitCode) / SFC ExitCode: $($sfc.ExitCode)"
-
-[System.Windows.MessageBox]::Show(
-
-    "PROCESSO DE REPARACAO FINALIZADO`n`n" +
-
-    "DISM ExitCode: $($dism.ExitCode)`n" +
-
-    "SFC ExitCode: $($sfc.ExitCode)`n`n" +
-
-    "Recomendamos reiniciar o computador caso o sistema tenha apresentado problemas.",
-
-    "TECH INFO BELEM - Reparar Windows",
-
-    "OK",
-
-    "Information"
-
-)
-```
-
-}
-
-# ============================================================
-
-# SAUDE DOS DISCOS
-
-# ============================================================
-
-function Verificar-SaudeDiscos {
-
-```
-$txtStatus.Text =
-    "Analisando armazenamento..."
-
-try {
-
-    $physicalDisks =
-        Get-PhysicalDisk
-
-    $resultado = ""
-
-    $relatorioDiscos = ""
-
-    foreach ($disk in $physicalDisks) {
-
-        $modelo =
-            $disk.FriendlyName
-
-        $tipo =
-            $disk.MediaType
-
-        $tamanho =
-            [math]::Round(
-                $disk.Size / 1GB,
-                1
             )
 
-        $saude =
-            $disk.HealthStatus
 
-        $operacional =
-            $disk.OperationalStatus
+            foreach ($folder in $folders) {
 
-        $resultado +=
+                $cache =
+                    Join-Path `
+                    $browser.Path `
+                    $folder
 
-            "Modelo: $modelo`n" +
 
-            "Tipo: $tipo`n" +
+                if (Test-Path $cache) {
 
-            "Capacidade: $tamanho GB`n" +
+                    Get-ChildItem `
+                        $cache `
+                        -Force `
+                        -ErrorAction SilentlyContinue |
 
-            "Saude: $saude`n" +
+                    Remove-Item `
+                        -Recurse `
+                        -Force `
+                        -ErrorAction SilentlyContinue
 
-            "Status: $operacional`n`n"
+                }
 
-        $relatorioDiscos +=
-
-            "$modelo - $tipo - $tamanho GB - Saude: $saude - Status: $operacional; "
-
-    }
-
-    if ([string]::IsNullOrWhiteSpace($resultado)) {
-
-        $resultado =
-            "Nenhum disco fisico foi identificado."
-
-        $relatorioDiscos =
-            "Nenhum disco fisico foi identificado."
-
-    }
-
-    $txtSaudeDisco.Text =
-        "Analise concluida"
-
-    $txtStatus.Text =
-        "Diagnostico de armazenamento concluido"
-
-    Registrar-Servico `
-        "Diagnostico de saude SSD / HD" `
-        "Concluido - $relatorioDiscos"
-
-    [System.Windows.MessageBox]::Show(
-
-        $resultado,
-
-        "TECH INFO BELEM - Saude SSD / HD",
-
-        "OK",
-
-        "Information"
-
-    )
-
-}
-catch {
-
-    $txtSaudeDisco.Text =
-        "Nao disponivel"
-
-    $txtStatus.Text =
-        "Nao foi possivel consultar os discos"
-
-    Registrar-Servico `
-        "Diagnostico de saude SSD / HD" `
-        "Erro ou informacao nao disponivel"
-
-    [System.Windows.MessageBox]::Show(
-
-        "Nao foi possivel obter informacoes de saude dos discos.`n`nIsso pode ocorrer devido ao driver ou ao tipo de armazenamento.",
-
-        "TECH INFO BELEM - Diagnostico",
-
-        "OK",
-
-        "Warning"
-
-    )
-
-}
-```
-
-}
-
-# ============================================================
-
-# TESTE DE MEMORIA RAM
-
-# ============================================================
-
-function Testar-Memoria {
-
-```
-$confirmacao =
-    [System.Windows.MessageBox]::Show(
-
-        "O Diagnostico de Memoria do Windows sera aberto.`n`n" +
-
-        "O teste completo exige que o computador seja reiniciado.`n`n" +
-
-        "Salve todos os trabalhos antes de continuar.`n`n" +
-
-        "Deseja abrir o diagnostico de memoria?",
-
-        "TECH INFO BELEM - Teste de RAM",
-
-        "YesNo",
-
-        "Warning"
-
-    )
-
-if ($confirmacao -ne "Yes") {
-
-    return
-
-}
-
-$txtStatusMemoria.Text =
-    "Diagnostico agendado"
-
-$txtStatus.Text =
-    "Abrindo Diagnostico de Memoria..."
-
-Start-Process `
-    "mdsched.exe"
-
-$txtStatusMemoria.Text =
-    "Aguardando teste do Windows"
-
-$txtStatus.Text =
-    "Diagnostico de memoria aberto"
-
-Registrar-Servico `
-    "Diagnostico de memoria RAM do Windows" `
-    "Agendado / Ferramenta de diagnostico aberta"
-
-[System.Windows.MessageBox]::Show(
-
-    "O Diagnostico de Memoria do Windows foi aberto.`n`nEscolha uma das opcoes disponiveis para iniciar o teste.`n`nO resultado sera apresentado pelo Windows apos a verificacao.",
-
-    "TECH INFO BELEM - Teste de RAM",
-
-    "OK",
-
-    "Information"
-
-)
-```
-
-}
-
-# ============================================================
-
-# INFORMACOES DE HARDWARE
-
-# ============================================================
-
-function Mostrar-Hardware {
-
-```
-$txtStatus.Text =
-    "Coletando informacoes de hardware..."
-
-try {
-
-    $cpu =
-        Get-CimInstance Win32_Processor |
-        Select-Object -First 1
-
-    $computer =
-        Get-CimInstance Win32_ComputerSystem
-
-    $gpu =
-        Get-CimInstance Win32_VideoController
-
-    $resultado =
-
-        "PROCESSADOR`n" +
-
-        "$($cpu.Name)`n`n" +
-
-        "NUCLEOS: $($cpu.NumberOfCores)`n" +
-
-        "THREADS: $($cpu.NumberOfLogicalProcessors)`n`n" +
-
-        "MEMORIA RAM`n" +
-
-        "$([math]::Round($computer.TotalPhysicalMemory / 1GB, 1)) GB`n`n" +
-
-        "PLACA DE VIDEO`n"
-
-    $gpuRelatorio = ""
-
-    foreach ($video in $gpu) {
-
-        $resultado +=
-
-            "$($video.Name)`n"
-
-        $gpuRelatorio +=
-            "$($video.Name); "
-
-    }
-
-    $txtStatus.Text =
-        "Informacoes de hardware coletadas"
-
-    Registrar-Servico `
-        "Coleta de informacoes de hardware" `
-        "Concluido - CPU: $($cpu.Name) / RAM: $([math]::Round($computer.TotalPhysicalMemory / 1GB, 1)) GB / GPU: $gpuRelatorio"
-
-    [System.Windows.MessageBox]::Show(
-
-        $resultado,
-
-        "TECH INFO BELEM - Hardware",
-
-        "OK",
-
-        "Information"
-
-    )
-
-}
-catch {
-
-    $txtStatus.Text =
-        "Erro ao coletar hardware"
-
-    Registrar-Servico `
-        "Coleta de informacoes de hardware" `
-        "Erro"
-
-}
-```
-
-}
-
-# ============================================================
-
-# GERAR RELATORIO DE SERVICO
-
-# ============================================================
-
-function Gerar-Relatorio-Servico {
-
-```
-$txtStatus.Text =
-    "Gerando relatorio de servico..."
-
-try {
-
-    $pastaDocumentos =
-        [Environment]::GetFolderPath("MyDocuments")
-
-    $pastaRelatorios =
-        Join-Path `
-        $pastaDocumentos `
-        "TECH INFO BELEM\Relatorios"
-
-    if (-not (Test-Path $pastaRelatorios)) {
-
-        New-Item `
-            -Path $pastaRelatorios `
-            -ItemType Directory `
-            -Force |
-            Out-Null
-
-    }
-
-    $computer =
-        Get-CimInstance Win32_ComputerSystem
-
-    $os =
-        Get-CimInstance Win32_OperatingSystem
-
-    $cpu =
-        Get-CimInstance Win32_Processor |
-        Select-Object -First 1
-
-    $disk =
-        Get-CimInstance Win32_LogicalDisk `
-        -Filter "DeviceID='C:'"
-
-    $ramGB =
-        [math]::Round(
-            $computer.TotalPhysicalMemory / 1GB,
-            1
-        )
-
-    $totalGB =
-        [math]::Round(
-            $disk.Size / 1GB,
-            1
-        )
-
-    $freeGB =
-        [math]::Round(
-            $disk.FreeSpace / 1GB,
-            1
-        )
-
-    $nomeComputador =
-        $env:COMPUTERNAME
-
-    $dataHora =
-        Get-Date
-
-    $nomeArquivo =
-        "Relatorio_${nomeComputador}_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
-
-    $arquivoRelatorio =
-        Join-Path `
-        $pastaRelatorios `
-        $nomeArquivo
-
-    $relatorio = New-Object System.Collections.ArrayList
-
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("TECH INFO BELEM")
-    [void]$relatorio.Add("RELATORIO DE SERVICO TECNICO")
-    [void]$relatorio.Add("CLEANER PRO v0.5")
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("")
-    [void]$relatorio.Add("DATA E HORA DO ATENDIMENTO: $($dataHora.ToString('dd/MM/yyyy HH:mm:ss'))")
-    [void]$relatorio.Add("TECNICO: TECH INFO BELEM")
-    [void]$relatorio.Add("")
-
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("IDENTIFICACAO DO COMPUTADOR")
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("")
-    [void]$relatorio.Add("Nome do computador: $nomeComputador")
-    [void]$relatorio.Add("Fabricante: $($computer.Manufacturer)")
-    [void]$relatorio.Add("Modelo: $($computer.Model)")
-    [void]$relatorio.Add("Sistema operacional: $($os.Caption)")
-    [void]$relatorio.Add("Versao do Windows: $($os.Version)")
-    [void]$relatorio.Add("Processador: $($cpu.Name)")
-    [void]$relatorio.Add("Nucleos: $($cpu.NumberOfCores)")
-    [void]$relatorio.Add("Threads: $($cpu.NumberOfLogicalProcessors)")
-    [void]$relatorio.Add("Memoria RAM: $ramGB GB")
-    [void]$relatorio.Add("Disco C: $freeGB GB livres de $totalGB GB")
-    [void]$relatorio.Add("")
-
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("SERVICOS EXECUTADOS NESTA SESSAO")
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("")
-
-    if ($global:HistoricoServico.Count -eq 0) {
-
-        [void]$relatorio.Add(
-            "Nenhum servico foi registrado nesta sessao."
-        )
-
-    }
-    else {
-
-        foreach ($item in $global:HistoricoServico) {
-
-            [void]$relatorio.Add(
-                "[$($item.Data) $($item.Hora)] $($item.Servico)"
-            )
-
-            [void]$relatorio.Add(
-                "Resultado: $($item.Resultado)"
-            )
-
-            [void]$relatorio.Add("")
+            }
 
         }
 
     }
 
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("OBSERVACOES")
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("")
-    [void]$relatorio.Add(
-        "Relatorio gerado automaticamente pelo TECH INFO BELEM Cleaner Pro."
-    )
-    [void]$relatorio.Add(
-        "Este documento registra os procedimentos executados durante esta sessao."
-    )
-    [void]$relatorio.Add("")
-    [void]$relatorio.Add("============================================================")
-    [void]$relatorio.Add("FIM DO RELATORIO")
-    [void]$relatorio.Add("============================================================")
-
-    $relatorio |
-        Out-File `
-        -FilePath $arquivoRelatorio `
-        -Encoding UTF8 `
-        -Force
 
     $txtStatus.Text =
-        "Relatorio gerado com sucesso"
+        "Caches dos navegadores limpos"
 
-    [System.Windows.MessageBox]::Show(
 
-        "RELATORIO DE SERVICO GERADO COM SUCESSO!`n`n" +
+    return $true
 
-        "Arquivo salvo em:`n`n" +
+}
 
-        "$arquivoRelatorio",
 
-        "TECH INFO BELEM - Relatorio",
+# ============================================================
+# LIMPAR LIXEIRA
+# ============================================================
 
-        "OK",
+function Limpar-Lixeira {
 
-        "Information"
+    $txtStatus.Text =
+        "Esvaziando lixeira..."
 
-    )
 
-    $abrirPasta =
+    try {
+
+        Clear-RecycleBin `
+            -Force `
+            -ErrorAction SilentlyContinue
+
+
+        $txtStatus.Text =
+            "Lixeira esvaziada"
+
+
+        return $true
+
+    }
+    catch {
+
+        $txtStatus.Text =
+            "Erro ao esvaziar lixeira"
+
+
+        return $false
+
+    }
+
+}
+
+
+# ============================================================
+# LIMPEZA COMPLETA
+# ============================================================
+
+function Limpeza-Completa {
+
+    $confirmacao =
         [System.Windows.MessageBox]::Show(
 
-            "Deseja abrir a pasta onde o relatorio foi salvo?",
+            "Deseja iniciar a limpeza completa?`n`n" +
 
-            "TECH INFO BELEM - Relatorio",
+            "Serão processados:`n" +
+
+            "- Arquivos temporarios`n" +
+
+            "- Cache seguro dos navegadores`n" +
+
+            "- Lixeira`n`n" +
+
+            "Cookies, senhas, favoritos e historico nao serao removidos.",
+
+            "TECH INFO BELEM - Limpeza Completa",
 
             "YesNo",
 
@@ -2076,93 +1349,1118 @@ try {
 
         )
 
-    if ($abrirPasta -eq "Yes") {
 
+    if ($confirmacao -ne "Yes") {
+
+        return
+
+    }
+
+
+    $diskBefore =
+        Get-CimInstance Win32_LogicalDisk `
+        -Filter "DeviceID='C:'"
+
+
+    $freeBefore =
+        $diskBefore.FreeSpace
+
+
+    Limpar-Temporarios
+
+
+    Limpar-Navegadores
+
+
+    Limpar-Lixeira
+
+
+    $diskAfter =
+        Get-CimInstance Win32_LogicalDisk `
+        -Filter "DeviceID='C:'"
+
+
+    $freeAfter =
+        $diskAfter.FreeSpace
+
+
+    $freed =
+        $freeAfter -
+        $freeBefore
+
+
+    $freedMB =
+        [math]::Round(
+            $freed / 1MB,
+            2
+        )
+
+
+    $freedGB =
+        [math]::Round(
+            $freed / 1GB,
+            2
+        )
+
+
+    Atualizar-Informacoes
+
+
+    $txtAnalise.Text =
+        "$freedGB GB liberados"
+
+
+    $txtStatus.Text =
+        "Limpeza completa concluida"
+
+
+    [System.Windows.MessageBox]::Show(
+
+        "LIMPEZA COMPLETA FINALIZADA`n`n" +
+
+        "Espaco liberado: " +
+        "$freedMB MB`n`n" +
+
+        "O Cleaner Pro concluiu a manutencao.",
+
+        "TECH INFO BELEM - Cleaner Pro v0.5",
+
+        "OK",
+
+        "Information"
+
+    )
+
+}
+
+
+# ============================================================
+# DIAGNOSTICO DO WINDOWS
+# ============================================================
+
+function Diagnosticar-Windows {
+
+    $txtStatus.Text =
+        "Executando DISM /ScanHealth..."
+
+
+    $dism =
         Start-Process `
-            "explorer.exe" `
-            -ArgumentList "`"$pastaRelatorios`""
+        "DISM.exe" `
+        -ArgumentList "/Online /Cleanup-Image /ScanHealth" `
+        -Wait `
+        -PassThru `
+        -WindowStyle Hidden
+
+
+    $txtStatus.Text =
+        "Executando SFC /VerifyOnly..."
+
+
+    $sfc =
+        Start-Process `
+        "sfc.exe" `
+        -ArgumentList "/verifyonly" `
+        -Wait `
+        -PassThru `
+        -WindowStyle Hidden
+
+
+    $txtStatus.Text =
+        "Diagnostico do Windows concluido"
+
+
+    [System.Windows.MessageBox]::Show(
+
+        "O diagnostico do Windows foi concluido.`n`n" +
+
+        "DISM ExitCode: $($dism.ExitCode)`n" +
+
+        "SFC ExitCode: $($sfc.ExitCode)`n`n" +
+
+        "Para uma analise detalhada, consulte os logs do Windows.",
+
+        "TECH INFO BELEM - Diagnostico Windows",
+
+        "OK",
+
+        "Information"
+
+    )
+
+}
+
+
+# ============================================================
+# REPARAR WINDOWS
+# ============================================================
+
+function Reparar-Windows {
+
+    $confirmacao =
+        [System.Windows.MessageBox]::Show(
+
+            "O processo executara:`n`n" +
+
+            "1. DISM /RestoreHealth`n" +
+
+            "2. SFC /scannow`n`n" +
+
+            "O processo pode levar varios minutos.`n`n" +
+
+            "Deseja continuar?",
+
+            "TECH INFO BELEM - Reparar Windows",
+
+            "YesNo",
+
+            "Warning"
+
+        )
+
+
+    if ($confirmacao -ne "Yes") {
+
+        return
+
+    }
+
+
+    $txtStatus.Text =
+        "Reparando imagem do Windows com DISM..."
+
+
+    $dism =
+        Start-Process `
+        "DISM.exe" `
+        -ArgumentList "/Online /Cleanup-Image /RestoreHealth" `
+        -Wait `
+        -PassThru
+
+
+    $txtStatus.Text =
+        "Executando SFC /scannow..."
+
+
+    $sfc =
+        Start-Process `
+        "sfc.exe" `
+        -ArgumentList "/scannow" `
+        -Wait `
+        -PassThru
+
+
+    $txtStatus.Text =
+        "Reparo do Windows concluido"
+
+
+    [System.Windows.MessageBox]::Show(
+
+        "PROCESSO DE REPARACAO FINALIZADO`n`n" +
+
+        "DISM ExitCode: $($dism.ExitCode)`n" +
+
+        "SFC ExitCode: $($sfc.ExitCode)`n`n" +
+
+        "Recomendamos reiniciar o computador caso o sistema tenha apresentado problemas.",
+
+        "TECH INFO BELEM - Reparar Windows",
+
+        "OK",
+
+        "Information"
+
+    )
+
+}
+
+
+# ============================================================
+# SAUDE DOS DISCOS
+# ============================================================
+
+function Verificar-SaudeDiscos {
+
+    $txtStatus.Text =
+        "Analisando armazenamento..."
+
+
+    try {
+
+        $physicalDisks =
+            Get-PhysicalDisk
+
+
+        $resultado = ""
+
+
+        foreach ($disk in $physicalDisks) {
+
+            $modelo =
+                $disk.FriendlyName
+
+
+            $tipo =
+                $disk.MediaType
+
+
+            $tamanho =
+                [math]::Round(
+                    $disk.Size / 1GB,
+                    1
+                )
+
+
+            $saude =
+                $disk.HealthStatus
+
+
+            $operacional =
+                $disk.OperationalStatus
+
+
+            $resultado +=
+
+                "Modelo: $modelo`n" +
+
+                "Tipo: $tipo`n" +
+
+                "Capacidade: $tamanho GB`n" +
+
+                "Saude: $saude`n" +
+
+                "Status: $operacional`n`n"
+
+        }
+
+
+        if ([string]::IsNullOrWhiteSpace($resultado)) {
+
+            $resultado =
+                "Nenhum disco fisico foi identificado."
+
+        }
+
+
+        $txtSaudeDisco.Text =
+            "Analise concluida"
+
+
+        $txtStatus.Text =
+            "Diagnostico de armazenamento concluido"
+
+
+        [System.Windows.MessageBox]::Show(
+
+            $resultado,
+
+            "TECH INFO BELEM - Saude SSD / HD",
+
+            "OK",
+
+            "Information"
+
+        )
+
+    }
+    catch {
+
+        $txtSaudeDisco.Text =
+            "Nao disponivel"
+
+
+        $txtStatus.Text =
+            "Nao foi possivel consultar os discos"
+
+
+        [System.Windows.MessageBox]::Show(
+
+            "Nao foi possivel obter informacoes de saude dos discos.`n`nIsso pode ocorrer devido ao driver ou ao tipo de armazenamento.",
+
+            "TECH INFO BELEM - Diagnostico",
+
+            "OK",
+
+            "Warning"
+
+        )
 
     }
 
 }
-catch {
+
+
+# ============================================================
+# TESTE DE MEMORIA RAM
+# ============================================================
+
+function Testar-Memoria {
+
+    $confirmacao =
+        [System.Windows.MessageBox]::Show(
+
+            "O Diagnostico de Memoria do Windows sera aberto.`n`n" +
+
+            "O teste completo exige que o computador seja reiniciado.`n`n" +
+
+            "Salve todos os trabalhos antes de continuar.`n`n" +
+
+            "Deseja abrir o diagnostico de memoria?",
+
+            "TECH INFO BELEM - Teste de RAM",
+
+            "YesNo",
+
+            "Warning"
+
+        )
+
+
+    if ($confirmacao -ne "Yes") {
+
+        return
+
+    }
+
+
+    $txtStatusMemoria.Text =
+        "Diagnostico agendado"
+
 
     $txtStatus.Text =
-        "Erro ao gerar relatorio"
+        "Abrindo Diagnostico de Memoria..."
+
+
+    Start-Process `
+        "mdsched.exe"
+
+
+    $txtStatusMemoria.Text =
+        "Aguardando teste do Windows"
+
+
+    $txtStatus.Text =
+        "Diagnostico de memoria aberto"
+
 
     [System.Windows.MessageBox]::Show(
 
-        "Nao foi possivel gerar o relatorio.`n`n" +
+        "O Diagnostico de Memoria do Windows foi aberto.`n`nEscolha uma das opcoes disponiveis para iniciar o teste.`n`nO resultado sera apresentado pelo Windows apos a verificacao.",
 
-        "Erro:`n$($_.Exception.Message)",
-
-        "TECH INFO BELEM - Erro",
+        "TECH INFO BELEM - Teste de RAM",
 
         "OK",
 
-        "Error"
+        "Information"
 
     )
 
 }
-```
 
-}
 
 # ============================================================
-
-# CHRIS TITUS WINUTIL
-
+# INFORMACOES DE HARDWARE
 # ============================================================
 
-function Abrir-ChrisTitus {
-
-```
-$confirmacao =
-    [System.Windows.MessageBox]::Show(
-
-        "Deseja abrir o Windows Utility do Chris Titus Tech?`n`nO WinUtil sera executado diretamente a partir do site oficial.",
-
-        "TECH INFO BELEM - WinUtil",
-
-        "YesNo",
-
-        "Question"
-
-    )
-
-if ($confirmacao -eq "Yes") {
+function Mostrar-Hardware {
 
     $txtStatus.Text =
-        "Abrindo Chris Titus WinUtil..."
+        "Coletando informacoes de hardware..."
+
 
     try {
 
-        Invoke-RestMethod `
-            "https://christitus.com/win" |
+        $cpu =
+            Get-CimInstance Win32_Processor |
+            Select-Object -First 1
 
-        Invoke-Expression
+
+        $computer =
+            Get-CimInstance Win32_ComputerSystem
+
+
+        $gpu =
+            Get-CimInstance Win32_VideoController
+
+
+        $resultado =
+
+            "PROCESSADOR`n" +
+
+            "$($cpu.Name)`n`n" +
+
+            "NUCLEOS: $($cpu.NumberOfCores)`n" +
+
+            "THREADS: $($cpu.NumberOfLogicalProcessors)`n`n" +
+
+
+            "MEMORIA RAM`n" +
+
+            "$([math]::Round($computer.TotalPhysicalMemory / 1GB, 1)) GB`n`n" +
+
+
+            "PLACA DE VIDEO`n"
+
+
+        foreach ($video in $gpu) {
+
+            $resultado +=
+
+                "$($video.Name)`n"
+
+        }
+
 
         $txtStatus.Text =
-            "Chris Titus WinUtil iniciado"
+            "Informacoes de hardware coletadas"
 
-        Registrar-Servico `
-            "Abertura do Chris Titus WinUtil" `
-            "Executado"
+
+        [System.Windows.MessageBox]::Show(
+
+            $resultado,
+
+            "TECH INFO BELEM - Hardware",
+
+            "OK",
+
+            "Information"
+
+        )
 
     }
     catch {
 
         $txtStatus.Text =
-            "Erro ao abrir Chris Titus WinUtil"
+            "Erro ao coletar hardware"
 
-        Registrar-Servico `
-            "Abertura do Chris Titus WinUtil" `
-            "Erro"
+    }
+
+}
+
+
+# ============================================================
+# CHRIS TITUS WINUTIL
+# ============================================================
+
+function Abrir-ChrisTitus {
+
+    $confirmacao =
+        [System.Windows.MessageBox]::Show(
+
+            "Deseja abrir o Windows Utility do Chris Titus Tech?`n`nO WinUtil sera executado diretamente a partir do site oficial.",
+
+            "TECH INFO BELEM - WinUtil",
+
+            "YesNo",
+
+            "Question"
+
+        )
+
+
+    if ($confirmacao -eq "Yes") {
+
+        $txtStatus.Text =
+            "Abrindo Chris Titus WinUtil..."
+
+
+        try {
+
+            Invoke-RestMethod `
+                "https://christitus.com/win" |
+
+            Invoke-Expression
+
+
+            $txtStatus.Text =
+                "Chris Titus WinUtil iniciado"
+
+        }
+        catch {
+
+            $txtStatus.Text =
+                "Erro ao abrir Chris Titus WinUtil"
+
+
+            [System.Windows.MessageBox]::Show(
+
+                "Nao foi possivel abrir o Chris Titus WinUtil.`n`nErro:`n$($_.Exception.Message)",
+
+                "TECH INFO BELEM - Erro",
+
+                "OK",
+
+                "Error"
+
+            )
+
+        }
+
+    }
+
+}
+
+
+# ============================================================
+# RELATORIO DE SERVICO
+# ============================================================
+
+function Gerar-RelatorioServico {
+
+    try {
+
+        $txtStatus.Text =
+            "Coletando informacoes para o relatorio..."
+
+
+        $computer =
+            Get-CimInstance Win32_ComputerSystem
+
+
+        $os =
+            Get-CimInstance Win32_OperatingSystem
+
+
+        $cpu =
+            Get-CimInstance Win32_Processor |
+            Select-Object -First 1
+
+
+        $disk =
+            Get-CimInstance Win32_LogicalDisk `
+            -Filter "DeviceID='C:'"
+
+
+        $ramGB =
+            [math]::Round(
+                $computer.TotalPhysicalMemory / 1GB,
+                1
+            )
+
+
+        $freeGB =
+            [math]::Round(
+                $disk.FreeSpace / 1GB,
+                1
+            )
+
+
+        $totalGB =
+            [math]::Round(
+                $disk.Size / 1GB,
+                1
+            )
+
+
+        $physicalDisks = @()
+
+
+        try {
+
+            $physicalDisks =
+                @(Get-PhysicalDisk)
+
+        }
+        catch {
+
+            $physicalDisks =
+                @()
+
+        }
+
+
+        $gpu =
+            @(Get-CimInstance Win32_VideoController)
+
+
+        $data =
+            Get-Date -Format "dd/MM/yyyy HH:mm"
+
+
+        $safeComputerName =
+            $env:COMPUTERNAME -replace '[\\/:*?"<>|]', '_'
+
+
+        $timestamp =
+            Get-Date -Format "yyyyMMdd_HHmmss"
+
+
+        $desktop =
+            [Environment]::GetFolderPath("Desktop")
+
+
+        $reportFolder =
+            Join-Path `
+            $desktop `
+            "Relatorios Cleaner Pro"
+
+
+        if (-not (Test-Path $reportFolder)) {
+
+            New-Item `
+                -Path $reportFolder `
+                -ItemType Directory `
+                -Force |
+                Out-Null
+
+        }
+
+
+        $reportFile =
+            Join-Path `
+            $reportFolder `
+            "Relatorio_Servico_${safeComputerName}_${timestamp}.html"
+
+
+        $diskHealthHtml = ""
+
+
+        if ($physicalDisks.Count -gt 0) {
+
+            foreach ($physicalDisk in $physicalDisks) {
+
+                $modelo =
+                    [System.Net.WebUtility]::HtmlEncode(
+                        [string]$physicalDisk.FriendlyName
+                    )
+
+
+                $tipo =
+                    [System.Net.WebUtility]::HtmlEncode(
+                        [string]$physicalDisk.MediaType
+                    )
+
+
+                $capacidade =
+                    [math]::Round(
+                        $physicalDisk.Size / 1GB,
+                        1
+                    )
+
+
+                $saude =
+                    [System.Net.WebUtility]::HtmlEncode(
+                        [string]$physicalDisk.HealthStatus
+                    )
+
+
+                $status =
+                    [System.Net.WebUtility]::HtmlEncode(
+                        [string]$physicalDisk.OperationalStatus
+                    )
+
+
+                $diskHealthHtml += @"
+
+<tr>
+<td>$modelo</td>
+<td>$tipo</td>
+<td>$capacidade GB</td>
+<td>$saude</td>
+<td>$status</td>
+</tr>
+
+"@
+
+            }
+
+        }
+        else {
+
+            $diskHealthHtml = @"
+
+<tr>
+<td colspan="5">Informacoes de saude dos discos nao disponiveis.</td>
+</tr>
+
+"@
+
+        }
+
+
+        $gpuHtml = ""
+
+
+        foreach ($video in $gpu) {
+
+            $gpuName =
+                [System.Net.WebUtility]::HtmlEncode(
+                    [string]$video.Name
+                )
+
+
+            $gpuHtml +=
+                "<li>$gpuName</li>"
+
+        }
+
+
+        if ([string]::IsNullOrWhiteSpace($gpuHtml)) {
+
+            $gpuHtml =
+                "<li>Informacao nao disponivel</li>"
+
+        }
+
+
+        $html = @"
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Relatorio de Servico - TECH INFO BELEM</title>
+
+<style>
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f3f4f6;
+    margin: 0;
+    padding: 30px;
+    color: #1f2937;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    background: white;
+    padding: 35px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+}
+
+.header {
+    border-bottom: 3px solid #2563eb;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+}
+
+.header h1 {
+    margin: 0;
+    color: #1d4ed8;
+}
+
+.header p {
+    margin: 5px 0;
+    color: #6b7280;
+}
+
+h2 {
+    background: #1f2937;
+    color: white;
+    padding: 10px;
+    font-size: 18px;
+}
+
+.info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 12px;
+}
+
+.label {
+    font-weight: bold;
+    color: #374151;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    background: #2563eb;
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
+
+td {
+    border: 1px solid #d1d5db;
+    padding: 10px;
+}
+
+ul {
+    background: #f9fafb;
+    padding: 20px 40px;
+}
+
+.footer {
+    margin-top: 40px;
+    border-top: 1px solid #d1d5db;
+    padding-top: 15px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+@media print {
+
+    body {
+        background: white;
+        padding: 0;
+    }
+
+    .container {
+        box-shadow: none;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+<div class="header">
+
+<h1>TECH INFO BELEM</h1>
+
+<p>RELATORIO DE SERVICO TECNICO</p>
+
+<p>Cleaner Pro v0.5</p>
+
+</div>
+
+
+<h2>INFORMACOES DO ATENDIMENTO</h2>
+
+<div class="info">
+
+<div class="card">
+
+<span class="label">Data e hora:</span>
+
+$data
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Computador:</span>
+
+$([System.Net.WebUtility]::HtmlEncode("$($computer.Manufacturer) $($computer.Model)"))
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Nome do equipamento:</span>
+
+$([System.Net.WebUtility]::HtmlEncode($env:COMPUTERNAME))
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Sistema operacional:</span>
+
+$([System.Net.WebUtility]::HtmlEncode($os.Caption))
+
+</div>
+
+</div>
+
+
+<h2>HARDWARE</h2>
+
+<div class="info">
+
+<div class="card">
+
+<span class="label">Processador:</span>
+
+$([System.Net.WebUtility]::HtmlEncode($cpu.Name))
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Memoria RAM:</span>
+
+$ramGB GB
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Disco principal:</span>
+
+C:
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Espaco livre:</span>
+
+$freeGB GB de $totalGB GB
+
+</div>
+
+</div>
+
+
+<h2>PLACA DE VIDEO</h2>
+
+<ul>
+
+$gpuHtml
+
+</ul>
+
+
+<h2>SAUDE DOS DISCOS</h2>
+
+<table>
+
+<tr>
+
+<th>Modelo</th>
+
+<th>Tipo</th>
+
+<th>Capacidade</th>
+
+<th>Saude</th>
+
+<th>Status</th>
+
+</tr>
+
+$diskHealthHtml
+
+</table>
+
+
+<h2>SERVICOS REALIZADOS</h2>
+
+<div class="card">
+
+<p>☐ Diagnostico geral do sistema</p>
+
+<p>☐ Limpeza de arquivos temporarios</p>
+
+<p>☐ Limpeza de cache dos navegadores</p>
+
+<p>☐ Limpeza da lixeira</p>
+
+<p>☐ Limpeza completa</p>
+
+<p>☐ Diagnostico do Windows</p>
+
+<p>☐ Reparacao do Windows</p>
+
+<p>☐ Verificacao de saude SSD / HD</p>
+
+<p>☐ Diagnostico de memoria RAM</p>
+
+<p>☐ Analise de hardware</p>
+
+</div>
+
+
+<h2>OBSERVACOES TECNICAS</h2>
+
+<div class="card" style="min-height:100px;">
+
+<br><br><br>
+
+</div>
+
+
+<div class="footer">
+
+TECH INFO BELEM - Assistencia Tecnica em Computadores, Notebooks e Celulares<br>
+
+Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
+
+</div>
+
+
+</div>
+
+</body>
+
+</html>
+"@
+
+
+        Set-Content `
+            -Path $reportFile `
+            -Value $html `
+            -Encoding UTF8
+
+
+        $txtStatus.Text =
+            "Relatorio de servico gerado"
+
+
+        $txtTitulo.Text =
+            "Relatorio de Servico"
+
+
+        $txtSubtitulo.Text =
+            "Relatorio tecnico salvo na Area de Trabalho"
+
+
+        $confirmacao =
+            [System.Windows.MessageBox]::Show(
+
+                "RELATORIO DE SERVICO GERADO COM SUCESSO!`n`n" +
+
+                "Arquivo salvo em:`n" +
+
+                "$reportFile`n`n" +
+
+                "Deseja abrir o relatorio agora?",
+
+                "TECH INFO BELEM - Relatorio",
+
+                "YesNo",
+
+                "Information"
+
+            )
+
+
+        if ($confirmacao -eq "Yes") {
+
+            Start-Process `
+                $reportFile
+
+        }
+
+    }
+    catch {
+
+        $txtStatus.Text =
+            "Erro ao gerar relatorio"
+
 
         [System.Windows.MessageBox]::Show(
 
-            "Nao foi possivel abrir o Chris Titus WinUtil.`n`nErro:`n$($_.Exception.Message)",
+            "Nao foi possivel gerar o relatorio.`n`nErro:`n$($_.Exception.Message)",
 
             "TECH INFO BELEM - Erro",
 
@@ -2175,306 +2473,296 @@ if ($confirmacao -eq "Yes") {
     }
 
 }
-```
 
-}
 
 # ============================================================
+# EVENTO - INICIO
+# ============================================================
 
+$btnInicio.Add_Click({
+
+    $txtTitulo.Text =
+        "Painel de Controle"
+
+
+    $txtSubtitulo.Text =
+        "Ferramenta profissional de limpeza, diagnostico e manutencao"
+
+
+    $txtStatus.Text =
+        "Sistema pronto"
+
+
+    Atualizar-Informacoes
+
+})
+
+
+# ============================================================
 # EVENTO - ANALISAR
-
 # ============================================================
 
 $btnAnalisar.Add_Click({
 
-```
-$txtTitulo.Text =
-    "Analise do Sistema"
+    $txtTitulo.Text =
+        "Analise do Sistema"
 
-$txtSubtitulo.Text =
-    "Verificando arquivos temporarios, caches e lixeira"
 
-Analisar-Sistema
-```
+    $txtSubtitulo.Text =
+        "Verificando arquivos temporarios, caches e lixeira"
+
+
+    Analisar-Sistema
 
 })
 
+
 # ============================================================
-
 # EVENTO - TEMPORARIOS
-
 # ============================================================
 
 $btnTemporarios.Add_Click({
 
-```
-$confirmacao =
-    [System.Windows.MessageBox]::Show(
+    $confirmacao =
+        [System.Windows.MessageBox]::Show(
 
-        "Deseja limpar os arquivos temporarios do sistema?",
+            "Deseja limpar os arquivos temporarios do sistema?",
 
-        "TECH INFO BELEM",
+            "TECH INFO BELEM",
 
-        "YesNo",
+            "YesNo",
 
-        "Question"
+            "Question"
 
-    )
+        )
 
-if ($confirmacao -eq "Yes") {
 
-    Limpar-Temporarios
+    if ($confirmacao -eq "Yes") {
 
-}
-```
+        Limpar-Temporarios
+
+    }
 
 })
 
+
 # ============================================================
-
 # EVENTO - NAVEGADORES
-
 # ============================================================
 
 $btnNavegadores.Add_Click({
 
-```
-$confirmacao =
-    [System.Windows.MessageBox]::Show(
+    $confirmacao =
+        [System.Windows.MessageBox]::Show(
 
-        "Deseja limpar os caches dos navegadores instalados?`n`nCookies, senhas, favoritos e historico nao serao removidos.",
+            "Deseja limpar os caches dos navegadores instalados?`n`nCookies, senhas, favoritos e historico nao serao removidos.",
 
-        "TECH INFO BELEM - Navegadores",
+            "TECH INFO BELEM - Navegadores",
 
-        "YesNo",
+            "YesNo",
 
-        "Question"
+            "Question"
 
-    )
+        )
 
-if ($confirmacao -eq "Yes") {
 
-    Limpar-Navegadores
+    if ($confirmacao -eq "Yes") {
 
-}
-```
+        Limpar-Navegadores
+
+    }
 
 })
 
+
 # ============================================================
-
 # EVENTO - LIXEIRA
-
 # ============================================================
 
 $btnLixeira.Add_Click({
 
-```
-$confirmacao =
-    [System.Windows.MessageBox]::Show(
+    $confirmacao =
+        [System.Windows.MessageBox]::Show(
 
-        "Deseja esvaziar a Lixeira do Windows?",
+            "Deseja esvaziar a Lixeira do Windows?",
 
-        "TECH INFO BELEM - Lixeira",
+            "TECH INFO BELEM - Lixeira",
 
-        "YesNo",
+            "YesNo",
 
-        "Warning"
+            "Warning"
 
-    )
+        )
 
-if ($confirmacao -eq "Yes") {
 
-    Limpar-Lixeira
+    if ($confirmacao -eq "Yes") {
 
-}
-```
+        Limpar-Lixeira
+
+    }
 
 })
 
+
 # ============================================================
-
 # EVENTO - LIMPEZA COMPLETA
-
 # ============================================================
 
 $btnCompleta.Add_Click({
 
-```
-Limpeza-Completa
-```
+    Limpeza-Completa
 
 })
 
+
 # ============================================================
-
 # EVENTO - DIAGNOSTICO WINDOWS
-
 # ============================================================
 
 $btnDiagnosticoWindows.Add_Click({
 
-```
-$txtTitulo.Text =
-    "Diagnostico do Windows"
+    $txtTitulo.Text =
+        "Diagnostico do Windows"
 
-$txtSubtitulo.Text =
-    "Verificando integridade da imagem e arquivos do sistema"
 
-Diagnosticar-Windows
-```
+    $txtSubtitulo.Text =
+        "Verificando integridade da imagem e arquivos do sistema"
+
+
+    Diagnosticar-Windows
 
 })
 
+
 # ============================================================
-
 # EVENTO - REPARAR WINDOWS
-
 # ============================================================
 
 $btnRepararWindows.Add_Click({
 
-```
-$txtTitulo.Text =
-    "Reparacao do Windows"
+    $txtTitulo.Text =
+        "Reparacao do Windows"
 
-$txtSubtitulo.Text =
-    "DISM RestoreHealth seguido de SFC Scannow"
 
-Reparar-Windows
-```
+    $txtSubtitulo.Text =
+        "DISM RestoreHealth seguido de SFC Scannow"
+
+
+    Reparar-Windows
 
 })
 
+
 # ============================================================
-
 # EVENTO - SAUDE SSD / HD
-
 # ============================================================
 
 $btnDiscos.Add_Click({
 
-```
-$txtTitulo.Text =
-    "Saude do Armazenamento"
+    $txtTitulo.Text =
+        "Saude do Armazenamento"
 
-$txtSubtitulo.Text =
-    "Consultando status dos discos fisicos"
 
-Verificar-SaudeDiscos
-```
+    $txtSubtitulo.Text =
+        "Consultando status dos discos fisicos"
+
+
+    Verificar-SaudeDiscos
 
 })
 
+
 # ============================================================
-
 # EVENTO - MEMORIA RAM
-
 # ============================================================
 
 $btnMemoria.Add_Click({
 
-```
-$txtTitulo.Text =
-    "Diagnostico de Memoria RAM"
+    $txtTitulo.Text =
+        "Diagnostico de Memoria RAM"
 
-$txtSubtitulo.Text =
-    "Teste utilizando o Diagnostico de Memoria do Windows"
 
-Testar-Memoria
-```
+    $txtSubtitulo.Text =
+        "Teste utilizando o Diagnostico de Memoria do Windows"
+
+
+    Testar-Memoria
 
 })
 
+
 # ============================================================
-
 # EVENTO - HARDWARE
-
 # ============================================================
 
 $btnHardware.Add_Click({
 
-```
-$txtTitulo.Text =
-    "Informacoes do Hardware"
+    $txtTitulo.Text =
+        "Informacoes do Hardware"
 
-$txtSubtitulo.Text =
-    "Informacoes basicas do hardware instalado"
 
-Mostrar-Hardware
-```
+    $txtSubtitulo.Text =
+        "Informacoes basicas do hardware instalado"
+
+
+    Mostrar-Hardware
 
 })
 
+
 # ============================================================
-
-# EVENTO - RELATORIO DE SERVICO
-
+# EVENTO - RELATORIO
 # ============================================================
 
 $btnRelatorio.Add_Click({
 
-```
-$txtTitulo.Text =
-    "Relatorio de Servico"
-
-$txtSubtitulo.Text =
-    "Gerando relatorio tecnico do atendimento realizado"
-
-Gerar-Relatorio-Servico
-```
+    Gerar-RelatorioServico
 
 })
 
+
 # ============================================================
-
 # EVENTO - CHRIS TITUS
-
 # ============================================================
 
 $btnChrisTitus.Add_Click({
 
-```
-Abrir-ChrisTitus
-```
+    Abrir-ChrisTitus
 
 })
 
+
 # ============================================================
-
 # EVENTO - SAIR
-
 # ============================================================
 
 $btnSair.Add_Click({
 
-```
-$confirmacao =
-    [System.Windows.MessageBox]::Show(
+    $confirmacao =
+        [System.Windows.MessageBox]::Show(
 
-        "Deseja fechar o TECH INFO BELEM Cleaner Pro?",
+            "Deseja fechar o TECH INFO BELEM Cleaner Pro?",
 
-        "TECH INFO BELEM",
+            "TECH INFO BELEM",
 
-        "YesNo",
+            "YesNo",
 
-        "Question"
+            "Question"
 
-    )
+        )
 
-if ($confirmacao -eq "Yes") {
 
-    $Window.Close()
+    if ($confirmacao -eq "Yes") {
 
-}
-```
+        $Window.Close()
+
+    }
 
 })
 
+
 # ============================================================
-
 # INICIALIZAR
-
 # ============================================================
 
 Atualizar-Informacoes
