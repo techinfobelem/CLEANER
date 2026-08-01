@@ -1956,220 +1956,542 @@ function Abrir-FormularioRelatorio {
 # ============================================================
 
 ```powershell
-# ============================================================
-
-# RELATORIO DE SERVICO - SALVAMENTO NO DISCO C:
-
-# ============================================================
-
+```powershell
 function Gerar-RelatorioServico {
 
-```
-try {
-
-    $txtStatus.Text =
-        "Coletando informacoes para o relatorio..."
-
-
-    # ====================================================
-    # COLETAR INFORMACOES DO COMPUTADOR
-    # ====================================================
-
-    $computer =
-        Get-CimInstance Win32_ComputerSystem `
-        -ErrorAction Stop
-
-
-    $os =
-        Get-CimInstance Win32_OperatingSystem `
-        -ErrorAction Stop
-
-
-    $cpu =
-        Get-CimInstance Win32_Processor `
-        -ErrorAction Stop |
-        Select-Object -First 1
-
-
-    $disk =
-        Get-CimInstance Win32_LogicalDisk `
-        -Filter "DeviceID='C:'" `
-        -ErrorAction Stop
-
-
-    $ramGB =
-        [math]::Round(
-            $computer.TotalPhysicalMemory / 1GB,
-            1
-        )
-
-
-    $freeGB =
-        [math]::Round(
-            $disk.FreeSpace / 1GB,
-            1
-        )
-
-
-    $totalGB =
-        [math]::Round(
-            $disk.Size / 1GB,
-            1
-        )
-
-
-    # ====================================================
-    # DISCOS FISICOS
-    # ====================================================
-
-    $physicalDisks = @()
-
-
     try {
 
-        $physicalDisks =
-            @(Get-PhysicalDisk -ErrorAction SilentlyContinue)
+        # ============================================================
+        # JANELA DE PREENCHIMENTO DO RELATORIO
+        # ============================================================
 
-    }
-    catch {
+        $inputXaml = @"
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="TECH INFO BELEM - Dados do Servico"
+    Height="650"
+    Width="750"
+    WindowStartupLocation="CenterScreen"
+    ResizeMode="CanResize"
+    Background="#111827">
 
-        $physicalDisks =
-            @()
+    <Grid Margin="25">
 
-    }
-
-
-    # ====================================================
-    # PLACA DE VIDEO
-    # ====================================================
-
-    $gpu = @()
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
 
-    try {
+        <StackPanel Grid.Row="0">
+
+            <TextBlock
+                Text="RELATORIO DE SERVICO"
+                Foreground="#60A5FA"
+                FontSize="26"
+                FontWeight="Bold"/>
+
+            <TextBlock
+                Text="Preencha os dados do atendimento"
+                Foreground="#9CA3AF"
+                FontSize="14"
+                Margin="0,5,0,20"/>
+
+        </StackPanel>
+
+
+        <ScrollViewer
+            Grid.Row="1"
+            VerticalScrollBarVisibility="Auto">
+
+            <StackPanel>
+
+
+                <TextBlock
+                    Text="CLIENTE"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,5"/>
+
+                <TextBox
+                    Name="txtCliente"
+                    Height="35"
+                    Padding="8"
+                    Margin="0,0,0,15"/>
+
+
+                <TextBlock
+                    Text="TELEFONE / CONTATO"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,5"/>
+
+                <TextBox
+                    Name="txtTelefone"
+                    Height="35"
+                    Padding="8"
+                    Margin="0,0,0,15"/>
+
+
+                <TextBlock
+                    Text="SERVICO REALIZADO"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,5"/>
+
+                <TextBox
+                    Name="txtServico"
+                    Height="100"
+                    Padding="8"
+                    TextWrapping="Wrap"
+                    AcceptsReturn="True"
+                    VerticalScrollBarVisibility="Auto"
+                    Margin="0,0,0,15"/>
+
+
+                <TextBlock
+                    Text="VALOR DO SERVICO (R$)"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,5"/>
+
+                <TextBox
+                    Name="txtValor"
+                    Height="35"
+                    Padding="8"
+                    Margin="0,0,0,15"/>
+
+
+                <TextBlock
+                    Text="FORMA DE PAGAMENTO"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,5"/>
+
+                <ComboBox
+                    Name="cmbPagamento"
+                    Height="35"
+                    Margin="0,0,0,15">
+
+                    <ComboBoxItem Content="PIX"/>
+                    <ComboBoxItem Content="Dinheiro"/>
+                    <ComboBoxItem Content="Cartao de Credito"/>
+                    <ComboBoxItem Content="Cartao de Debito"/>
+                    <ComboBoxItem Content="Transferencia"/>
+                    <ComboBoxItem Content="Nao informado"/>
+
+                </ComboBox>
+
+
+                <TextBlock
+                    Text="OBSERVACOES"
+                    Foreground="#60A5FA"
+                    FontWeight="Bold"
+                    Margin="0,5,0,5"/>
+
+                <TextBox
+                    Name="txtObservacoes"
+                    Height="100"
+                    Padding="8"
+                    TextWrapping="Wrap"
+                    AcceptsReturn="True"
+                    VerticalScrollBarVisibility="Auto"
+                    Margin="0,0,0,20"/>
+
+            </StackPanel>
+
+        </ScrollViewer>
+
+
+        <StackPanel
+            Grid.Row="2"
+            Orientation="Horizontal"
+            HorizontalAlignment="Right">
+
+            <Button
+                Name="btnCancelarRelatorio"
+                Content="CANCELAR"
+                Width="120"
+                Height="40"
+                Margin="5"
+                Background="#374151"
+                Foreground="White"/>
+
+            <Button
+                Name="btnSalvarRelatorio"
+                Content="GERAR RELATORIO"
+                Width="170"
+                Height="40"
+                Margin="5"
+                Background="#0369A1"
+                Foreground="White"
+                FontWeight="Bold"/>
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>
+"@
+
+
+        [xml]$inputXml = $inputXaml
+
+        $inputReader =
+            New-Object System.Xml.XmlNodeReader $inputXml
+
+        $inputWindow =
+            [Windows.Markup.XamlReader]::Load($inputReader)
+
+
+        # ============================================================
+        # CONTROLES DA JANELA
+        # ============================================================
+
+        $txtCliente =
+            $inputWindow.FindName("txtCliente")
+
+        $txtTelefone =
+            $inputWindow.FindName("txtTelefone")
+
+        $txtServico =
+            $inputWindow.FindName("txtServico")
+
+        $txtValor =
+            $inputWindow.FindName("txtValor")
+
+        $cmbPagamento =
+            $inputWindow.FindName("cmbPagamento")
+
+        $txtObservacoes =
+            $inputWindow.FindName("txtObservacoes")
+
+        $btnCancelarRelatorio =
+            $inputWindow.FindName("btnCancelarRelatorio")
+
+        $btnSalvarRelatorio =
+            $inputWindow.FindName("btnSalvarRelatorio")
+
+
+        # ============================================================
+        # VALOR PADRAO
+        # ============================================================
+
+        $cmbPagamento.SelectedIndex = 0
+
+
+        # ============================================================
+        # CANCELAR
+        # ============================================================
+
+        $btnCancelarRelatorio.Add_Click({
+
+            $inputWindow.DialogResult = $false
+
+            $inputWindow.Close()
+
+        })
+
+
+        # ============================================================
+        # GERAR RELATORIO
+        # ============================================================
+
+        $btnSalvarRelatorio.Add_Click({
+
+            if ([string]::IsNullOrWhiteSpace($txtServico.Text)) {
+
+                [System.Windows.MessageBox]::Show(
+
+                    "Informe o servico realizado antes de gerar o relatorio.",
+
+                    "TECH INFO BELEM",
+
+                    "OK",
+
+                    "Warning"
+
+                )
+
+                return
+
+            }
+
+
+            $inputWindow.DialogResult = $true
+
+            $inputWindow.Close()
+
+        })
+
+
+        # ============================================================
+        # ABRIR JANELA
+        # ============================================================
+
+        $resultadoJanela =
+            $inputWindow.ShowDialog()
+
+
+        if ($resultadoJanela -ne $true) {
+
+            $txtStatus.Text =
+                "Geracao do relatorio cancelada"
+
+            return
+
+        }
+
+
+        # ============================================================
+        # COLETAR INFORMACOES DO COMPUTADOR
+        # ============================================================
+
+        $txtStatus.Text =
+            "Coletando informacoes para o relatorio..."
+
+
+        $computer =
+            Get-CimInstance Win32_ComputerSystem
+
+
+        $os =
+            Get-CimInstance Win32_OperatingSystem
+
+
+        $cpu =
+            Get-CimInstance Win32_Processor |
+            Select-Object -First 1
+
+
+        $disk =
+            Get-CimInstance Win32_LogicalDisk `
+            -Filter "DeviceID='C:'"
+
+
+        $ramGB =
+            [math]::Round(
+                $computer.TotalPhysicalMemory / 1GB,
+                1
+            )
+
+
+        $freeGB =
+            [math]::Round(
+                $disk.FreeSpace / 1GB,
+                1
+            )
+
+
+        $totalGB =
+            [math]::Round(
+                $disk.Size / 1GB,
+                1
+            )
+
+
+        # ============================================================
+        # DISCOS FISICOS
+        # ============================================================
+
+        $physicalDisks = @()
+
+
+        try {
+
+            $physicalDisks =
+                @(Get-PhysicalDisk)
+
+        }
+        catch {
+
+            $physicalDisks =
+                @()
+
+        }
+
+
+        # ============================================================
+        # PLACA DE VIDEO
+        # ============================================================
 
         $gpu =
-            @(Get-CimInstance Win32_VideoController `
-            -ErrorAction SilentlyContinue)
-
-    }
-    catch {
-
-        $gpu =
-            @()
-
-    }
+            @(Get-CimInstance Win32_VideoController)
 
 
-    # ====================================================
-    # DATA E HORA
-    # ====================================================
+        # ============================================================
+        # DATA E HORA
+        # ============================================================
 
-    $data =
-        Get-Date -Format "dd/MM/yyyy HH:mm"
-
-
-    $timestamp =
-        Get-Date -Format "yyyyMMdd_HHmmss"
+        $data =
+            Get-Date -Format "dd/MM/yyyy HH:mm"
 
 
-    # ====================================================
-    # NOME SEGURO DO COMPUTADOR
-    # ====================================================
+        # ============================================================
+        # CRIAR PASTA NO DISCO C:
+        # ============================================================
 
-    $safeComputerName =
-        $env:COMPUTERNAME -replace '[\\/:*?"<>|]', '_'
-
-
-    # ====================================================
-    # PASTA DE RELATORIOS
-    # ====================================================
-
-    $reportFolder =
-        "C:\Relatorio Tech Info Belem"
+        $reportFolder =
+            "C:\Relatorio Tech Info Belem"
 
 
-    # ====================================================
-    # CRIAR PASTA AUTOMATICAMENTE
-    # ====================================================
+        if (-not (Test-Path -LiteralPath $reportFolder)) {
 
-    if (-not (Test-Path -LiteralPath $reportFolder)) {
+            New-Item `
+                -Path $reportFolder `
+                -ItemType Directory `
+                -Force |
+                Out-Null
 
-        New-Item `
-            -Path $reportFolder `
-            -ItemType Directory `
-            -Force `
-            -ErrorAction Stop |
-            Out-Null
-
-    }
+        }
 
 
-    # ====================================================
-    # CONFIRMAR EXISTENCIA DA PASTA
-    # ====================================================
+        # ============================================================
+        # VALIDAR PASTA
+        # ============================================================
 
-    if (-not (Test-Path -LiteralPath $reportFolder)) {
+        if (-not (Test-Path -LiteralPath $reportFolder)) {
 
-        throw "Nao foi possivel criar a pasta:`n$reportFolder"
+            throw "Nao foi possivel criar ou acessar a pasta: $reportFolder"
 
-    }
-
-
-    # ====================================================
-    # NOME DO ARQUIVO
-    # ====================================================
-
-    $reportFile =
-        Join-Path `
-        $reportFolder `
-        "Relatorio_Tech_Info_Belem_${safeComputerName}_${timestamp}.html"
+        }
 
 
-    # ====================================================
-    # SAUDE DOS DISCOS
-    # ====================================================
+        # ============================================================
+        # NOME DO ARQUIVO
+        # ============================================================
 
-    $diskHealthHtml = ""
+        $safeComputerName =
+            $env:COMPUTERNAME -replace '[\\/:*?"<>|]', '_'
 
 
-    if ($physicalDisks.Count -gt 0) {
+        $timestamp =
+            Get-Date -Format "yyyyMMdd_HHmmss"
 
-        foreach ($physicalDisk in $physicalDisks) {
 
-            $modelo =
+        $reportFile =
+            Join-Path `
+            $reportFolder `
+            "Relatorio_Servico_${safeComputerName}_${timestamp}.html"
+
+
+        # ============================================================
+        # DADOS PREENCHIDOS PELO TECNICO
+        # ============================================================
+
+        $cliente =
+            [System.Net.WebUtility]::HtmlEncode(
+                [string]$txtCliente.Text
+            )
+
+
+        $telefone =
+            [System.Net.WebUtility]::HtmlEncode(
+                [string]$txtTelefone.Text
+            )
+
+
+        $servico =
+            [System.Net.WebUtility]::HtmlEncode(
+                [string]$txtServico.Text
+            )
+
+
+        $valor =
+            [System.Net.WebUtility]::HtmlEncode(
+                [string]$txtValor.Text
+            )
+
+
+        $pagamento = ""
+
+        if ($cmbPagamento.SelectedItem) {
+
+            $pagamento =
                 [System.Net.WebUtility]::HtmlEncode(
-                    [string]$physicalDisk.FriendlyName
+                    [string]$cmbPagamento.SelectedItem.Content
                 )
 
+        }
+        else {
 
-            $tipo =
-                [System.Net.WebUtility]::HtmlEncode(
-                    [string]$physicalDisk.MediaType
-                )
+            $pagamento =
+                "Nao informado"
 
-
-            $capacidade =
-                [math]::Round(
-                    $physicalDisk.Size / 1GB,
-                    1
-                )
+        }
 
 
-            $saude =
-                [System.Net.WebUtility]::HtmlEncode(
-                    [string]$physicalDisk.HealthStatus
-                )
+        $observacoes =
+            [System.Net.WebUtility]::HtmlEncode(
+                [string]$txtObservacoes.Text
+            )
 
 
-            $status =
-                [System.Net.WebUtility]::HtmlEncode(
-                    [string]$physicalDisk.OperationalStatus
-                )
+        # ============================================================
+        # FORMATAR SERVICO E OBSERVACOES
+        # ============================================================
+
+        $servicoHtml =
+            $servico -replace "`r`n", "<br>"
 
 
-            $diskHealthHtml += @"
-```
+        $servicoHtml =
+            $servicoHtml -replace "`n", "<br>"
+
+
+        $observacoesHtml =
+            $observacoes -replace "`r`n", "<br>"
+
+
+        $observacoesHtml =
+            $observacoesHtml -replace "`n", "<br>"
+
+
+        # ============================================================
+        # SAUDE DOS DISCOS
+        # ============================================================
+
+        $diskHealthHtml = ""
+
+
+        if ($physicalDisks.Count -gt 0) {
+
+            foreach ($physicalDisk in $physicalDisks) {
+
+                $modelo =
+                    [System.Net.WebUtility]::HtmlEncode(
+                        [string]$physicalDisk.FriendlyName
+                    )
+
+
+                $tipo =
+                    [System.Net.WebUtility]::HtmlEncode(
+                        [string]$physicalDisk.MediaType
+                    )
+
+
+                $capacidade =
+                    [math]::Round(
+                        $physicalDisk.Size / 1GB,
+                        1
+                    )
+
+
+                $saude =
+                    [System.Net.WebUtility]::HtmlEncode(
+                        [string]$physicalDisk.HealthStatus
+                    )
+
+
+                $status =
+                    [System.Net.WebUtility]::HtmlEncode(
+                        [string]$physicalDisk.OperationalStatus
+                    )
+
+
+                $diskHealthHtml += @"
 
 <tr>
 <td>$modelo</td>
@@ -2181,14 +2503,12 @@ try {
 
 "@
 
-```
+            }
+
         }
+        else {
 
-    }
-    else {
-
-        $diskHealthHtml = @"
-```
+            $diskHealthHtml = @"
 
 <tr>
 <td colspan="5">
@@ -2198,46 +2518,43 @@ Informacoes de saude dos discos nao disponiveis.
 
 "@
 
-```
-    }
+        }
 
 
-    # ====================================================
-    # PLACA DE VIDEO
-    # ====================================================
+        # ============================================================
+        # PLACA DE VIDEO
+        # ============================================================
 
-    $gpuHtml = ""
-
-
-    foreach ($video in $gpu) {
-
-        $gpuName =
-            [System.Net.WebUtility]::HtmlEncode(
-                [string]$video.Name
-            )
+        $gpuHtml = ""
 
 
-        $gpuHtml +=
-            "<li>$gpuName</li>"
+        foreach ($video in $gpu) {
 
-    }
-
-
-    if ([string]::IsNullOrWhiteSpace($gpuHtml)) {
-
-        $gpuHtml =
-            "<li>Informacao nao disponivel</li>"
-
-    }
+            $gpuName =
+                [System.Net.WebUtility]::HtmlEncode(
+                    [string]$video.Name
+                )
 
 
-    # ====================================================
-    # HTML DO RELATORIO
-    # ====================================================
+            $gpuHtml +=
+                "<li>$gpuName</li>"
 
-    $html = @"
-```
+        }
 
+
+        if ([string]::IsNullOrWhiteSpace($gpuHtml)) {
+
+            $gpuHtml =
+                "<li>Informacao nao disponivel</li>"
+
+        }
+
+
+        # ============================================================
+        # HTML DO RELATORIO
+        # ============================================================
+
+        $html = @"
 <!DOCTYPE html>
 
 <html lang="pt-BR">
@@ -2299,35 +2616,11 @@ h2 {
     background: #f9fafb;
     border: 1px solid #e5e7eb;
     padding: 12px;
-    margin-bottom: 10px;
 }
 
 .label {
     font-weight: bold;
     color: #374151;
-}
-
-input,
-textarea,
-select {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 10px;
-    margin-top: 6px;
-    border: 1px solid #9ca3af;
-    border-radius: 5px;
-    font-family: Arial;
-    font-size: 14px;
-}
-
-textarea {
-    min-height: 100px;
-    resize: vertical;
-}
-
-.price {
-    font-size: 20px;
-    font-weight: bold;
 }
 
 table {
@@ -2353,20 +2646,18 @@ ul {
     padding: 20px 40px;
 }
 
-.button-area {
-    text-align: center;
-    margin-top: 30px;
+.servico {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+    min-height: 80px;
+    line-height: 1.6;
 }
 
-button {
-    background: #2563eb;
-    color: white;
-    border: none;
-    padding: 14px 30px;
-    font-size: 16px;
+.valor {
+    font-size: 24px;
     font-weight: bold;
-    border-radius: 6px;
-    cursor: pointer;
+    color: #166534;
 }
 
 .footer {
@@ -2388,26 +2679,17 @@ button {
         box-shadow: none;
     }
 
-    .button-area {
-        display: none;
-    }
-
-    input,
-    textarea,
-    select {
-        border: none;
-        padding: 0;
-    }
-
 }
 
 </style>
 
 </head>
 
+
 <body>
 
 <div class="container">
+
 
 <div class="header">
 
@@ -2419,35 +2701,6 @@ button {
 
 </div>
 
-<h2>DADOS DO CLIENTE</h2>
-
-<div class="info">
-
-<div class="card">
-
-<span class="label">
-Nome do cliente:
-</span>
-
-<input
-type="text"
-placeholder="Digite o nome do cliente">
-
-</div>
-
-<div class="card">
-
-<span class="label">
-Telefone:
-</span>
-
-<input
-type="text"
-placeholder="Digite o telefone">
-
-</div>
-
-</div>
 
 <h2>INFORMACOES DO ATENDIMENTO</h2>
 
@@ -2455,39 +2708,52 @@ placeholder="Digite o telefone">
 
 <div class="card">
 
-<span class="label">
-Data e hora:
-</span>
+<span class="label">Cliente:</span><br>
+
+$cliente
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Telefone / Contato:</span><br>
+
+$telefone
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Data e hora:</span><br>
 
 $data
 
 </div>
 
+
 <div class="card">
 
-<span class="label">
-Computador:
-</span>
+<span class="label">Computador:</span><br>
 
 $([System.Net.WebUtility]::HtmlEncode("$($computer.Manufacturer) $($computer.Model)"))
 
 </div>
 
+
 <div class="card">
 
-<span class="label">
-Nome do equipamento:
-</span>
+<span class="label">Nome do equipamento:</span><br>
 
 $([System.Net.WebUtility]::HtmlEncode($env:COMPUTERNAME))
 
 </div>
 
+
 <div class="card">
 
-<span class="label">
-Sistema operacional:
-</span>
+<span class="label">Sistema operacional:</span><br>
 
 $([System.Net.WebUtility]::HtmlEncode($os.Caption))
 
@@ -2495,134 +2761,85 @@ $([System.Net.WebUtility]::HtmlEncode($os.Caption))
 
 </div>
 
+
 <h2>SERVICO REALIZADO</h2>
 
-<div class="card">
+<div class="servico">
 
-<span class="label">
-Tipo de servico:
-</span>
-
-<select>
-
-<option>
-Selecione o servico realizado
-</option>
-
-<option>
-Montagem de PC Gamer
-</option>
-
-<option>
-Montagem de Computador
-</option>
-
-<option>
-Instalacao do Windows
-</option>
-
-<option>
-Formatacao e Instalacao do Windows
-</option>
-
-<option>
-Manutencao Preventiva
-</option>
-
-<option>
-Limpeza e Otimizacao
-</option>
-
-<option>
-Diagnostico e Reparo
-</option>
-
-<option>
-Reparo do Windows
-</option>
-
-<option>
-Troca de SSD / HD
-</option>
-
-<option>
-Upgrade de Hardware
-</option>
-
-<option>
-Instalacao de Drivers
-</option>
-
-<option>
-Backup e Migracao de Dados
-</option>
-
-<option>
-Manutencao em Notebook
-</option>
-
-<option>
-Outro servico
-</option>
-
-</select>
-
-<br><br>
-
-<span class="label">
-Descricao do servico realizado:
-</span>
-
-<textarea
-placeholder="Descreva detalhadamente o que foi realizado no equipamento..."></textarea>
+$servicoHtml
 
 </div>
 
-<h2>HARDWARE IDENTIFICADO</h2>
+
+<h2>VALOR E PAGAMENTO</h2>
 
 <div class="info">
 
 <div class="card">
 
-<span class="label">
-Processador:
-</span>
+<span class="label">Valor do servico:</span>
+
+<div class="valor">
+
+R$ $valor
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<span class="label">Forma de pagamento:</span><br><br>
+
+$pagamento
+
+</div>
+
+</div>
+
+
+<h2>HARDWARE</h2>
+
+<div class="info">
+
+<div class="card">
+
+<span class="label">Processador:</span><br>
 
 $([System.Net.WebUtility]::HtmlEncode($cpu.Name))
 
 </div>
 
+
 <div class="card">
 
-<span class="label">
-Memoria RAM:
-</span>
+<span class="label">Memoria RAM:</span><br>
 
 $ramGB GB
 
 </div>
 
+
 <div class="card">
 
-<span class="label">
-Disco principal:
-</span>
+<span class="label">Disco principal:</span><br>
 
 C:
 
 </div>
 
+
 <div class="card">
 
-<span class="label">
-Espaco livre:
-</span>
+<span class="label">Espaco livre:</span><br>
 
 $freeGB GB de $totalGB GB
 
 </div>
 
 </div>
+
 
 <h2>PLACA DE VIDEO</h2>
 
@@ -2631,6 +2848,7 @@ $freeGB GB de $totalGB GB
 $gpuHtml
 
 </ul>
+
 
 <h2>SAUDE DOS DISCOS</h2>
 
@@ -2654,114 +2872,15 @@ $diskHealthHtml
 
 </table>
 
-<h2>SERVICOS ADICIONAIS</h2>
-
-<div class="card">
-
-<label>
-<input type="checkbox">
-Diagnostico geral do sistema
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Limpeza de arquivos temporarios
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Limpeza de cache dos navegadores
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Limpeza da lixeira
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Limpeza completa
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Diagnostico do Windows
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Reparacao do Windows
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Verificacao de saude SSD / HD
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Diagnostico de memoria RAM
-</label>
-
-<br><br>
-
-<label>
-<input type="checkbox">
-Analise de hardware
-</label>
-
-</div>
 
 <h2>OBSERVACOES TECNICAS</h2>
 
-<div class="card">
+<div class="servico">
 
-<textarea
-placeholder="Digite observacoes, recomendacoes ou informacoes adicionais..."></textarea>
-
-</div>
-
-<h2>VALOR DO SERVICO</h2>
-
-<div class="card">
-
-<span class="label">
-Preco / Valor cobrado:
-</span>
-
-<input
-class="price"
-type="text"
-placeholder="Ex.: R$ 150,00">
+$observacoesHtml
 
 </div>
 
-<div class="button-area">
-
-<button
-onclick="window.print()">
-
-IMPRIMIR / SALVAR COMO PDF
-
-</button>
-
-</div>
 
 <div class="footer">
 
@@ -2771,6 +2890,7 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
 
 </div>
 
+
 </div>
 
 </body>
@@ -2778,126 +2898,125 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
 </html>
 "@
 
-```
-    # ====================================================
-    # SALVAR ARQUIVO NO C:
-    # ====================================================
 
-    $txtStatus.Text =
-        "Salvando relatorio..."
+        # ============================================================
+        # SALVAR ARQUIVO
+        # ============================================================
 
-
-    [System.IO.File]::WriteAllText(
-        $reportFile,
-        $html,
-        [System.Text.UTF8Encoding]::new($false)
-    )
+        Set-Content `
+            -LiteralPath $reportFile `
+            -Value $html `
+            -Encoding UTF8 `
+            -Force
 
 
-    # ====================================================
-    # VERIFICAR SE O ARQUIVO EXISTE
-    # ====================================================
+        # ============================================================
+        # VALIDAR SE ARQUIVO FOI CRIADO
+        # ============================================================
 
-    if (-not [System.IO.File]::Exists($reportFile)) {
+        if (-not (Test-Path -LiteralPath $reportFile)) {
 
-        throw "O arquivo nao foi encontrado apos a gravacao."
+            throw "O arquivo do relatorio nao foi criado em: $reportFile"
+
+        }
+
+
+        $arquivoInfo =
+            Get-Item `
+            -LiteralPath $reportFile `
+            -ErrorAction Stop
+
+
+        if ($arquivoInfo.Length -le 100) {
+
+            throw "O arquivo foi criado, mas parece estar vazio ou incompleto."
+
+        }
+
+
+        # ============================================================
+        # ATUALIZAR INTERFACE
+        # ============================================================
+
+        $txtStatus.Text =
+            "Relatorio salvo com sucesso"
+
+
+        $txtTitulo.Text =
+            "Relatorio de Servico"
+
+
+        $txtSubtitulo.Text =
+            "Relatorio salvo em C:\Relatorio Tech Info Belem"
+
+
+        # ============================================================
+        # CONFIRMACAO
+        # ============================================================
+
+        $confirmacao =
+            [System.Windows.MessageBox]::Show(
+
+                "RELATORIO GERADO COM SUCESSO!`n`n" +
+
+                "Cliente: $($txtCliente.Text)`n" +
+
+                "Servico: $($txtServico.Text)`n`n" +
+
+                "Valor: R$ $($txtValor.Text)`n`n" +
+
+                "Arquivo salvo em:`n" +
+
+                "$reportFile`n`n" +
+
+                "Deseja abrir o relatorio agora?",
+
+                "TECH INFO BELEM - Relatorio",
+
+                "YesNo",
+
+                "Information"
+
+            )
+
+
+        if ($confirmacao -eq "Yes") {
+
+            Start-Process `
+                -FilePath $reportFile
+
+        }
 
     }
+    catch {
+
+        $txtStatus.Text =
+            "Erro ao gerar relatorio"
 
 
-    # ====================================================
-    # VERIFICAR TAMANHO DO ARQUIVO
-    # ====================================================
-
-    $fileInfo =
-        [System.IO.FileInfo]$reportFile
-
-
-    if ($fileInfo.Length -eq 0) {
-
-        throw "O arquivo foi criado, mas esta vazio."
-
-    }
-
-
-    # ====================================================
-    # STATUS
-    # ====================================================
-
-    $txtStatus.Text =
-        "Relatorio gerado com sucesso"
-
-
-    $txtTitulo.Text =
-        "Relatorio de Servico"
-
-
-    $txtSubtitulo.Text =
-        "Relatorio salvo em C:\Relatorio Tech Info Belem"
-
-
-    # ====================================================
-    # ABRIR RELATORIO
-    # ====================================================
-
-    $confirmacao =
         [System.Windows.MessageBox]::Show(
 
-            "RELATORIO GERADO COM SUCESSO!`n`n" +
+            "NAO FOI POSSIVEL GERAR O RELATORIO.`n`n" +
 
-            "Arquivo salvo em:`n" +
+            "Detalhes do erro:`n" +
 
-            "$reportFile`n`n" +
+            "$($_.Exception.Message)`n`n" +
 
-            "Deseja abrir o relatorio agora?",
+            "Verifique se a pasta C:\Relatorio Tech Info Belem pode ser criada e se o script esta sendo executado como Administrador.",
 
-            "TECH INFO BELEM - Relatorio",
+            "TECH INFO BELEM - Erro",
 
-            "YesNo",
+            "OK",
 
-            "Information"
+            "Error"
 
         )
 
-
-    if ($confirmacao -eq "Yes") {
-
-        Start-Process `
-            -FilePath $reportFile
-
     }
-
-}
-catch {
-
-    $txtStatus.Text =
-        "Erro ao gerar relatorio"
-
-
-    [System.Windows.MessageBox]::Show(
-
-        "ERRO AO GERAR O RELATORIO`n`n" +
-
-        "Mensagem:`n" +
-
-        "$($_.Exception.Message)`n`n" +
-
-        "Caminho esperado:`n" +
-
-        "C:\Relatorio Tech Info Belem",
-
-        "TECH INFO BELEM - Erro",
-
-        "OK",
-
-        "Error"
-
-    )
 
 }
 ```
 
-}
 
 
 
