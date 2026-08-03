@@ -1,11 +1,15 @@
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
 
-$ErrorActionPreference = "SilentlyContinue"
-
 # ============================================================
 # TECH INFO BELEM - CLEANER PRO
-# VERSAO 0.6
+# VERSAO 0.7
+# ============================================================
+# NOTA: removemos o $ErrorActionPreference = "SilentlyContinue"
+# global. Ele estava mascarando erros reais em todo o script,
+# dificultando o diagnostico de problemas. Cada comando que
+# realmente pode falhar de forma esperada (ex: pasta que nao
+# existe) ja usa -ErrorAction SilentlyContinue individualmente.
 # ============================================================
 
 function Test-Administrator {
@@ -27,7 +31,7 @@ if (-not (Test-Administrator)) {
 
     [System.Windows.MessageBox]::Show(
         "O Cleaner Pro nao esta sendo executado como Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente.`n`nRecomendamos executar o PowerShell como Administrador.",
-        "TECH INFO BELEM - Cleaner Pro v0.6",
+        "TECH INFO BELEM - Cleaner Pro v0.7",
         "OK",
         "Warning"
     )
@@ -41,7 +45,7 @@ if (-not (Test-Administrator)) {
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="TECH INFO BELEM - Cleaner Pro v0.6"
+    Title="TECH INFO BELEM - Cleaner Pro v0.7"
     Height="760"
     Width="1200"
     WindowStartupLocation="CenterScreen"
@@ -546,7 +550,7 @@ if (-not (Test-Administrator)) {
             <TextBlock
                 Name="txtRodape"
                 Grid.Row="3"
-                Text="TECH INFO BELEM - Cleaner Pro v0.6"
+                Text="TECH INFO BELEM - Cleaner Pro v0.7"
                 Foreground="#6B7280"
                 HorizontalAlignment="Right"
                 Margin="0,20,0,0"/>
@@ -604,6 +608,118 @@ $txtStatus = $Window.FindName("txtStatus")
 
 $txtTitulo = $Window.FindName("txtTitulo")
 $txtSubtitulo = $Window.FindName("txtSubtitulo")
+
+# ============================================================
+# LISTA DE BOTOES QUE DISPARAM TAREFAS (para travar durante execucao)
+# ============================================================
+
+$Global:BotoesDeAcao = @(
+    $btnAnalisar, $btnTemporarios, $btnNavegadores, $btnLixeira,
+    $btnCompleta, $btnDiagnosticoWindows, $btnRepararWindows,
+    $btnDiscos, $btnMemoria, $btnHardware, $btnRelatorio, $btnChrisTitus
+)
+
+function Set-BotoesHabilitados {
+
+    param(
+        [bool]$Habilitado
+    )
+
+    foreach ($botao in $Global:BotoesDeAcao) {
+
+        $botao.IsEnabled = $Habilitado
+
+    }
+
+}
+
+# ============================================================
+# EXECUCAO ASSINCRONA (evita travar a interface)
+# ============================================================
+# $Work roda em um processo powershell.exe separado (Start-Job),
+# entao NAO pode acessar $txtStatus, $Window, nem funcoes/variaveis
+# definidas fora dele. $Work deve ser autossuficiente e retornar
+# apenas dados simples (o "return" do fim do bloco).
+#
+# $OnComplete roda na thread da interface (seguro atualizar
+# controles WPF) e recebe o resultado de $Work como parametro.
+# ============================================================
+
+function Start-AsyncTask {
+
+    param(
+        [Parameter(Mandatory = $true)]
+        [scriptblock]$Work,
+
+        [Parameter(Mandatory = $true)]
+        [scriptblock]$OnComplete,
+
+        [string]$StatusMessage = "Processando..."
+    )
+
+    $txtStatus.Text = $StatusMessage
+
+    Set-BotoesHabilitados -Habilitado $false
+
+    $job = Start-Job -ScriptBlock $Work
+
+    $timer = New-Object System.Windows.Threading.DispatcherTimer
+
+    $timer.Interval = [TimeSpan]::FromMilliseconds(400)
+
+    $tick = {
+
+        if ($job.State -in @('Completed', 'Failed', 'Stopped')) {
+
+            $timer.Stop()
+
+            try {
+
+                if ($job.State -eq 'Completed') {
+
+                    $resultado = Receive-Job -Job $job -ErrorAction Stop
+
+                    & $OnComplete $resultado
+
+                }
+                else {
+
+                    $erro = Receive-Job -Job $job -ErrorAction SilentlyContinue 2>&1
+
+                    $txtStatus.Text = "Erro na tarefa em segundo plano"
+
+                    [System.Windows.MessageBox]::Show(
+                        "A tarefa nao foi concluida corretamente.`n`n$erro",
+                        "TECH INFO BELEM - Erro",
+                        "OK",
+                        "Error"
+                    )
+
+                }
+
+            }
+            catch {
+
+                $txtStatus.Text = "Erro: $($_.Exception.Message)"
+
+            }
+            finally {
+
+                Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
+
+                Set-BotoesHabilitados -Habilitado $true
+
+            }
+
+        }
+
+    }.GetNewClosure()
+
+    $timer.Add_Tick($tick)
+
+    $timer.Start()
+
+}
 
 # ============================================================
 # ATUALIZAR INFORMACOES
@@ -674,7 +790,7 @@ function Atualizar-Informacoes {
 }
 
 # ============================================================
-# TAMANHO DE PASTA
+# TAMANHO DE PASTA (helper - usado apenas fora de jobs)
 # ============================================================
 
 function Get-FolderSize {
@@ -715,7 +831,7 @@ function Get-FolderSize {
 }
 
 # ============================================================
-# DETECTAR NAVEGADORES
+# DETECTAR NAVEGADORES (helper - usado apenas fora de jobs)
 # ============================================================
 
 function Get-BrowserCachePaths {
@@ -809,346 +925,242 @@ function Get-BrowserCachePaths {
 }
 
 # ============================================================
-# TAMANHO CACHE
-# ============================================================
-
-function Get-BrowserCacheSize {
-
-    $total = 0
-
-    $browsers =
-        Get-BrowserCachePaths
-
-    foreach ($browser in $browsers) {
-
-        if ($browser.Name -eq "Firefox") {
-
-            $cache =
-                Join-Path `
-                $browser.Path `
-                "cache2"
-
-            $total +=
-                Get-FolderSize $cache
-
-        }
-        else {
-
-            $folders = @(
-                "Default\Cache",
-                "Default\Code Cache",
-                "Default\GPUCache"
-            )
-
-            foreach ($folder in $folders) {
-
-                $cache =
-                    Join-Path `
-                    $browser.Path `
-                    $folder
-
-                $total +=
-                    Get-FolderSize $cache
-
-            }
-
-        }
-
-    }
-
-    return $total
-
-}
-
-# ============================================================
-# TEMPORARIOS
-# ============================================================
-
-function Get-TemporarySize {
-
-    $total = 0
-
-    $total +=
-        Get-FolderSize $env:TEMP
-
-    $total +=
-        Get-FolderSize "$env:SystemRoot\Temp"
-
-    $total +=
-        Get-FolderSize "$env:LOCALAPPDATA\Microsoft\Windows\INetCache"
-
-    return $total
-
-}
-
-# ============================================================
-# LIXEIRA
-# ============================================================
-
-function Get-RecycleBinSize {
-
-    $total = 0
-
-    try {
-
-        $items =
-            Get-ChildItem `
-            'C:\$Recycle.Bin' `
-            -Force `
-            -Recurse `
-            -ErrorAction SilentlyContinue
-
-        foreach ($item in $items) {
-
-            if (-not $item.PSIsContainer) {
-
-                $total +=
-                    $item.Length
-
-            }
-
-        }
-
-    }
-    catch {
-
-    }
-
-    return $total
-
-}
-
-# ============================================================
-# ANALISAR SISTEMA
+# ANALISAR SISTEMA (ASSINCRONO)
 # ============================================================
 
 function Analisar-Sistema {
 
-    $txtStatus.Text =
-        "Analisando arquivos temporarios..."
+    $work = {
 
-    $tempSize =
-        Get-TemporarySize
+        function Get-FolderSizeJob {
+            param([string]$Path)
+            $total = 0
+            if (Test-Path $Path) {
+                $files = Get-ChildItem -Path $Path -File -Recurse -Force -ErrorAction SilentlyContinue
+                foreach ($file in $files) { $total += $file.Length }
+            }
+            return $total
+        }
 
-    $txtStatus.Text =
-        "Analisando caches dos navegadores..."
+        # Temporarios
+        $tempSize = 0
+        $tempSize += Get-FolderSizeJob $env:TEMP
+        $tempSize += Get-FolderSizeJob "$env:SystemRoot\Temp"
+        $tempSize += Get-FolderSizeJob "$env:LOCALAPPDATA\Microsoft\Windows\INetCache"
 
-    $browserSize =
-        Get-BrowserCacheSize
+        # Navegadores
+        $browserSize = 0
+        $browserPaths = @()
 
-    $txtStatus.Text =
-        "Analisando lixeira..."
-
-    $recycleSize =
-        Get-RecycleBinSize
-
-    $total =
-        $tempSize +
-        $browserSize +
-        $recycleSize
-
-    $totalGB =
-        [math]::Round(
-            $total / 1GB,
-            2
+        $candidatos = @(
+            @{ Name = "Chrome";   Path = "$env:LOCALAPPDATA\Google\Chrome\User Data" },
+            @{ Name = "Edge";     Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data" },
+            @{ Name = "Brave";    Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data" },
+            @{ Name = "Opera";    Path = "$env:APPDATA\Opera Software\Opera Stable" },
+            @{ Name = "OperaGX";  Path = "$env:APPDATA\Opera Software\Opera GX Stable" }
         )
 
-    $txtAnalise.Text =
-        "$totalGB GB potencialmente recuperaveis"
+        foreach ($c in $candidatos) {
+            if (Test-Path $c.Path) {
+                foreach ($folder in @("Default\Cache", "Default\Code Cache", "Default\GPUCache")) {
+                    $browserSize += Get-FolderSizeJob (Join-Path $c.Path $folder)
+                }
+            }
+        }
 
-    $txtStatus.Text =
-        "Analise concluida"
+        $firefoxProfiles = "$env:APPDATA\Mozilla\Firefox\Profiles"
+        if (Test-Path $firefoxProfiles) {
+            $profiles = Get-ChildItem $firefoxProfiles -Directory -ErrorAction SilentlyContinue
+            foreach ($profile in $profiles) {
+                $browserSize += Get-FolderSizeJob (Join-Path $profile.FullName "cache2")
+            }
+        }
 
-    [System.Windows.MessageBox]::Show(
+        # Lixeira
+        $recycleSize = 0
+        try {
+            $items = Get-ChildItem 'C:\$Recycle.Bin' -Force -Recurse -ErrorAction SilentlyContinue
+            foreach ($item in $items) {
+                if (-not $item.PSIsContainer) { $recycleSize += $item.Length }
+            }
+        }
+        catch { }
 
-        "ANALISE CONCLUIDA`n`n" +
-        "Arquivos temporarios: " +
-        "$([math]::Round($tempSize / 1MB, 2)) MB`n`n" +
-        "Cache dos navegadores: " +
-        "$([math]::Round($browserSize / 1MB, 2)) MB`n`n" +
-        "Lixeira: " +
-        "$([math]::Round($recycleSize / 1MB, 2)) MB`n`n" +
-        "Total potencialmente recuperavel: " +
-        "$totalGB GB",
+        return [PSCustomObject]@{
+            TempSize    = $tempSize
+            BrowserSize = $browserSize
+            RecycleSize = $recycleSize
+        }
 
-        "TECH INFO BELEM - Analise",
+    }
 
-        "OK",
+    $onComplete = {
 
-        "Information"
+        param($resultado)
 
-    )
+        $total = $resultado.TempSize + $resultado.BrowserSize + $resultado.RecycleSize
+
+        $totalGB = [math]::Round($total / 1GB, 2)
+
+        $txtAnalise.Text = "$totalGB GB potencialmente recuperaveis"
+
+        $txtStatus.Text = "Analise concluida"
+
+        [System.Windows.MessageBox]::Show(
+
+            "ANALISE CONCLUIDA`n`n" +
+            "Arquivos temporarios: $([math]::Round($resultado.TempSize / 1MB, 2)) MB`n`n" +
+            "Cache dos navegadores: $([math]::Round($resultado.BrowserSize / 1MB, 2)) MB`n`n" +
+            "Lixeira: $([math]::Round($resultado.RecycleSize / 1MB, 2)) MB`n`n" +
+            "Total potencialmente recuperavel: $totalGB GB",
+
+            "TECH INFO BELEM - Analise",
+            "OK",
+            "Information"
+        )
+
+    }
+
+    Start-AsyncTask -StatusMessage "Analisando sistema..." -Work $work -OnComplete $onComplete
 
 }
 
 # ============================================================
-# LIMPAR TEMPORARIOS
+# LIMPAR TEMPORARIOS (ASSINCRONO)
 # ============================================================
 
 function Limpar-Temporarios {
 
-    $txtStatus.Text =
-        "Limpando arquivos temporarios..."
+    $work = {
 
-    try {
+        try {
+            Get-ChildItem $env:TEMP -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
-        Get-ChildItem `
-            $env:TEMP `
-            -Force `
-            -ErrorAction SilentlyContinue |
-        Remove-Item `
-            -Recurse `
-            -Force `
-            -ErrorAction SilentlyContinue
+            Get-ChildItem "$env:SystemRoot\Temp" -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
-        Get-ChildItem `
-            "$env:SystemRoot\Temp" `
-            -Force `
-            -ErrorAction SilentlyContinue |
-        Remove-Item `
-            -Recurse `
-            -Force `
-            -ErrorAction SilentlyContinue
+            Get-ChildItem "$env:LOCALAPPDATA\Microsoft\Windows\INetCache" -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
-        Get-ChildItem `
-            "$env:LOCALAPPDATA\Microsoft\Windows\INetCache" `
-            -Force `
-            -ErrorAction SilentlyContinue |
-        Remove-Item `
-            -Recurse `
-            -Force `
-            -ErrorAction SilentlyContinue
-
-        $txtStatus.Text =
-            "Temporarios limpos"
-
-        return $true
+            return $true
+        }
+        catch {
+            return $false
+        }
 
     }
-    catch {
 
-        $txtStatus.Text =
-            "Erro ao limpar temporarios"
+    $onComplete = {
 
-        return $false
+        param($sucesso)
+
+        if ($sucesso) {
+            $txtStatus.Text = "Temporarios limpos"
+        }
+        else {
+            $txtStatus.Text = "Erro ao limpar temporarios"
+        }
 
     }
+
+    Start-AsyncTask -StatusMessage "Limpando arquivos temporarios..." -Work $work -OnComplete $onComplete
 
 }
 
 # ============================================================
-# LIMPAR NAVEGADORES
+# LIMPAR NAVEGADORES (ASSINCRONO)
 # ============================================================
 
 function Limpar-Navegadores {
 
-    $txtStatus.Text =
-        "Limpando caches dos navegadores..."
+    $work = {
 
-    $browsers =
-        Get-BrowserCachePaths
+        $candidatos = @(
+            @{ Name = "Chrome";   Path = "$env:LOCALAPPDATA\Google\Chrome\User Data" },
+            @{ Name = "Edge";     Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data" },
+            @{ Name = "Brave";    Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data" },
+            @{ Name = "Opera";    Path = "$env:APPDATA\Opera Software\Opera Stable" },
+            @{ Name = "OperaGX";  Path = "$env:APPDATA\Opera Software\Opera GX Stable" }
+        )
 
-    foreach ($browser in $browsers) {
-
-        $txtStatus.Text =
-            "Limpando $($browser.Name)..."
-
-        if ($browser.Name -eq "Firefox") {
-
-            $cache =
-                Join-Path `
-                $browser.Path `
-                "cache2"
-
-            if (Test-Path $cache) {
-
-                Get-ChildItem `
-                    $cache `
-                    -Force `
-                    -ErrorAction SilentlyContinue |
-                Remove-Item `
-                    -Recurse `
-                    -Force `
-                    -ErrorAction SilentlyContinue
-
-            }
-
-        }
-        else {
-
-            $folders = @(
-                "Default\Cache",
-                "Default\Code Cache",
-                "Default\GPUCache"
-            )
-
-            foreach ($folder in $folders) {
-
-                $cache =
-                    Join-Path `
-                    $browser.Path `
-                    $folder
-
-                if (Test-Path $cache) {
-
-                    Get-ChildItem `
-                        $cache `
-                        -Force `
-                        -ErrorAction SilentlyContinue |
-                    Remove-Item `
-                        -Recurse `
-                        -Force `
-                        -ErrorAction SilentlyContinue
-
+        foreach ($c in $candidatos) {
+            if (Test-Path $c.Path) {
+                foreach ($folder in @("Default\Cache", "Default\Code Cache", "Default\GPUCache")) {
+                    $cache = Join-Path $c.Path $folder
+                    if (Test-Path $cache) {
+                        Get-ChildItem $cache -Force -ErrorAction SilentlyContinue |
+                            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    }
                 }
-
             }
-
         }
 
-    }
-
-    $txtStatus.Text =
-        "Caches dos navegadores limpos"
-
-    return $true
-
-}
-
-# ============================================================
-# LIMPAR LIXEIRA
-# ============================================================
-
-function Limpar-Lixeira {
-
-    $txtStatus.Text =
-        "Esvaziando lixeira..."
-
-    try {
-
-        Clear-RecycleBin `
-            -Force `
-            -ErrorAction SilentlyContinue
-
-        $txtStatus.Text =
-            "Lixeira esvaziada"
+        $firefoxProfiles = "$env:APPDATA\Mozilla\Firefox\Profiles"
+        if (Test-Path $firefoxProfiles) {
+            $profiles = Get-ChildItem $firefoxProfiles -Directory -ErrorAction SilentlyContinue
+            foreach ($profile in $profiles) {
+                $cache = Join-Path $profile.FullName "cache2"
+                if (Test-Path $cache) {
+                    Get-ChildItem $cache -Force -ErrorAction SilentlyContinue |
+                        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
 
         return $true
 
     }
-    catch {
 
-        $txtStatus.Text =
-            "Erro ao esvaziar lixeira"
+    $onComplete = {
 
-        return $false
+        param($sucesso)
+
+        $txtStatus.Text = "Caches dos navegadores limpos"
 
     }
+
+    Start-AsyncTask -StatusMessage "Limpando caches dos navegadores..." -Work $work -OnComplete $onComplete
 
 }
 
 # ============================================================
-# LIMPEZA COMPLETA
+# LIMPAR LIXEIRA (ASSINCRONO)
+# ============================================================
+
+function Limpar-Lixeira {
+
+    $work = {
+
+        try {
+            Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+            return $true
+        }
+        catch {
+            return $false
+        }
+
+    }
+
+    $onComplete = {
+
+        param($sucesso)
+
+        if ($sucesso) {
+            $txtStatus.Text = "Lixeira esvaziada"
+        }
+        else {
+            $txtStatus.Text = "Erro ao esvaziar lixeira"
+        }
+
+    }
+
+    Start-AsyncTask -StatusMessage "Esvaziando lixeira..." -Work $work -OnComplete $onComplete
+
+}
+
+# ============================================================
+# LIMPEZA COMPLETA (ASSINCRONO - uma unica tarefa combinada)
 # ============================================================
 
 function Limpeza-Completa {
@@ -1164,130 +1176,139 @@ function Limpeza-Completa {
             "Cookies, senhas, favoritos e historico nao serao removidos.",
 
             "TECH INFO BELEM - Limpeza Completa",
-
             "YesNo",
-
             "Question"
-
         )
 
-    if ($confirmacao -ne "Yes") {
+    if ($confirmacao -ne "Yes") { return }
 
-        return
+    $diskBefore = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
+    $Global:FreeBeforeLimpeza = $diskBefore.FreeSpace
+
+    $work = {
+
+        # Temporarios
+        Get-ChildItem $env:TEMP -Force -ErrorAction SilentlyContinue |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        Get-ChildItem "$env:SystemRoot\Temp" -Force -ErrorAction SilentlyContinue |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        Get-ChildItem "$env:LOCALAPPDATA\Microsoft\Windows\INetCache" -Force -ErrorAction SilentlyContinue |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+        # Navegadores
+        $candidatos = @(
+            @{ Name = "Chrome";   Path = "$env:LOCALAPPDATA\Google\Chrome\User Data" },
+            @{ Name = "Edge";     Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data" },
+            @{ Name = "Brave";    Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data" },
+            @{ Name = "Opera";    Path = "$env:APPDATA\Opera Software\Opera Stable" },
+            @{ Name = "OperaGX";  Path = "$env:APPDATA\Opera Software\Opera GX Stable" }
+        )
+        foreach ($c in $candidatos) {
+            if (Test-Path $c.Path) {
+                foreach ($folder in @("Default\Cache", "Default\Code Cache", "Default\GPUCache")) {
+                    $cache = Join-Path $c.Path $folder
+                    if (Test-Path $cache) {
+                        Get-ChildItem $cache -Force -ErrorAction SilentlyContinue |
+                            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    }
+                }
+            }
+        }
+        $firefoxProfiles = "$env:APPDATA\Mozilla\Firefox\Profiles"
+        if (Test-Path $firefoxProfiles) {
+            $profiles = Get-ChildItem $firefoxProfiles -Directory -ErrorAction SilentlyContinue
+            foreach ($profile in $profiles) {
+                $cache = Join-Path $profile.FullName "cache2"
+                if (Test-Path $cache) {
+                    Get-ChildItem $cache -Force -ErrorAction SilentlyContinue |
+                        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+
+        # Lixeira
+        Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+
+        return $true
 
     }
 
-    $diskBefore =
-        Get-CimInstance Win32_LogicalDisk `
-        -Filter "DeviceID='C:'"
+    $onComplete = {
 
-    $freeBefore =
-        $diskBefore.FreeSpace
+        param($sucesso)
 
-    Limpar-Temporarios
+        $diskAfter = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
+        $freed = $diskAfter.FreeSpace - $Global:FreeBeforeLimpeza
 
-    Limpar-Navegadores
+        $freedMB = [math]::Round($freed / 1MB, 2)
+        $freedGB = [math]::Round($freed / 1GB, 2)
 
-    Limpar-Lixeira
+        Atualizar-Informacoes
 
-    $diskAfter =
-        Get-CimInstance Win32_LogicalDisk `
-        -Filter "DeviceID='C:'"
+        $txtAnalise.Text = "$freedGB GB liberados"
+        $txtStatus.Text = "Limpeza completa concluida"
 
-    $freeAfter =
-        $diskAfter.FreeSpace
+        [System.Windows.MessageBox]::Show(
 
-    $freed =
-        $freeAfter -
-        $freeBefore
+            "LIMPEZA COMPLETA FINALIZADA`n`n" +
+            "Espaco liberado: $freedMB MB`n`n" +
+            "O Cleaner Pro concluiu a manutencao.",
 
-    $freedMB =
-        [math]::Round(
-            $freed / 1MB,
-            2
+            "TECH INFO BELEM - Cleaner Pro v0.7",
+            "OK",
+            "Information"
         )
 
-    $freedGB =
-        [math]::Round(
-            $freed / 1GB,
-            2
-        )
+    }
 
-    Atualizar-Informacoes
-
-    $txtAnalise.Text =
-        "$freedGB GB liberados"
-
-    $txtStatus.Text =
-        "Limpeza completa concluida"
-
-    [System.Windows.MessageBox]::Show(
-
-        "LIMPEZA COMPLETA FINALIZADA`n`n" +
-        "Espaco liberado: " +
-        "$freedMB MB`n`n" +
-        "O Cleaner Pro concluiu a manutencao.",
-
-        "TECH INFO BELEM - Cleaner Pro v0.6",
-
-        "OK",
-
-        "Information"
-
-    )
+    Start-AsyncTask -StatusMessage "Executando limpeza completa..." -Work $work -OnComplete $onComplete
 
 }
 
 # ============================================================
-# DIAGNOSTICO WINDOWS
+# DIAGNOSTICO WINDOWS (ASSINCRONO)
 # ============================================================
 
 function Diagnosticar-Windows {
 
-    $txtStatus.Text =
-        "Executando DISM /ScanHealth..."
+    $work = {
 
-    $dism =
-        Start-Process `
-        "DISM.exe" `
-        -ArgumentList "/Online /Cleanup-Image /ScanHealth" `
-        -Wait `
-        -PassThru `
-        -WindowStyle Hidden
+        $dism = Start-Process "DISM.exe" -ArgumentList "/Online /Cleanup-Image /ScanHealth" -Wait -PassThru -WindowStyle Hidden
+        $sfc = Start-Process "sfc.exe" -ArgumentList "/verifyonly" -Wait -PassThru -WindowStyle Hidden
 
-    $txtStatus.Text =
-        "Executando SFC /VerifyOnly..."
+        return [PSCustomObject]@{
+            DismExitCode = $dism.ExitCode
+            SfcExitCode  = $sfc.ExitCode
+        }
 
-    $sfc =
-        Start-Process `
-        "sfc.exe" `
-        -ArgumentList "/verifyonly" `
-        -Wait `
-        -PassThru `
-        -WindowStyle Hidden
+    }
 
-    $txtStatus.Text =
-        "Diagnostico do Windows concluido"
+    $onComplete = {
 
-    [System.Windows.MessageBox]::Show(
+        param($resultado)
 
-        "O diagnostico do Windows foi concluido.`n`n" +
-        "DISM ExitCode: $($dism.ExitCode)`n" +
-        "SFC ExitCode: $($sfc.ExitCode)`n`n" +
-        "Para uma analise detalhada, consulte os logs do Windows.",
+        $txtStatus.Text = "Diagnostico do Windows concluido"
 
-        "TECH INFO BELEM - Diagnostico Windows",
+        [System.Windows.MessageBox]::Show(
 
-        "OK",
+            "O diagnostico do Windows foi concluido.`n`n" +
+            "DISM ExitCode: $($resultado.DismExitCode)`n" +
+            "SFC ExitCode: $($resultado.SfcExitCode)`n`n" +
+            "Para uma analise detalhada, consulte os logs do Windows.",
 
-        "Information"
+            "TECH INFO BELEM - Diagnostico Windows",
+            "OK",
+            "Information"
+        )
 
-    )
+    }
+
+    Start-AsyncTask -StatusMessage "Executando diagnostico do Windows (DISM + SFC)..." -Work $work -OnComplete $onComplete
 
 }
 
 # ============================================================
-# REPARAR WINDOWS
+# REPARAR WINDOWS (ASSINCRONO)
 # ============================================================
 
 function Reparar-Windows {
@@ -1298,155 +1319,122 @@ function Reparar-Windows {
             "O processo executara:`n`n" +
             "1. DISM /RestoreHealth`n" +
             "2. SFC /scannow`n`n" +
-            "O processo pode levar varios minutos.`n`n" +
+            "O processo pode levar varios minutos. A interface continuara" +
+            " responsiva, mas evite fechar o programa.`n`n" +
             "Deseja continuar?",
 
             "TECH INFO BELEM - Reparar Windows",
-
             "YesNo",
-
             "Warning"
-
         )
 
-    if ($confirmacao -ne "Yes") {
+    if ($confirmacao -ne "Yes") { return }
 
-        return
+    $work = {
+
+        $dism = Start-Process "DISM.exe" -ArgumentList "/Online /Cleanup-Image /RestoreHealth" -Wait -PassThru -WindowStyle Hidden
+        $sfc = Start-Process "sfc.exe" -ArgumentList "/scannow" -Wait -PassThru -WindowStyle Hidden
+
+        return [PSCustomObject]@{
+            DismExitCode = $dism.ExitCode
+            SfcExitCode  = $sfc.ExitCode
+        }
 
     }
 
-    $txtStatus.Text =
-        "Reparando imagem do Windows com DISM..."
+    $onComplete = {
 
-    $dism =
-        Start-Process `
-        "DISM.exe" `
-        -ArgumentList "/Online /Cleanup-Image /RestoreHealth" `
-        -Wait `
-        -PassThru
+        param($resultado)
 
-    $txtStatus.Text =
-        "Executando SFC /scannow..."
+        $txtStatus.Text = "Reparo do Windows concluido"
 
-    $sfc =
-        Start-Process `
-        "sfc.exe" `
-        -ArgumentList "/scannow" `
-        -Wait `
-        -PassThru
+        [System.Windows.MessageBox]::Show(
 
-    $txtStatus.Text =
-        "Reparo do Windows concluido"
+            "PROCESSO DE REPARACAO FINALIZADO`n`n" +
+            "DISM ExitCode: $($resultado.DismExitCode)`n" +
+            "SFC ExitCode: $($resultado.SfcExitCode)`n`n" +
+            "Recomendamos reiniciar o computador caso o sistema tenha apresentado problemas.",
 
-    [System.Windows.MessageBox]::Show(
+            "TECH INFO BELEM - Reparar Windows",
+            "OK",
+            "Information"
+        )
 
-        "PROCESSO DE REPARACAO FINALIZADO`n`n" +
-        "DISM ExitCode: $($dism.ExitCode)`n" +
-        "SFC ExitCode: $($sfc.ExitCode)`n`n" +
-        "Recomendamos reiniciar o computador caso o sistema tenha apresentado problemas.",
+    }
 
-        "TECH INFO BELEM - Reparar Windows",
-
-        "OK",
-
-        "Information"
-
-    )
+    Start-AsyncTask -StatusMessage "Reparando o Windows (DISM + SFC) - isso pode levar varios minutos..." -Work $work -OnComplete $onComplete
 
 }
 
 # ============================================================
-# SAUDE DOS DISCOS
+# SAUDE DOS DISCOS (ASSINCRONO)
 # ============================================================
 
 function Verificar-SaudeDiscos {
 
-    $txtStatus.Text =
-        "Analisando armazenamento..."
+    $work = {
 
-    try {
+        try {
+            $physicalDisks = Get-PhysicalDisk -ErrorAction Stop
+            return [PSCustomObject]@{ Sucesso = $true; Discos = $physicalDisks }
+        }
+        catch {
+            return [PSCustomObject]@{ Sucesso = $false; Discos = @() }
+        }
 
-        $physicalDisks =
-            Get-PhysicalDisk
+    }
 
-        $resultado = ""
+    $onComplete = {
 
-        foreach ($disk in $physicalDisks) {
+        param($resultado)
 
-            $modelo =
-                $disk.FriendlyName
+        if (-not $resultado.Sucesso) {
 
-            $tipo =
-                $disk.MediaType
+            $txtSaudeDisco.Text = "Nao disponivel"
+            $txtStatus.Text = "Nao foi possivel consultar os discos"
 
-            $tamanho =
-                [math]::Round(
-                    $disk.Size / 1GB,
-                    1
-                )
+            [System.Windows.MessageBox]::Show(
+                "Nao foi possivel obter informacoes de saude dos discos.`n`nIsso pode ocorrer devido ao driver ou ao tipo de armazenamento.",
+                "TECH INFO BELEM - Diagnostico",
+                "OK",
+                "Warning"
+            )
 
-            $saude =
-                $disk.HealthStatus
+            return
+        }
 
-            $operacional =
-                $disk.OperationalStatus
+        $resultadoTexto = ""
 
-            $resultado +=
-                "Modelo: $modelo`n" +
-                "Tipo: $tipo`n" +
+        foreach ($disk in $resultado.Discos) {
+
+            $tamanho = [math]::Round($disk.Size / 1GB, 1)
+
+            $resultadoTexto +=
+                "Modelo: $($disk.FriendlyName)`n" +
+                "Tipo: $($disk.MediaType)`n" +
                 "Capacidade: $tamanho GB`n" +
-                "Saude: $saude`n" +
-                "Status: $operacional`n`n"
+                "Saude: $($disk.HealthStatus)`n" +
+                "Status: $($disk.OperationalStatus)`n`n"
 
         }
 
-        if ([string]::IsNullOrWhiteSpace($resultado)) {
-
-            $resultado =
-                "Nenhum disco fisico foi identificado."
-
+        if ([string]::IsNullOrWhiteSpace($resultadoTexto)) {
+            $resultadoTexto = "Nenhum disco fisico foi identificado."
         }
 
-        $txtSaudeDisco.Text =
-            "Analise concluida"
-
-        $txtStatus.Text =
-            "Diagnostico de armazenamento concluido"
+        $txtSaudeDisco.Text = "Analise concluida"
+        $txtStatus.Text = "Diagnostico de armazenamento concluido"
 
         [System.Windows.MessageBox]::Show(
-
-            $resultado,
-
+            $resultadoTexto,
             "TECH INFO BELEM - Saude SSD / HD",
-
             "OK",
-
             "Information"
-
         )
 
     }
-    catch {
 
-        $txtSaudeDisco.Text =
-            "Nao disponivel"
-
-        $txtStatus.Text =
-            "Nao foi possivel consultar os discos"
-
-        [System.Windows.MessageBox]::Show(
-
-            "Nao foi possivel obter informacoes de saude dos discos.`n`nIsso pode ocorrer devido ao driver ou ao tipo de armazenamento.",
-
-            "TECH INFO BELEM - Diagnostico",
-
-            "OK",
-
-            "Warning"
-
-        )
-
-    }
+    Start-AsyncTask -StatusMessage "Analisando armazenamento..." -Work $work -OnComplete $onComplete
 
 }
 
@@ -1465,44 +1453,25 @@ function Testar-Memoria {
             "Deseja abrir o diagnostico de memoria?",
 
             "TECH INFO BELEM - Teste de RAM",
-
             "YesNo",
-
             "Warning"
-
         )
 
-    if ($confirmacao -ne "Yes") {
+    if ($confirmacao -ne "Yes") { return }
 
-        return
+    $txtStatusMemoria.Text = "Diagnostico agendado"
+    $txtStatus.Text = "Abrindo Diagnostico de Memoria..."
 
-    }
+    Start-Process "mdsched.exe"
 
-    $txtStatusMemoria.Text =
-        "Diagnostico agendado"
-
-    $txtStatus.Text =
-        "Abrindo Diagnostico de Memoria..."
-
-    Start-Process `
-        "mdsched.exe"
-
-    $txtStatusMemoria.Text =
-        "Aguardando teste do Windows"
-
-    $txtStatus.Text =
-        "Diagnostico de memoria aberto"
+    $txtStatusMemoria.Text = "Aguardando teste do Windows"
+    $txtStatus.Text = "Diagnostico de memoria aberto"
 
     [System.Windows.MessageBox]::Show(
-
         "O Diagnostico de Memoria do Windows foi aberto.`n`nEscolha uma das opcoes disponiveis para iniciar o teste.`n`nO resultado sera apresentado pelo Windows apos a verificacao.",
-
         "TECH INFO BELEM - Teste de RAM",
-
         "OK",
-
         "Information"
-
     )
 
 }
@@ -1513,57 +1482,38 @@ function Testar-Memoria {
 
 function Mostrar-Hardware {
 
-    $txtStatus.Text =
-        "Coletando informacoes de hardware..."
+    $txtStatus.Text = "Coletando informacoes de hardware..."
 
     try {
 
-        $cpu =
-            Get-CimInstance Win32_Processor |
-            Select-Object -First 1
-
-        $computer =
-            Get-CimInstance Win32_ComputerSystem
-
-        $gpu =
-            Get-CimInstance Win32_VideoController
+        $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+        $computer = Get-CimInstance Win32_ComputerSystem
+        $gpu = Get-CimInstance Win32_VideoController
 
         $resultado =
-            "PROCESSADOR`n" +
-            "$($cpu.Name)`n`n" +
+            "PROCESSADOR`n$($cpu.Name)`n`n" +
             "NUCLEOS: $($cpu.NumberOfCores)`n" +
             "THREADS: $($cpu.NumberOfLogicalProcessors)`n`n" +
-            "MEMORIA RAM`n" +
-            "$([math]::Round($computer.TotalPhysicalMemory / 1GB, 1)) GB`n`n" +
+            "MEMORIA RAM`n$([math]::Round($computer.TotalPhysicalMemory / 1GB, 1)) GB`n`n" +
             "PLACA DE VIDEO`n"
 
         foreach ($video in $gpu) {
-
-            $resultado +=
-                "$($video.Name)`n"
-
+            $resultado += "$($video.Name)`n"
         }
 
-        $txtStatus.Text =
-            "Informacoes de hardware coletadas"
+        $txtStatus.Text = "Informacoes de hardware coletadas"
 
         [System.Windows.MessageBox]::Show(
-
             $resultado,
-
             "TECH INFO BELEM - Hardware",
-
             "OK",
-
             "Information"
-
         )
 
     }
     catch {
 
-        $txtStatus.Text =
-            "Erro ao coletar hardware"
+        $txtStatus.Text = "Erro ao coletar hardware"
 
     }
 
@@ -1581,43 +1531,30 @@ function Abrir-ChrisTitus {
             "Deseja abrir o Windows Utility do Chris Titus Tech?`n`nO WinUtil sera executado diretamente a partir do site oficial.",
 
             "TECH INFO BELEM - WinUtil",
-
             "YesNo",
-
             "Question"
-
         )
 
     if ($confirmacao -eq "Yes") {
 
-        $txtStatus.Text =
-            "Abrindo Chris Titus WinUtil..."
+        $txtStatus.Text = "Abrindo Chris Titus WinUtil..."
 
         try {
 
-            Invoke-RestMethod `
-                "https://christitus.com/win" |
-            Invoke-Expression
+            Invoke-RestMethod "https://christitus.com/win" | Invoke-Expression
 
-            $txtStatus.Text =
-                "Chris Titus WinUtil iniciado"
+            $txtStatus.Text = "Chris Titus WinUtil iniciado"
 
         }
         catch {
 
-            $txtStatus.Text =
-                "Erro ao abrir Chris Titus WinUtil"
+            $txtStatus.Text = "Erro ao abrir Chris Titus WinUtil"
 
             [System.Windows.MessageBox]::Show(
-
                 "Nao foi possivel abrir o Chris Titus WinUtil.`n`nErro:`n$($_.Exception.Message)",
-
                 "TECH INFO BELEM - Erro",
-
                 "OK",
-
                 "Error"
-
             )
 
         }
@@ -1627,336 +1564,9 @@ function Abrir-ChrisTitus {
 }
 
 # ============================================================
-# FIM DA PARTE 1
-# COLE A PARTE 2 IMEDIATAMENTE ABAIXO
-# ============================================================# ============================================================
 # JANELA DE PREENCHIMENTO DO RELATORIO
 # ============================================================
 
-function Abrir-FormularioRelatorio {
-
-    [xml]$FormXAML = @"
-<Window
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="TECH INFO BELEM - Novo Relatorio de Servico"
-    Height="700"
-    Width="850"
-    WindowStartupLocation="CenterScreen"
-    ResizeMode="CanResize"
-    Background="#111827">
-
-    <Grid Margin="25">
-
-        <Grid.RowDefinitions>
-
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-
-        </Grid.RowDefinitions>
-
-        <StackPanel>
-
-            <TextBlock
-                Text="NOVO RELATORIO DE SERVICO"
-                Foreground="#60A5FA"
-                FontSize="26"
-                FontWeight="Bold"/>
-
-            <TextBlock
-                Text="Preencha as informacoes do atendimento realizado."
-                Foreground="#9CA3AF"
-                FontSize="14"
-                Margin="0,5,0,20"/>
-
-        </StackPanel>
-
-        <ScrollViewer
-            Grid.Row="1"
-            VerticalScrollBarVisibility="Auto">
-
-            <StackPanel>
-
-                <TextBlock
-                    Text="CLIENTE"
-                    Foreground="White"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
-
-                <TextBox
-                    Name="txtCliente"
-                    Height="35"
-                    Padding="8"
-                    FontSize="15"
-                    Margin="0,0,0,15"/>
-
-                <TextBlock
-                    Text="TIPO DE SERVICO"
-                    Foreground="White"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
-
-                <ComboBox
-                    Name="cmbTipoServico"
-                    Height="35"
-                    FontSize="15"
-                    Margin="0,0,0,15">
-
-                    <ComboBoxItem Content="Montagem de PC Gamer"/>
-                    <ComboBoxItem Content="Montagem de computador"/>
-                    <ComboBoxItem Content="Instalacao do Windows"/>
-                    <ComboBoxItem Content="Formatacao e instalacao do Windows"/>
-                    <ComboBoxItem Content="Manutencao preventiva"/>
-                    <ComboBoxItem Content="Manutencao corretiva"/>
-                    <ComboBoxItem Content="Diagnostico tecnico"/>
-                    <ComboBoxItem Content="Limpeza e otimizacao"/>
-                    <ComboBoxItem Content="Reparo do Windows"/>
-                    <ComboBoxItem Content="Upgrade de hardware"/>
-                    <ComboBoxItem Content="Instalacao de SSD / HD"/>
-                    <ComboBoxItem Content="Outro servico"/>
-
-                </ComboBox>
-
-                <TextBlock
-                    Text="DESCRICAO DO SERVICO REALIZADO"
-                    Foreground="White"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
-
-                <TextBox
-                    Name="txtServico"
-                    Height="130"
-                    Padding="8"
-                    FontSize="14"
-                    AcceptsReturn="True"
-                    TextWrapping="Wrap"
-                    VerticalScrollBarVisibility="Auto"
-                    Margin="0,0,0,15"/>
-
-                <TextBlock
-                    Text="OBSERVACOES TECNICAS"
-                    Foreground="White"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
-
-                <TextBox
-                    Name="txtObservacoes"
-                    Height="120"
-                    Padding="8"
-                    FontSize="14"
-                    AcceptsReturn="True"
-                    TextWrapping="Wrap"
-                    VerticalScrollBarVisibility="Auto"
-                    Margin="0,0,0,15"/>
-
-                <TextBlock
-                    Text="TECNICO RESPONSAVEL"
-                    Foreground="White"
-                    FontWeight="Bold"
-                    Margin="0,5,0,5"/>
-
-                <TextBox
-                    Name="txtTecnico"
-                    Height="35"
-                    Padding="8"
-                    FontSize="15"
-                    Text="TECH INFO BELEM"
-                    Margin="0,0,0,15"/>
-
-            </StackPanel>
-
-        </ScrollViewer>
-
-        <StackPanel
-            Grid.Row="2"
-            Orientation="Horizontal"
-            HorizontalAlignment="Right"
-            Margin="0,20,0,0">
-
-            <Button
-                Name="btnCancelarRelatorio"
-                Content="CANCELAR"
-                Width="130"
-                Height="40"
-                Margin="0,0,10,0"
-                Background="#374151"
-                Foreground="White"/>
-
-            <Button
-                Name="btnGerarRelatorio"
-                Content="GERAR RELATORIO"
-                Width="170"
-                Height="40"
-                Background="#0369A1"
-                Foreground="White"/>
-
-        </StackPanel>
-
-    </Grid>
-
-</Window>
-"@
-
-    $readerForm =
-        New-Object System.Xml.XmlNodeReader $FormXAML
-
-    $FormWindow =
-        [Windows.Markup.XamlReader]::Load($readerForm)
-
-    $txtCliente =
-        $FormWindow.FindName("txtCliente")
-
-    $cmbTipoServico =
-        $FormWindow.FindName("cmbTipoServico")
-
-    $txtServico =
-        $FormWindow.FindName("txtServico")
-
-    $txtObservacoes =
-        $FormWindow.FindName("txtObservacoes")
-
-    $txtTecnico =
-        $FormWindow.FindName("txtTecnico")
-
-    $btnCancelarRelatorio =
-        $FormWindow.FindName("btnCancelarRelatorio")
-
-    $btnGerarRelatorio =
-        $FormWindow.FindName("btnGerarRelatorio")
-
-
-    $btnCancelarRelatorio.Add_Click({
-
-        $FormWindow.Close()
-
-    })
-
-
-    $btnGerarRelatorio.Add_Click({
-
-        if (
-            [string]::IsNullOrWhiteSpace(
-                $txtServico.Text
-            )
-        ) {
-
-            [System.Windows.MessageBox]::Show(
-
-                "Informe a descricao do servico realizado antes de gerar o relatorio.",
-
-                "TECH INFO BELEM",
-
-                "OK",
-
-                "Warning"
-
-            )
-
-            return
-
-        }
-
-
-        $tipoServico = ""
-
-        if ($cmbTipoServico.SelectedItem) {
-
-            $tipoServico =
-                $cmbTipoServico.SelectedItem.Content
-
-        }
-
-
-        if (
-            [string]::IsNullOrWhiteSpace(
-                $tipoServico
-            )
-        ) {
-
-            $tipoServico =
-                "Servico tecnico"
-
-        }
-
-
-        $cliente =
-            $txtCliente.Text
-
-        if (
-            [string]::IsNullOrWhiteSpace(
-                $cliente
-            )
-        ) {
-
-            $cliente =
-                "Nao informado"
-
-        }
-
-
-        $servico =
-            $txtServico.Text
-
-        $observacoes =
-            $txtObservacoes.Text
-
-        $tecnico =
-            $txtTecnico.Text
-
-        if (
-            [string]::IsNullOrWhiteSpace(
-                $tecnico
-            )
-        ) {
-
-            $tecnico =
-                "TECH INFO BELEM"
-
-        }
-
-
-        $FormWindow.Tag = [PSCustomObject]@{
-
-            Cliente =
-                $cliente
-
-            TipoServico =
-                $tipoServico
-
-            Servico =
-                $servico
-
-            Observacoes =
-                $observacoes
-
-            Tecnico =
-                $tecnico
-
-        }
-
-
-        $FormWindow.DialogResult =
-            $true
-
-        $FormWindow.Close()
-
-    })
-
-
-    $FormWindow.ShowDialog() | Out-Null
-
-
-    return $FormWindow.Tag
-
-}
-
-# ============================================================
-# RELATORIO DE SERVICO - TECH INFO BELEM
-# ============================================================
-
-```powershell
-```powershell
 function Gerar-RelatorioServico {
 
     # ============================================================
@@ -1973,152 +1583,91 @@ function Gerar-RelatorioServico {
     $form.MaximizeBox = $false
     $form.MinimizeBox = $false
 
-
-    # ============================================================
-    # TITULO
-    # ============================================================
-
     $lblTitulo = New-Object System.Windows.Forms.Label
     $lblTitulo.Text = "RELATORIO DE SERVICO TECH INFO BELEM"
     $lblTitulo.Location = New-Object System.Drawing.Point(25,20)
     $lblTitulo.Size = New-Object System.Drawing.Size(580,35)
     $lblTitulo.Font = New-Object System.Drawing.Font("Arial",16,[System.Drawing.FontStyle]::Bold)
     $lblTitulo.ForeColor = [System.Drawing.Color]::FromArgb(96,165,250)
-
     $form.Controls.Add($lblTitulo)
-
-
-    # ============================================================
-    # CLIENTE
-    # ============================================================
 
     $lblCliente = New-Object System.Windows.Forms.Label
     $lblCliente.Text = "CLIENTE"
     $lblCliente.Location = New-Object System.Drawing.Point(25,75)
     $lblCliente.Size = New-Object System.Drawing.Size(150,25)
-
     $form.Controls.Add($lblCliente)
-
 
     $txtClienteForm = New-Object System.Windows.Forms.TextBox
     $txtClienteForm.Location = New-Object System.Drawing.Point(25,100)
     $txtClienteForm.Size = New-Object System.Drawing.Size(580,30)
-
     $form.Controls.Add($txtClienteForm)
-
-
-    # ============================================================
-    # TELEFONE
-    # ============================================================
 
     $lblTelefone = New-Object System.Windows.Forms.Label
     $lblTelefone.Text = "TELEFONE / CONTATO"
     $lblTelefone.Location = New-Object System.Drawing.Point(25,140)
     $lblTelefone.Size = New-Object System.Drawing.Size(200,25)
-
     $form.Controls.Add($lblTelefone)
-
 
     $txtTelefoneForm = New-Object System.Windows.Forms.TextBox
     $txtTelefoneForm.Location = New-Object System.Drawing.Point(25,165)
     $txtTelefoneForm.Size = New-Object System.Drawing.Size(580,30)
-
     $form.Controls.Add($txtTelefoneForm)
-
-
-    # ============================================================
-    # SERVICO
-    # ============================================================
 
     $lblServico = New-Object System.Windows.Forms.Label
     $lblServico.Text = "SERVICO REALIZADO"
     $lblServico.Location = New-Object System.Drawing.Point(25,205)
     $lblServico.Size = New-Object System.Drawing.Size(200,25)
-
     $form.Controls.Add($lblServico)
-
 
     $txtServicoForm = New-Object System.Windows.Forms.TextBox
     $txtServicoForm.Location = New-Object System.Drawing.Point(25,230)
     $txtServicoForm.Size = New-Object System.Drawing.Size(580,80)
     $txtServicoForm.Multiline = $true
     $txtServicoForm.ScrollBars = "Vertical"
-
     $form.Controls.Add($txtServicoForm)
-
-
-    # ============================================================
-    # VALOR
-    # ============================================================
 
     $lblValor = New-Object System.Windows.Forms.Label
     $lblValor.Text = "VALOR DO SERVICO (R$)"
     $lblValor.Location = New-Object System.Drawing.Point(25,320)
     $lblValor.Size = New-Object System.Drawing.Size(200,25)
-
     $form.Controls.Add($lblValor)
-
 
     $txtValorForm = New-Object System.Windows.Forms.TextBox
     $txtValorForm.Location = New-Object System.Drawing.Point(25,345)
     $txtValorForm.Size = New-Object System.Drawing.Size(200,30)
-
     $form.Controls.Add($txtValorForm)
-
-
-    # ============================================================
-    # PAGAMENTO
-    # ============================================================
 
     $lblPagamento = New-Object System.Windows.Forms.Label
     $lblPagamento.Text = "FORMA DE PAGAMENTO"
     $lblPagamento.Location = New-Object System.Drawing.Point(250,320)
     $lblPagamento.Size = New-Object System.Drawing.Size(200,25)
-
     $form.Controls.Add($lblPagamento)
-
 
     $cmbPagamentoForm = New-Object System.Windows.Forms.ComboBox
     $cmbPagamentoForm.Location = New-Object System.Drawing.Point(250,345)
     $cmbPagamentoForm.Size = New-Object System.Drawing.Size(355,30)
     $cmbPagamentoForm.DropDownStyle = "DropDownList"
-
     [void]$cmbPagamentoForm.Items.Add("PIX")
     [void]$cmbPagamentoForm.Items.Add("Dinheiro")
     [void]$cmbPagamentoForm.Items.Add("Cartao de Credito")
     [void]$cmbPagamentoForm.Items.Add("Cartao de Debito")
     [void]$cmbPagamentoForm.Items.Add("Transferencia")
     [void]$cmbPagamentoForm.Items.Add("Nao informado")
-
     $cmbPagamentoForm.SelectedIndex = 0
-
     $form.Controls.Add($cmbPagamentoForm)
-
-
-    # ============================================================
-    # OBSERVACOES
-    # ============================================================
 
     $lblObservacoes = New-Object System.Windows.Forms.Label
     $lblObservacoes.Text = "OBSERVACOES TECNICAS"
     $lblObservacoes.Location = New-Object System.Drawing.Point(25,390)
     $lblObservacoes.Size = New-Object System.Drawing.Size(250,25)
-
     $form.Controls.Add($lblObservacoes)
-
 
     $txtObservacoesForm = New-Object System.Windows.Forms.TextBox
     $txtObservacoesForm.Location = New-Object System.Drawing.Point(25,415)
     $txtObservacoesForm.Size = New-Object System.Drawing.Size(580,70)
     $txtObservacoesForm.Multiline = $true
     $txtObservacoesForm.ScrollBars = "Vertical"
-
     $form.Controls.Add($txtObservacoesForm)
-
-
-    # ============================================================
-    # BOTAO CANCELAR
-    # ============================================================
 
     $btnCancelarForm = New-Object System.Windows.Forms.Button
     $btnCancelarForm.Text = "CANCELAR"
@@ -2126,20 +1675,11 @@ function Gerar-RelatorioServico {
     $btnCancelarForm.Size = New-Object System.Drawing.Size(120,40)
     $btnCancelarForm.BackColor = [System.Drawing.Color]::FromArgb(55,65,81)
     $btnCancelarForm.ForeColor = [System.Drawing.Color]::White
-
     $btnCancelarForm.Add_Click({
-
         $form.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
         $form.Close()
-
     })
-
     $form.Controls.Add($btnCancelarForm)
-
-
-    # ============================================================
-    # BOTAO GERAR
-    # ============================================================
 
     $btnGerarForm = New-Object System.Windows.Forms.Button
     $btnGerarForm.Text = "GERAR RELATORIO"
@@ -2147,683 +1687,210 @@ function Gerar-RelatorioServico {
     $btnGerarForm.Size = New-Object System.Drawing.Size(125,40)
     $btnGerarForm.BackColor = [System.Drawing.Color]::FromArgb(3,105,161)
     $btnGerarForm.ForeColor = [System.Drawing.Color]::White
-
     $btnGerarForm.Add_Click({
-
         if ([string]::IsNullOrWhiteSpace($txtServicoForm.Text)) {
-
             [System.Windows.Forms.MessageBox]::Show(
                 "Digite o servico realizado.",
                 "TECH INFO BELEM",
                 "OK",
                 "Warning"
             )
-
             return
-
         }
-
         $form.DialogResult = [System.Windows.Forms.DialogResult]::OK
         $form.Close()
-
     })
-
     $form.Controls.Add($btnGerarForm)
 
-
-    # ============================================================
-    # ABRIR FORMULARIO
-    # ============================================================
-
-    $resultado =
-        $form.ShowDialog()
-
+    $resultado = $form.ShowDialog()
 
     if ($resultado -ne [System.Windows.Forms.DialogResult]::OK) {
-
         $txtStatus.Text = "Geracao do relatorio cancelada"
-
         return
-
     }
-
-
-    # ============================================================
-    # COLETAR DADOS DO COMPUTADOR
-    # ============================================================
 
     try {
 
-        $txtStatus.Text =
-            "Coletando informacoes para o relatorio..."
+        $txtStatus.Text = "Coletando informacoes para o relatorio..."
 
+        $computer = Get-CimInstance Win32_ComputerSystem
+        $os = Get-CimInstance Win32_OperatingSystem
+        $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+        $disk = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
 
-        $computer =
-            Get-CimInstance Win32_ComputerSystem
+        $ramGB = [math]::Round($computer.TotalPhysicalMemory / 1GB, 1)
+        $freeGB = [math]::Round($disk.FreeSpace / 1GB, 1)
+        $totalGB = [math]::Round($disk.Size / 1GB, 1)
 
+        $gpu = @(Get-CimInstance Win32_VideoController)
+        $physicalDisks = @(Get-PhysicalDisk -ErrorAction SilentlyContinue)
 
-        $os =
-            Get-CimInstance Win32_OperatingSystem
+        $data = Get-Date -Format "dd/MM/yyyy HH:mm"
 
+        $cliente = [System.Net.WebUtility]::HtmlEncode($txtClienteForm.Text)
+        $telefone = [System.Net.WebUtility]::HtmlEncode($txtTelefoneForm.Text)
+        $servico = [System.Net.WebUtility]::HtmlEncode($txtServicoForm.Text)
+        $valor = [System.Net.WebUtility]::HtmlEncode($txtValorForm.Text)
+        $pagamento = [System.Net.WebUtility]::HtmlEncode($cmbPagamentoForm.SelectedItem.ToString())
+        $observacoes = [System.Net.WebUtility]::HtmlEncode($txtObservacoesForm.Text)
 
-        $cpu =
-            Get-CimInstance Win32_Processor |
-            Select-Object -First 1
+        $servico = $servico -replace "`r`n","<br>"
+        $servico = $servico -replace "`n","<br>"
+        $observacoes = $observacoes -replace "`r`n","<br>"
+        $observacoes = $observacoes -replace "`n","<br>"
 
-
-        $disk =
-            Get-CimInstance Win32_LogicalDisk `
-            -Filter "DeviceID='C:'"
-
-
-        $ramGB =
-            [math]::Round(
-                $computer.TotalPhysicalMemory / 1GB,
-                1
-            )
-
-
-        $freeGB =
-            [math]::Round(
-                $disk.FreeSpace / 1GB,
-                1
-            )
-
-
-        $totalGB =
-            [math]::Round(
-                $disk.Size / 1GB,
-                1
-            )
-
-
-        $gpu =
-            @(Get-CimInstance Win32_VideoController)
-
-
-        $physicalDisks =
-            @(Get-PhysicalDisk -ErrorAction SilentlyContinue)
-
-
-        $data =
-            Get-Date -Format "dd/MM/yyyy HH:mm"
-
-
-        # ========================================================
-        # DADOS DIGITADOS
-        # ========================================================
-
-        $cliente =
-            [System.Net.WebUtility]::HtmlEncode(
-                $txtClienteForm.Text
-            )
-
-
-        $telefone =
-            [System.Net.WebUtility]::HtmlEncode(
-                $txtTelefoneForm.Text
-            )
-
-
-        $servico =
-            [System.Net.WebUtility]::HtmlEncode(
-                $txtServicoForm.Text
-            )
-
-
-        $valor =
-            [System.Net.WebUtility]::HtmlEncode(
-                $txtValorForm.Text
-            )
-
-
-        $pagamento =
-            [System.Net.WebUtility]::HtmlEncode(
-                $cmbPagamentoForm.SelectedItem.ToString()
-            )
-
-
-        $observacoes =
-            [System.Net.WebUtility]::HtmlEncode(
-                $txtObservacoesForm.Text
-            )
-
-
-        $servico =
-            $servico -replace "`r`n","<br>"
-        $servico =
-            $servico -replace "`n","<br>"
-
-
-        $observacoes =
-            $observacoes -replace "`r`n","<br>"
-        $observacoes =
-            $observacoes -replace "`n","<br>"
-
-
-        # ========================================================
-        # CRIAR PASTA
-        # ========================================================
-
-        $reportFolder =
-            "C:\Relatorio Tech Info Belem"
-
+        $reportFolder = "C:\Relatorio Tech Info Belem"
 
         if (!(Test-Path -LiteralPath $reportFolder)) {
-
-            New-Item `
-                -Path $reportFolder `
-                -ItemType Directory `
-                -Force `
-                -ErrorAction Stop |
-                Out-Null
-
+            New-Item -Path $reportFolder -ItemType Directory -Force -ErrorAction Stop | Out-Null
         }
 
-
-        # ========================================================
-        # ARQUIVO
-        # ========================================================
-
-        $safeComputerName =
-            $env:COMPUTERNAME -replace '[\\/:*?"<>|]', '_'
-
-
-        $timestamp =
-            Get-Date -Format "yyyyMMdd_HHmmss"
-
-
-        $reportFile =
-            Join-Path `
-            $reportFolder `
-            "Relatorio_${safeComputerName}_${timestamp}.html"
-
-
-        # ========================================================
-        # GPU
-        # ========================================================
+        $safeComputerName = $env:COMPUTERNAME -replace '[\\/:*?"<>|]', '_'
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        $reportFile = Join-Path $reportFolder "Relatorio_${safeComputerName}_${timestamp}.html"
 
         $gpuHtml = ""
-
-
         foreach ($video in $gpu) {
-
-            $gpuName =
-                [System.Net.WebUtility]::HtmlEncode(
-                    $video.Name
-                )
-
-
-            $gpuHtml +=
-                "<li>$gpuName</li>"
-
+            $gpuName = [System.Net.WebUtility]::HtmlEncode($video.Name)
+            $gpuHtml += "<li>$gpuName</li>"
         }
-
-
-        if (!$gpuHtml) {
-
-            $gpuHtml =
-                "<li>Informacao nao disponivel</li>"
-
-        }
-
-
-        # ========================================================
-        # DISCOS
-        # ========================================================
+        if (!$gpuHtml) { $gpuHtml = "<li>Informacao nao disponivel</li>" }
 
         $diskHealthHtml = ""
-
-
         foreach ($pd in $physicalDisks) {
+            $modelo = [System.Net.WebUtility]::HtmlEncode([string]$pd.FriendlyName)
+            $tipo = [System.Net.WebUtility]::HtmlEncode([string]$pd.MediaType)
+            $capacidade = [math]::Round($pd.Size / 1GB, 1)
+            $saude = [System.Net.WebUtility]::HtmlEncode([string]$pd.HealthStatus)
+            $status = [System.Net.WebUtility]::HtmlEncode([string]$pd.OperationalStatus)
 
-            $modelo =
-                [System.Net.WebUtility]::HtmlEncode(
-                    [string]$pd.FriendlyName
-                )
-
-
-            $tipo =
-                [System.Net.WebUtility]::HtmlEncode(
-                    [string]$pd.MediaType
-                )
-
-
-            $capacidade =
-                [math]::Round(
-                    $pd.Size / 1GB,
-                    1
-                )
-
-
-            $saude =
-                [System.Net.WebUtility]::HtmlEncode(
-                    [string]$pd.HealthStatus
-                )
-
-
-            $status =
-                [System.Net.WebUtility]::HtmlEncode(
-                    [string]$pd.OperationalStatus
-                )
-
-
-            $diskHealthHtml += @"
-
-<tr>
-<td>$modelo</td>
-<td>$tipo</td>
-<td>$capacidade GB</td>
-<td>$saude</td>
-<td>$status</td>
-</tr>
-
-"@
-
+            $diskHealthHtml += "<tr><td>$modelo</td><td>$tipo</td><td>$capacidade GB</td><td>$saude</td><td>$status</td></tr>`n"
         }
-
-
         if (!$diskHealthHtml) {
-
-            $diskHealthHtml = @"
-
-<tr>
-<td colspan="5">
-Informacoes de saude dos discos nao disponiveis.
-</td>
-</tr>
-
-"@
-
+            $diskHealthHtml = '<tr><td colspan="5">Informacoes de saude dos discos nao disponiveis.</td></tr>'
         }
 
-
-        # ========================================================
-        # HTML
-        # ========================================================
+        $computadorEnc = [System.Net.WebUtility]::HtmlEncode("$($computer.Manufacturer) $($computer.Model)")
+        $osEnc = [System.Net.WebUtility]::HtmlEncode($os.Caption)
+        $cpuEnc = [System.Net.WebUtility]::HtmlEncode($cpu.Name)
 
         $html = @"
 <!DOCTYPE html>
-
 <html lang="pt-BR">
-
 <head>
-
 <meta charset="UTF-8">
-
 <title>Relatorio de Servico - TECH INFO BELEM</title>
-
 <style>
-
-body {
-font-family: Arial;
-background:#f3f4f6;
-padding:30px;
-color:#1f2937;
-}
-
-.container {
-max-width:1000px;
-margin:auto;
-background:white;
-padding:35px;
-}
-
-.header {
-border-bottom:3px solid #2563eb;
-padding-bottom:20px;
-}
-
-.header h1 {
-color:#1d4ed8;
-}
-
-h2 {
-background:#1f2937;
-color:white;
-padding:10px;
-}
-
-.info {
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-}
-
-.card {
-background:#f9fafb;
-border:1px solid #ddd;
-padding:15px;
-}
-
-.label {
-font-weight:bold;
-}
-
-.valor {
-font-size:24px;
-font-weight:bold;
-color:#166534;
-}
-
-table {
-width:100%;
-border-collapse:collapse;
-}
-
-th {
-background:#2563eb;
-color:white;
-padding:10px;
-}
-
-td {
-border:1px solid #ddd;
-padding:10px;
-}
-
-.servico {
-background:#f9fafb;
-border:1px solid #ddd;
-padding:20px;
-min-height:80px;
-}
-
-.footer {
-margin-top:40px;
-border-top:1px solid #ddd;
-padding-top:15px;
-font-size:12px;
-color:#666;
-}
-
+body { font-family: Arial; background:#f3f4f6; padding:30px; color:#1f2937; }
+.container { max-width:1000px; margin:auto; background:white; padding:35px; }
+.header { border-bottom:3px solid #2563eb; padding-bottom:20px; }
+.header h1 { color:#1d4ed8; }
+h2 { background:#1f2937; color:white; padding:10px; }
+.info { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.card { background:#f9fafb; border:1px solid #ddd; padding:15px; }
+.label { font-weight:bold; }
+.valor { font-size:24px; font-weight:bold; color:#166534; }
+table { width:100%; border-collapse:collapse; }
+th { background:#2563eb; color:white; padding:10px; }
+td { border:1px solid #ddd; padding:10px; }
+.servico { background:#f9fafb; border:1px solid #ddd; padding:20px; min-height:80px; }
+.footer { margin-top:40px; border-top:1px solid #ddd; padding-top:15px; font-size:12px; color:#666; }
 </style>
-
 </head>
-
 <body>
-
 <div class="container">
-
 <div class="header">
-
 <h1>TECH INFO BELEM</h1>
-
 <p>RELATORIO DE SERVICO TECNICO</p>
-
-<p>Cleaner Pro v0.5</p>
-
+<p>Cleaner Pro v0.7</p>
 </div>
-
-
 <h2>ATENDIMENTO</h2>
-
 <div class="info">
-
-<div class="card">
-<span class="label">Cliente:</span><br>
-$cliente
+<div class="card"><span class="label">Cliente:</span><br>$cliente</div>
+<div class="card"><span class="label">Telefone:</span><br>$telefone</div>
+<div class="card"><span class="label">Data:</span><br>$data</div>
+<div class="card"><span class="label">Computador:</span><br>$computadorEnc</div>
 </div>
-
-<div class="card">
-<span class="label">Telefone:</span><br>
-$telefone
-</div>
-
-<div class="card">
-<span class="label">Data:</span><br>
-$data
-</div>
-
-<div class="card">
-<span class="label">Computador:</span><br>
-$([System.Net.WebUtility]::HtmlEncode("$($computer.Manufacturer) $($computer.Model)"))
-</div>
-
-</div>
-
-
 <h2>SERVICO REALIZADO</h2>
-
-<div class="servico">
-
-$servico
-
-</div>
-
-
+<div class="servico">$servico</div>
 <h2>VALOR E PAGAMENTO</h2>
-
 <div class="info">
-
-<div class="card">
-
-<span class="label">Valor:</span>
-
-<div class="valor">
-
-R$ $valor
-
+<div class="card"><span class="label">Valor:</span><div class="valor">R$ $valor</div></div>
+<div class="card"><span class="label">Pagamento:</span><br><br>$pagamento</div>
 </div>
-
-</div>
-
-<div class="card">
-
-<span class="label">Pagamento:</span><br><br>
-
-$pagamento
-
-</div>
-
-</div>
-
-
 <h2>INFORMACOES DO COMPUTADOR</h2>
-
 <div class="info">
-
-<div class="card">
-
-<span class="label">Sistema:</span><br>
-
-$([System.Net.WebUtility]::HtmlEncode($os.Caption))
-
+<div class="card"><span class="label">Sistema:</span><br>$osEnc</div>
+<div class="card"><span class="label">Processador:</span><br>$cpuEnc</div>
+<div class="card"><span class="label">Memoria RAM:</span><br>$ramGB GB</div>
+<div class="card"><span class="label">Armazenamento:</span><br>$freeGB GB livres de $totalGB GB</div>
 </div>
-
-<div class="card">
-
-<span class="label">Processador:</span><br>
-
-$([System.Net.WebUtility]::HtmlEncode($cpu.Name))
-
-</div>
-
-<div class="card">
-
-<span class="label">Memoria RAM:</span><br>
-
-$ramGB GB
-
-</div>
-
-<div class="card">
-
-<span class="label">Armazenamento:</span><br>
-
-$freeGB GB livres de $totalGB GB
-
-</div>
-
-</div>
-
-
 <h2>PLACA DE VIDEO</h2>
-
-<ul>
-
-$gpuHtml
-
-</ul>
-
-
+<ul>$gpuHtml</ul>
 <h2>SAUDE DOS DISCOS</h2>
-
 <table>
-
-<tr>
-
-<th>Modelo</th>
-
-<th>Tipo</th>
-
-<th>Capacidade</th>
-
-<th>Saude</th>
-
-<th>Status</th>
-
-</tr>
-
+<tr><th>Modelo</th><th>Tipo</th><th>Capacidade</th><th>Saude</th><th>Status</th></tr>
 $diskHealthHtml
-
 </table>
-
-
 <h2>OBSERVACOES</h2>
-
-<div class="servico">
-
-$observacoes
-
-</div>
-
-
+<div class="servico">$observacoes</div>
 <div class="footer">
-
 TECH INFO BELEM - Assistencia Tecnica em Computadores, Notebooks e Celulares<br>
-
-Relatorio gerado automaticamente pelo Cleaner Pro v0.5.
-
+Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
 </div>
-
 </div>
-
 </body>
-
 </html>
 "@
 
-
-        # ========================================================
-        # SALVAR
-        # ========================================================
-
-        Set-Content `
-            -LiteralPath $reportFile `
-            -Value $html `
-            -Encoding UTF8 `
-            -Force `
-            -ErrorAction Stop
-
-
-        # ========================================================
-        # VERIFICAR
-        # ========================================================
+        Set-Content -LiteralPath $reportFile -Value $html -Encoding UTF8 -Force -ErrorAction Stop
 
         if (!(Test-Path -LiteralPath $reportFile)) {
-
             throw "O arquivo nao foi criado."
-
         }
 
-
-        $fileInfo =
-            Get-Item `
-            -LiteralPath $reportFile `
-            -ErrorAction Stop
-
+        $fileInfo = Get-Item -LiteralPath $reportFile -ErrorAction Stop
 
         if ($fileInfo.Length -lt 100) {
-
             throw "O arquivo foi criado, mas esta vazio."
-
         }
 
+        $txtStatus.Text = "Relatorio criado com sucesso"
 
-        $txtStatus.Text =
-            "Relatorio criado com sucesso"
-
-
-        # ========================================================
-        # ABRIR
-        # ========================================================
-
-        Start-Process `
-            -FilePath $reportFile
-
+        Start-Process -FilePath $reportFile
 
         [System.Windows.MessageBox]::Show(
-
-            "Relatorio criado com sucesso!`n`n" +
-            "Arquivo:`n$reportFile",
-
+            "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile",
             "TECH INFO BELEM",
-
             "OK",
-
             "Information"
-
         )
 
     }
     catch {
 
-        $txtStatus.Text =
-            "Erro ao gerar relatorio"
-
+        $txtStatus.Text = "Erro ao gerar relatorio"
 
         [System.Windows.MessageBox]::Show(
-
-            "ERRO AO GERAR RELATORIO:`n`n" +
-            "$($_.Exception.Message)",
-
+            "ERRO AO GERAR RELATORIO:`n`n$($_.Exception.Message)",
             "TECH INFO BELEM - Erro",
-
             "OK",
-
             "Error"
-
         )
 
     }
 
 }
-```
-
-```
-
-
-
-
 
 # ============================================================
 # EVENTO - INICIO
 # ============================================================
 
 $btnInicio.Add_Click({
-
-    $txtTitulo.Text =
-        "Painel de Controle"
-
-    $txtSubtitulo.Text =
-        "Ferramenta profissional de limpeza, diagnostico e manutencao"
-
-    $txtStatus.Text =
-        "Sistema pronto"
-
+    $txtTitulo.Text = "Painel de Controle"
+    $txtSubtitulo.Text = "Ferramenta profissional de limpeza, diagnostico e manutencao"
+    $txtStatus.Text = "Sistema pronto"
     Atualizar-Informacoes
-
 })
 
 # ============================================================
@@ -2831,15 +1898,9 @@ $btnInicio.Add_Click({
 # ============================================================
 
 $btnAnalisar.Add_Click({
-
-    $txtTitulo.Text =
-        "Analise do Sistema"
-
-    $txtSubtitulo.Text =
-        "Verificando arquivos temporarios, caches e lixeira"
-
+    $txtTitulo.Text = "Analise do Sistema"
+    $txtSubtitulo.Text = "Verificando arquivos temporarios, caches e lixeira"
     Analisar-Sistema
-
 })
 
 # ============================================================
@@ -2847,26 +1908,13 @@ $btnAnalisar.Add_Click({
 # ============================================================
 
 $btnTemporarios.Add_Click({
-
-    $confirmacao =
-        [System.Windows.MessageBox]::Show(
-
-            "Deseja limpar os arquivos temporarios do sistema?",
-
-            "TECH INFO BELEM",
-
-            "YesNo",
-
-            "Question"
-
-        )
-
-    if ($confirmacao -eq "Yes") {
-
-        Limpar-Temporarios
-
-    }
-
+    $confirmacao = [System.Windows.MessageBox]::Show(
+        "Deseja limpar os arquivos temporarios do sistema?",
+        "TECH INFO BELEM",
+        "YesNo",
+        "Question"
+    )
+    if ($confirmacao -eq "Yes") { Limpar-Temporarios }
 })
 
 # ============================================================
@@ -2874,26 +1922,13 @@ $btnTemporarios.Add_Click({
 # ============================================================
 
 $btnNavegadores.Add_Click({
-
-    $confirmacao =
-        [System.Windows.MessageBox]::Show(
-
-            "Deseja limpar os caches dos navegadores instalados?`n`nCookies, senhas, favoritos e historico nao serao removidos.",
-
-            "TECH INFO BELEM - Navegadores",
-
-            "YesNo",
-
-            "Question"
-
-        )
-
-    if ($confirmacao -eq "Yes") {
-
-        Limpar-Navegadores
-
-    }
-
+    $confirmacao = [System.Windows.MessageBox]::Show(
+        "Deseja limpar os caches dos navegadores instalados?`n`nCookies, senhas, favoritos e historico nao serao removidos.",
+        "TECH INFO BELEM - Navegadores",
+        "YesNo",
+        "Question"
+    )
+    if ($confirmacao -eq "Yes") { Limpar-Navegadores }
 })
 
 # ============================================================
@@ -2901,26 +1936,13 @@ $btnNavegadores.Add_Click({
 # ============================================================
 
 $btnLixeira.Add_Click({
-
-    $confirmacao =
-        [System.Windows.MessageBox]::Show(
-
-            "Deseja esvaziar a Lixeira do Windows?",
-
-            "TECH INFO BELEM - Lixeira",
-
-            "YesNo",
-
-            "Warning"
-
-        )
-
-    if ($confirmacao -eq "Yes") {
-
-        Limpar-Lixeira
-
-    }
-
+    $confirmacao = [System.Windows.MessageBox]::Show(
+        "Deseja esvaziar a Lixeira do Windows?",
+        "TECH INFO BELEM - Lixeira",
+        "YesNo",
+        "Warning"
+    )
+    if ($confirmacao -eq "Yes") { Limpar-Lixeira }
 })
 
 # ============================================================
@@ -2928,9 +1950,7 @@ $btnLixeira.Add_Click({
 # ============================================================
 
 $btnCompleta.Add_Click({
-
     Limpeza-Completa
-
 })
 
 # ============================================================
@@ -2938,15 +1958,9 @@ $btnCompleta.Add_Click({
 # ============================================================
 
 $btnDiagnosticoWindows.Add_Click({
-
-    $txtTitulo.Text =
-        "Diagnostico do Windows"
-
-    $txtSubtitulo.Text =
-        "Verificando integridade da imagem e arquivos do sistema"
-
+    $txtTitulo.Text = "Diagnostico do Windows"
+    $txtSubtitulo.Text = "Verificando integridade da imagem e arquivos do sistema"
     Diagnosticar-Windows
-
 })
 
 # ============================================================
@@ -2954,15 +1968,9 @@ $btnDiagnosticoWindows.Add_Click({
 # ============================================================
 
 $btnRepararWindows.Add_Click({
-
-    $txtTitulo.Text =
-        "Reparacao do Windows"
-
-    $txtSubtitulo.Text =
-        "DISM RestoreHealth seguido de SFC Scannow"
-
+    $txtTitulo.Text = "Reparacao do Windows"
+    $txtSubtitulo.Text = "DISM RestoreHealth seguido de SFC Scannow"
     Reparar-Windows
-
 })
 
 # ============================================================
@@ -2970,15 +1978,9 @@ $btnRepararWindows.Add_Click({
 # ============================================================
 
 $btnDiscos.Add_Click({
-
-    $txtTitulo.Text =
-        "Saude do Armazenamento"
-
-    $txtSubtitulo.Text =
-        "Consultando status dos discos fisicos"
-
+    $txtTitulo.Text = "Saude do Armazenamento"
+    $txtSubtitulo.Text = "Consultando status dos discos fisicos"
     Verificar-SaudeDiscos
-
 })
 
 # ============================================================
@@ -2986,15 +1988,9 @@ $btnDiscos.Add_Click({
 # ============================================================
 
 $btnMemoria.Add_Click({
-
-    $txtTitulo.Text =
-        "Diagnostico de Memoria RAM"
-
-    $txtSubtitulo.Text =
-        "Teste utilizando o Diagnostico de Memoria do Windows"
-
+    $txtTitulo.Text = "Diagnostico de Memoria RAM"
+    $txtSubtitulo.Text = "Teste utilizando o Diagnostico de Memoria do Windows"
     Testar-Memoria
-
 })
 
 # ============================================================
@@ -3002,15 +1998,9 @@ $btnMemoria.Add_Click({
 # ============================================================
 
 $btnHardware.Add_Click({
-
-    $txtTitulo.Text =
-        "Informacoes do Hardware"
-
-    $txtSubtitulo.Text =
-        "Informacoes basicas do hardware instalado"
-
+    $txtTitulo.Text = "Informacoes do Hardware"
+    $txtSubtitulo.Text = "Informacoes basicas do hardware instalado"
     Mostrar-Hardware
-
 })
 
 # ============================================================
@@ -3018,15 +2008,9 @@ $btnHardware.Add_Click({
 # ============================================================
 
 $btnRelatorio.Add_Click({
-
-    $txtTitulo.Text =
-        "Relatorio de Servico"
-
-    $txtSubtitulo.Text =
-        "Preencha os dados do atendimento e gere o relatorio tecnico"
-
+    $txtTitulo.Text = "Relatorio de Servico"
+    $txtSubtitulo.Text = "Preencha os dados do atendimento e gere o relatorio tecnico"
     Gerar-RelatorioServico
-
 })
 
 # ============================================================
@@ -3034,9 +2018,7 @@ $btnRelatorio.Add_Click({
 # ============================================================
 
 $btnChrisTitus.Add_Click({
-
     Abrir-ChrisTitus
-
 })
 
 # ============================================================
@@ -3044,26 +2026,13 @@ $btnChrisTitus.Add_Click({
 # ============================================================
 
 $btnSair.Add_Click({
-
-    $confirmacao =
-        [System.Windows.MessageBox]::Show(
-
-            "Deseja fechar o TECH INFO BELEM Cleaner Pro?",
-
-            "TECH INFO BELEM",
-
-            "YesNo",
-
-            "Question"
-
-        )
-
-    if ($confirmacao -eq "Yes") {
-
-        $Window.Close()
-
-    }
-
+    $confirmacao = [System.Windows.MessageBox]::Show(
+        "Deseja fechar o TECH INFO BELEM Cleaner Pro?",
+        "TECH INFO BELEM",
+        "YesNo",
+        "Question"
+    )
+    if ($confirmacao -eq "Yes") { $Window.Close() }
 })
 
 # ============================================================
