@@ -537,6 +537,16 @@ if (-not (Test-Administrator)) {
                                     Margin="0,7,0,0"
                                     TextWrapping="Wrap"/>
 
+                                <ProgressBar
+                                    Name="prgProgresso"
+                                    IsIndeterminate="True"
+                                    Height="6"
+                                    Margin="0,10,0,0"
+                                    Background="#111827"
+                                    BorderThickness="0"
+                                    Foreground="#22C55E"
+                                    Visibility="Collapsed"/>
+
                             </StackPanel>
 
                         </Border>
@@ -605,33 +615,26 @@ $txtStatusMemoria = $Window.FindName("txtStatusMemoria")
 
 $txtAnalise = $Window.FindName("txtAnalise")
 $txtStatus = $Window.FindName("txtStatus")
+$prgProgresso = $Window.FindName("prgProgresso")
 
 $txtTitulo = $Window.FindName("txtTitulo")
 $txtSubtitulo = $Window.FindName("txtSubtitulo")
 
 # ============================================================
-# LISTA DE BOTOES QUE DISPARAM TAREFAS (para travar durante execucao)
+# TRAVA DE TAREFA EM EXECUCAO
+# ============================================================
+# IMPORTANTE: nao usamos $botao.IsEnabled = $false para bloquear
+# os botoes durante uma tarefa. O tema padrao do Windows ignora
+# as cores customizadas (Background/Foreground) de um botao
+# desabilitado e aplica um estilo cinza-claro por cima, fazendo
+# os botoes escuros parecerem "brancos"/apagados.
+#
+# Em vez disso, usamos um sinalizador logico: se uma tarefa ja
+# esta rodando, um novo clique so mostra um aviso e nao inicia
+# nada. Os botoes continuam com a aparencia normal o tempo todo.
 # ============================================================
 
-$Global:BotoesDeAcao = @(
-    $btnAnalisar, $btnTemporarios, $btnNavegadores, $btnLixeira,
-    $btnCompleta, $btnDiagnosticoWindows, $btnRepararWindows,
-    $btnDiscos, $btnMemoria, $btnHardware, $btnRelatorio, $btnChrisTitus
-)
-
-function Set-BotoesHabilitados {
-
-    param(
-        [bool]$Habilitado
-    )
-
-    foreach ($botao in $Global:BotoesDeAcao) {
-
-        $botao.IsEnabled = $Habilitado
-
-    }
-
-}
+$Global:TarefaEmExecucao = $false
 
 # ============================================================
 # EXECUCAO ASSINCRONA (evita travar a interface)
@@ -657,9 +660,26 @@ function Start-AsyncTask {
         [string]$StatusMessage = "Processando..."
     )
 
+    if ($Global:TarefaEmExecucao) {
+
+        [System.Windows.MessageBox]::Show(
+            "Ja existe uma tarefa em execucao.`n`nAguarde a tarefa atual terminar antes de iniciar outra.",
+            "TECH INFO BELEM",
+            "OK",
+            "Warning"
+        )
+
+        return
+
+    }
+
+    $Global:TarefaEmExecucao = $true
+
     $txtStatus.Text = $StatusMessage
 
-    Set-BotoesHabilitados -Habilitado $false
+    $Window.Cursor = [System.Windows.Input.Cursors]::Wait
+
+    $prgProgresso.Visibility = [System.Windows.Visibility]::Visible
 
     $job = Start-Job -ScriptBlock $Work
 
@@ -707,7 +727,11 @@ function Start-AsyncTask {
 
                 Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
 
-                Set-BotoesHabilitados -Habilitado $true
+                $Global:TarefaEmExecucao = $false
+
+                $Window.Cursor = [System.Windows.Input.Cursors]::Arrow
+
+                $prgProgresso.Visibility = [System.Windows.Visibility]::Collapsed
 
             }
 
