@@ -227,6 +227,14 @@ if (-not (Test-Administrator)) {
                         Foreground="White"/>
 
                     <Button
+                        Name="btnLicenca"
+                        Content="STATUS DA LICENCA"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#16A34A"
+                        Foreground="White"/>
+
+                    <Button
                         Name="btnSair"
                         Content="SAIR"
                         Height="40"
@@ -601,6 +609,7 @@ $btnHardware = $Window.FindName("btnHardware")
 $btnRelatorio = $Window.FindName("btnRelatorio")
 
 $btnChrisTitus = $Window.FindName("btnChrisTitus")
+$btnLicenca = $Window.FindName("btnLicenca")
 $btnSair = $Window.FindName("btnSair")
 
 $txtComputador = $Window.FindName("txtComputador")
@@ -1588,8 +1597,55 @@ function Abrir-ChrisTitus {
 }
 
 # ============================================================
-# JANELA DE PREENCHIMENTO DO RELATORIO
+# STATUS DA LICENCA DO WINDOWS
 # ============================================================
+# Usa a ferramenta nativa do Windows (slmgr.vbs) apenas para
+# CONSULTAR o status atual da licenca (ativado, em trial, tipo
+# de licenca, dias restantes). Nao ativa, nao altera e nao
+# burla nada - e so leitura de informacao, util para saber o
+# que informar ao cliente no atendimento.
+# ============================================================
+
+function Verificar-StatusLicenca {
+
+    $txtStatus.Text = "Verificando status da licenca..."
+
+    try {
+
+        $slmgrPath = Join-Path $env:windir "System32\slmgr.vbs"
+
+        if (-not (Test-Path $slmgrPath)) {
+            throw "slmgr.vbs nao encontrado no sistema."
+        }
+
+        $resultado =
+            & cscript.exe //nologo $slmgrPath /xpr 2>&1 |
+            Out-String
+
+        $txtStatus.Text = "Status da licenca verificado"
+
+        [System.Windows.MessageBox]::Show(
+            $resultado.Trim(),
+            "TECH INFO BELEM - Status da Licenca",
+            "OK",
+            "Information"
+        )
+
+    }
+    catch {
+
+        $txtStatus.Text = "Erro ao verificar status da licenca"
+
+        [System.Windows.MessageBox]::Show(
+            "Nao foi possivel verificar o status da licenca.`n`nErro:`n$($_.Exception.Message)",
+            "TECH INFO BELEM - Erro",
+            "OK",
+            "Error"
+        )
+
+    }
+
+}
 
 function Gerar-RelatorioServico {
 
@@ -2043,6 +2099,16 @@ $btnRelatorio.Add_Click({
 
 $btnChrisTitus.Add_Click({
     Abrir-ChrisTitus
+})
+
+# ============================================================
+# EVENTO - STATUS DA LICENCA
+# ============================================================
+
+$btnLicenca.Add_Click({
+    $txtTitulo.Text = "Status da Licenca"
+    $txtSubtitulo.Text = "Consulta o status de ativacao do Windows (somente leitura)"
+    Verificar-StatusLicenca
 })
 
 # ============================================================
