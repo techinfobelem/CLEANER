@@ -1790,6 +1790,8 @@ function Ensure-SQLiteModule {
 
     try {
 
+        $ConfirmPreference = 'None'
+
         [Net.ServicePointManager]::SecurityProtocol =
             [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
@@ -1800,10 +1802,10 @@ function Ensure-SQLiteModule {
         }
 
         if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-            Install-PackageProvider -Name NuGet -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false -Scope CurrentUser -ErrorAction Stop | Out-Null
         }
 
-        Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
+        Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -Confirm:$false -ErrorAction Stop
 
         Import-Module PSSQLite -ErrorAction Stop
 
@@ -2749,6 +2751,8 @@ try {
                 return $true
             }
 
+            $ConfirmPreference = 'None'
+
             [Net.ServicePointManager]::SecurityProtocol =
                 [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
@@ -2759,10 +2763,10 @@ try {
             }
 
             if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-                Install-PackageProvider -Name NuGet -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+                Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false -Scope CurrentUser -ErrorAction Stop | Out-Null
             }
 
-            Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
+            Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -Confirm:$false -ErrorAction Stop
 
             return $true
 
