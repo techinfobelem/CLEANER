@@ -9,7 +9,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue
 
 # ============================================================
-# TECH INFO BELEM - CLEANER PRO
+# SKALON - CLEANER PRO
 # VERSAO 0.7
 # ============================================================
 # NOTA: removemos o $ErrorActionPreference = "SilentlyContinue"
@@ -38,7 +38,7 @@ if (-not (Test-Administrator)) {
 
     [System.Windows.MessageBox]::Show(
         "O Cleaner Pro nao esta sendo executado como Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente.`n`nRecomendamos executar o PowerShell como Administrador.",
-        "TECH INFO BELEM - Cleaner Pro v0.7",
+        "SKALON - Cleaner Pro v0.7",
         "OK",
         "Warning"
     )
@@ -52,11 +52,28 @@ if (-not (Test-Administrator)) {
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="TECH INFO BELEM - Cleaner Pro v0.7"
+    Title="SKALON - Cleaner Pro v0.7"
     Height="760"
     Width="1200"
     WindowStartupLocation="CenterScreen"
-    Background="#111827">
+    Background="#111111">
+
+    <Window.Resources>
+
+        <!-- Acabamento fosco com detalhe metalico sutil (sem gradientes) -->
+        <Style TargetType="Button">
+            <Setter Property="BorderBrush" Value="#3A3A3A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style TargetType="Border">
+            <Setter Property="BorderBrush" Value="#2A2A2A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+    </Window.Resources>
 
     <Grid>
 
@@ -67,7 +84,7 @@ if (-not (Test-Administrator)) {
 
         <Border
             Grid.Column="0"
-            Background="#0B1220">
+            Background="#0A0A0A">
 
             <ScrollViewer
                 VerticalScrollBarVisibility="Auto">
@@ -75,28 +92,37 @@ if (-not (Test-Administrator)) {
                 <StackPanel>
 
                     <TextBlock
-                        Text="TECH INFO"
-                        Foreground="#60A5FA"
-                        FontSize="25"
+                        Text="SKALON"
+                        Foreground="#FF6A00"
+                        FontSize="28"
                         FontWeight="Bold"
                         Margin="25,25,10,0"/>
-
-                    <TextBlock
-                        Text="BELEM"
-                        Foreground="#EF4444"
-                        FontSize="25"
-                        FontWeight="Bold"
-                        Margin="25,0,10,5"/>
 
                     <TextBlock
                         Text="CLEANER PRO"
                         Foreground="White"
                         FontSize="14"
-                        Margin="25,0,10,25"/>
+                        Margin="25,2,10,10"/>
+
+                    <TextBlock
+                        Text="Performance para quem trabalha."
+                        Foreground="#8A8A8A"
+                        FontSize="10"
+                        FontStyle="Italic"
+                        TextWrapping="Wrap"
+                        Margin="25,0,15,0"/>
+
+                    <TextBlock
+                        Text="Potência para quem joga."
+                        Foreground="#8A8A8A"
+                        FontSize="10"
+                        FontStyle="Italic"
+                        TextWrapping="Wrap"
+                        Margin="25,0,15,25"/>
 
                     <TextBlock
                         Text="MANUTENCAO"
-                        Foreground="#6B7280"
+                        Foreground="#8A8A8A"
                         FontSize="11"
                         FontWeight="Bold"
                         Margin="20,5,10,5"/>
@@ -106,7 +132,7 @@ if (-not (Test-Administrator)) {
                         Content="INICIO"
                         Height="40"
                         Margin="15,3"
-                        Background="#1D4ED8"
+                        Background="#FF6A00"
                         Foreground="White"/>
 
                     <Button
@@ -114,7 +140,7 @@ if (-not (Test-Administrator)) {
                         Content="ANALISAR SISTEMA"
                         Height="40"
                         Margin="15,3"
-                        Background="#047857"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -122,7 +148,7 @@ if (-not (Test-Administrator)) {
                         Content="LIMPAR TEMPORARIOS"
                         Height="40"
                         Margin="15,3"
-                        Background="#1F2937"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -130,7 +156,7 @@ if (-not (Test-Administrator)) {
                         Content="LIMPAR NAVEGADORES"
                         Height="40"
                         Margin="15,3"
-                        Background="#1F2937"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -138,7 +164,7 @@ if (-not (Test-Administrator)) {
                         Content="ESVAZIAR LIXEIRA"
                         Height="40"
                         Margin="15,3"
-                        Background="#1F2937"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -146,12 +172,12 @@ if (-not (Test-Administrator)) {
                         Content="LIMPEZA COMPLETA"
                         Height="40"
                         Margin="15,3"
-                        Background="#991B1B"
+                        Background="#FF6A00"
                         Foreground="White"/>
 
                     <TextBlock
                         Text="REPARACAO DO WINDOWS"
-                        Foreground="#6B7280"
+                        Foreground="#8A8A8A"
                         FontSize="11"
                         FontWeight="Bold"
                         Margin="20,20,10,5"/>
@@ -161,7 +187,7 @@ if (-not (Test-Administrator)) {
                         Content="DIAGNOSTICAR WINDOWS"
                         Height="40"
                         Margin="15,3"
-                        Background="#1F2937"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -169,12 +195,12 @@ if (-not (Test-Administrator)) {
                         Content="REPARAR WINDOWS"
                         Height="40"
                         Margin="15,3"
-                        Background="#92400E"
+                        Background="#FF6A00"
                         Foreground="White"/>
 
                     <TextBlock
                         Text="DIAGNOSTICO DE HARDWARE"
-                        Foreground="#6B7280"
+                        Foreground="#8A8A8A"
                         FontSize="11"
                         FontWeight="Bold"
                         Margin="20,20,10,5"/>
@@ -184,7 +210,7 @@ if (-not (Test-Administrator)) {
                         Content="SAUDE SSD / HD"
                         Height="40"
                         Margin="15,3"
-                        Background="#1F2937"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -192,7 +218,7 @@ if (-not (Test-Administrator)) {
                         Content="TESTE DE MEMORIA RAM"
                         Height="40"
                         Margin="15,3"
-                        Background="#1F2937"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -200,12 +226,12 @@ if (-not (Test-Administrator)) {
                         Content="INFORMACOES DO HARDWARE"
                         Height="40"
                         Margin="15,3"
-                        Background="#1F2937"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <TextBlock
                         Text="ATENDIMENTO"
-                        Foreground="#6B7280"
+                        Foreground="#8A8A8A"
                         FontSize="11"
                         FontWeight="Bold"
                         Margin="20,20,10,5"/>
@@ -215,7 +241,7 @@ if (-not (Test-Administrator)) {
                         Content="RELATORIO DE SERVICO"
                         Height="40"
                         Margin="15,3"
-                        Background="#0369A1"
+                        Background="#FF6A00"
                         Foreground="White"/>
 
                     <Button
@@ -223,12 +249,12 @@ if (-not (Test-Administrator)) {
                         Content="HISTORICO / FATURAMENTO"
                         Height="40"
                         Margin="15,3"
-                        Background="#155E75"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <TextBlock
                         Text="FERRAMENTAS"
-                        Foreground="#6B7280"
+                        Foreground="#8A8A8A"
                         FontSize="11"
                         FontWeight="Bold"
                         Margin="20,20,10,5"/>
@@ -238,7 +264,7 @@ if (-not (Test-Administrator)) {
                         Content="WINUTIL - CHRIS TITUS"
                         Height="40"
                         Margin="15,3"
-                        Background="#7C3AED"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -246,7 +272,7 @@ if (-not (Test-Administrator)) {
                         Content="STATUS DA LICENCA"
                         Height="40"
                         Margin="15,3"
-                        Background="#16A34A"
+                        Background="#1A1A1A"
                         Foreground="White"/>
 
                     <Button
@@ -254,7 +280,7 @@ if (-not (Test-Administrator)) {
                         Content="SAIR"
                         Height="40"
                         Margin="15,25,15,20"
-                        Background="#374151"
+                        Background="#2A2A2A"
                         Foreground="White"/>
 
                 </StackPanel>
@@ -287,7 +313,7 @@ if (-not (Test-Administrator)) {
                 Name="txtSubtitulo"
                 Grid.Row="1"
                 Text="Ferramenta profissional de limpeza, diagnostico e manutencao"
-                Foreground="#9CA3AF"
+                Foreground="#8A8A8A"
                 FontSize="15"
                 Margin="0,5,0,20"/>
 
@@ -309,7 +335,7 @@ if (-not (Test-Administrator)) {
                         Margin="0,0,10,0">
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20"
                             Margin="0,0,0,12">
@@ -318,7 +344,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="COMPUTADOR"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -334,7 +360,7 @@ if (-not (Test-Administrator)) {
                         </Border>
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20"
                             Margin="0,0,0,12">
@@ -343,7 +369,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="SISTEMA OPERACIONAL"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -359,7 +385,7 @@ if (-not (Test-Administrator)) {
                         </Border>
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20"
                             Margin="0,0,0,12">
@@ -368,7 +394,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="PROCESSADOR"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -384,7 +410,7 @@ if (-not (Test-Administrator)) {
                         </Border>
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20"
                             Margin="0,0,0,12">
@@ -393,7 +419,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="MEMORIA RAM"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -408,7 +434,7 @@ if (-not (Test-Administrator)) {
                         </Border>
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20">
 
@@ -416,7 +442,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="STATUS DA MEMORIA"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -439,7 +465,7 @@ if (-not (Test-Administrator)) {
                         Margin="10,0,0,0">
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20"
                             Margin="0,0,0,12">
@@ -448,7 +474,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="DISCO PRINCIPAL"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -464,7 +490,7 @@ if (-not (Test-Administrator)) {
                         </Border>
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20"
                             Margin="0,0,0,12">
@@ -473,7 +499,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="ESPACO DISPONIVEL"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -488,7 +514,7 @@ if (-not (Test-Administrator)) {
                         </Border>
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20"
                             Margin="0,0,0,12">
@@ -497,7 +523,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="SAUDE DO ARMAZENAMENTO"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -514,7 +540,7 @@ if (-not (Test-Administrator)) {
                         </Border>
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20"
                             Margin="0,0,0,12">
@@ -523,7 +549,7 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="ANALISE DE LIMPEZA"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
@@ -540,7 +566,7 @@ if (-not (Test-Administrator)) {
                         </Border>
 
                         <Border
-                            Background="#1F2937"
+                            Background="#1A1A1A"
                             CornerRadius="10"
                             Padding="20">
 
@@ -548,13 +574,13 @@ if (-not (Test-Administrator)) {
 
                                 <TextBlock
                                     Text="STATUS"
-                                    Foreground="#60A5FA"
+                                    Foreground="#FF6A00"
                                     FontSize="13"/>
 
                                 <TextBlock
                                     Name="txtStatus"
                                     Text="Sistema pronto"
-                                    Foreground="#22C55E"
+                                    Foreground="#FF6A00"
                                     FontSize="18"
                                     FontWeight="Bold"
                                     Margin="0,7,0,0"
@@ -565,9 +591,9 @@ if (-not (Test-Administrator)) {
                                     IsIndeterminate="True"
                                     Height="6"
                                     Margin="0,10,0,0"
-                                    Background="#111827"
+                                    Background="#111111"
                                     BorderThickness="0"
-                                    Foreground="#22C55E"
+                                    Foreground="#FF6A00"
                                     Visibility="Collapsed"/>
 
                             </StackPanel>
@@ -583,8 +609,8 @@ if (-not (Test-Administrator)) {
             <TextBlock
                 Name="txtRodape"
                 Grid.Row="3"
-                Text="TECH INFO BELEM - Cleaner Pro v0.7"
-                Foreground="#6B7280"
+                Text="SKALON - Cleaner Pro v0.7"
+                Foreground="#8A8A8A"
                 HorizontalAlignment="Right"
                 Margin="0,20,0,0"/>
 
@@ -689,7 +715,7 @@ function Start-AsyncTask {
 
         [System.Windows.MessageBox]::Show(
             "Ja existe uma tarefa em execucao.`n`nAguarde a tarefa atual terminar antes de iniciar outra.",
-            "TECH INFO BELEM",
+            "SKALON",
             "OK",
             "Warning"
         )
@@ -735,7 +761,7 @@ function Start-AsyncTask {
 
                     [System.Windows.MessageBox]::Show(
                         "A tarefa nao foi concluida corretamente.`n`n$erro",
-                        "TECH INFO BELEM - Erro",
+                        "SKALON - Erro",
                         "OK",
                         "Error"
                     )
@@ -1063,7 +1089,7 @@ function Analisar-Sistema {
             "Lixeira: $([math]::Round($resultado.RecycleSize / 1MB, 2)) MB`n`n" +
             "Total potencialmente recuperavel: $totalGB GB",
 
-            "TECH INFO BELEM - Analise",
+            "SKALON - Analise",
             "OK",
             "Information"
         )
@@ -1224,7 +1250,7 @@ function Limpeza-Completa {
             "- Lixeira`n`n" +
             "Cookies, senhas, favoritos e historico nao serao removidos.",
 
-            "TECH INFO BELEM - Limpeza Completa",
+            "SKALON - Limpeza Completa",
             "YesNo",
             "Question"
         )
@@ -1303,7 +1329,7 @@ function Limpeza-Completa {
             "Espaco liberado: $freedMB MB`n`n" +
             "O Cleaner Pro concluiu a manutencao.",
 
-            "TECH INFO BELEM - Cleaner Pro v0.7",
+            "SKALON - Cleaner Pro v0.7",
             "OK",
             "Information"
         )
@@ -1345,7 +1371,7 @@ function Diagnosticar-Windows {
             "SFC ExitCode: $($resultado.SfcExitCode)`n`n" +
             "Para uma analise detalhada, consulte os logs do Windows.",
 
-            "TECH INFO BELEM - Diagnostico Windows",
+            "SKALON - Diagnostico Windows",
             "OK",
             "Information"
         )
@@ -1372,7 +1398,7 @@ function Reparar-Windows {
             " responsiva, mas evite fechar o programa.`n`n" +
             "Deseja continuar?",
 
-            "TECH INFO BELEM - Reparar Windows",
+            "SKALON - Reparar Windows",
             "YesNo",
             "Warning"
         )
@@ -1404,7 +1430,7 @@ function Reparar-Windows {
             "SFC ExitCode: $($resultado.SfcExitCode)`n`n" +
             "Recomendamos reiniciar o computador caso o sistema tenha apresentado problemas.",
 
-            "TECH INFO BELEM - Reparar Windows",
+            "SKALON - Reparar Windows",
             "OK",
             "Information"
         )
@@ -1444,7 +1470,7 @@ function Verificar-SaudeDiscos {
 
             [System.Windows.MessageBox]::Show(
                 "Nao foi possivel obter informacoes de saude dos discos.`n`nIsso pode ocorrer devido ao driver ou ao tipo de armazenamento.",
-                "TECH INFO BELEM - Diagnostico",
+                "SKALON - Diagnostico",
                 "OK",
                 "Warning"
             )
@@ -1476,7 +1502,7 @@ function Verificar-SaudeDiscos {
 
         [System.Windows.MessageBox]::Show(
             $resultadoTexto,
-            "TECH INFO BELEM - Saude SSD / HD",
+            "SKALON - Saude SSD / HD",
             "OK",
             "Information"
         )
@@ -1501,7 +1527,7 @@ function Testar-Memoria {
             "Salve todos os trabalhos antes de continuar.`n`n" +
             "Deseja abrir o diagnostico de memoria?",
 
-            "TECH INFO BELEM - Teste de RAM",
+            "SKALON - Teste de RAM",
             "YesNo",
             "Warning"
         )
@@ -1518,7 +1544,7 @@ function Testar-Memoria {
 
     [System.Windows.MessageBox]::Show(
         "O Diagnostico de Memoria do Windows foi aberto.`n`nEscolha uma das opcoes disponiveis para iniciar o teste.`n`nO resultado sera apresentado pelo Windows apos a verificacao.",
-        "TECH INFO BELEM - Teste de RAM",
+        "SKALON - Teste de RAM",
         "OK",
         "Information"
     )
@@ -1554,7 +1580,7 @@ function Mostrar-Hardware {
 
         [System.Windows.MessageBox]::Show(
             $resultado,
-            "TECH INFO BELEM - Hardware",
+            "SKALON - Hardware",
             "OK",
             "Information"
         )
@@ -1579,7 +1605,7 @@ function Abrir-ChrisTitus {
 
             "Deseja abrir o Windows Utility do Chris Titus Tech?`n`nO WinUtil sera executado diretamente a partir do site oficial.",
 
-            "TECH INFO BELEM - WinUtil",
+            "SKALON - WinUtil",
             "YesNo",
             "Question"
         )
@@ -1601,7 +1627,7 @@ function Abrir-ChrisTitus {
 
             [System.Windows.MessageBox]::Show(
                 "Nao foi possivel abrir o Chris Titus WinUtil.`n`nErro:`n$($_.Exception.Message)",
-                "TECH INFO BELEM - Erro",
+                "SKALON - Erro",
                 "OK",
                 "Error"
             )
@@ -1642,7 +1668,7 @@ function Verificar-StatusLicenca {
 
         [System.Windows.MessageBox]::Show(
             $resultado.Trim(),
-            "TECH INFO BELEM - Status da Licenca",
+            "SKALON - Status da Licenca",
             "OK",
             "Information"
         )
@@ -1654,7 +1680,7 @@ function Verificar-StatusLicenca {
 
         [System.Windows.MessageBox]::Show(
             "Nao foi possivel verificar o status da licenca.`n`nErro:`n$($_.Exception.Message)",
-            "TECH INFO BELEM - Erro",
+            "SKALON - Erro",
             "OK",
             "Error"
         )
@@ -1965,7 +1991,7 @@ function Abrir-HistoricoServicos {
 
         [System.Windows.MessageBox]::Show(
             "Nao foi possivel carregar o banco de dados.`n`nMotivo: $($Global:UltimoErroSQLite)`n`nVerifique sua internet/proxy e tente novamente.",
-            "TECH INFO BELEM - Banco de Dados",
+            "SKALON - Banco de Dados",
             "OK",
             "Warning"
         )
@@ -1983,7 +2009,7 @@ function Abrir-HistoricoServicos {
 
         [System.Windows.MessageBox]::Show(
             "Nao foi possivel abrir o banco de dados.`n`nErro:`n$($_.Exception.Message)",
-            "TECH INFO BELEM - Erro",
+            "SKALON - Erro",
             "OK",
             "Error"
         )
@@ -1997,10 +2023,10 @@ function Abrir-HistoricoServicos {
     # ------------------------------------------------------------
 
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = "TECH INFO BELEM - Historico e Faturamento"
+    $form.Text = "SKALON - Historico e Faturamento"
     $form.Size = New-Object System.Drawing.Size(950,650)
     $form.StartPosition = "CenterScreen"
-    $form.BackColor = [System.Drawing.Color]::FromArgb(17,24,39)
+    $form.BackColor = [System.Drawing.Color]::FromArgb(17,17,17)
     $form.ForeColor = [System.Drawing.Color]::White
     $form.FormBorderStyle = "Sizable"
     $form.MinimumSize = New-Object System.Drawing.Size(750,500)
@@ -2059,7 +2085,7 @@ function Abrir-HistoricoServicos {
     $btnBuscar.Text = "BUSCAR"
     $btnBuscar.Location = New-Object System.Drawing.Point(580,44)
     $btnBuscar.Size = New-Object System.Drawing.Size(110,32)
-    $btnBuscar.BackColor = [System.Drawing.Color]::FromArgb(21,94,117)
+    $btnBuscar.BackColor = [System.Drawing.Color]::FromArgb(255,106,0)
     $btnBuscar.ForeColor = [System.Drawing.Color]::White
     $form.Controls.Add($btnBuscar)
 
@@ -2067,7 +2093,7 @@ function Abrir-HistoricoServicos {
     $btnExportarCsv.Text = "EXPORTAR CSV"
     $btnExportarCsv.Location = New-Object System.Drawing.Point(700,44)
     $btnExportarCsv.Size = New-Object System.Drawing.Size(130,32)
-    $btnExportarCsv.BackColor = [System.Drawing.Color]::FromArgb(55,65,81)
+    $btnExportarCsv.BackColor = [System.Drawing.Color]::FromArgb(42,42,42)
     $btnExportarCsv.ForeColor = [System.Drawing.Color]::White
     $form.Controls.Add($btnExportarCsv)
 
@@ -2080,7 +2106,7 @@ function Abrir-HistoricoServicos {
     $dgvResultados.AllowUserToDeleteRows = $false
     $dgvResultados.SelectionMode = "FullRowSelect"
     $dgvResultados.AutoSizeColumnsMode = "Fill"
-    $dgvResultados.BackgroundColor = [System.Drawing.Color]::FromArgb(31,41,55)
+    $dgvResultados.BackgroundColor = [System.Drawing.Color]::FromArgb(26,26,26)
     $form.Controls.Add($dgvResultados)
 
     $lblTotal = New-Object System.Windows.Forms.Label
@@ -2089,7 +2115,7 @@ function Abrir-HistoricoServicos {
     $lblTotal.Size = New-Object System.Drawing.Size(890,30)
     $lblTotal.Anchor = "Bottom,Left,Right"
     $lblTotal.Font = New-Object System.Drawing.Font("Arial",12,[System.Drawing.FontStyle]::Bold)
-    $lblTotal.ForeColor = [System.Drawing.Color]::FromArgb(34,197,94)
+    $lblTotal.ForeColor = [System.Drawing.Color]::FromArgb(255,106,0)
     $form.Controls.Add($lblTotal)
 
     $script:UltimaTabelaResultados = $null
@@ -2152,7 +2178,7 @@ function Abrir-HistoricoServicos {
 
             [System.Windows.Forms.MessageBox]::Show(
                 "Erro ao consultar o banco de dados:`n`n$($_.Exception.Message)",
-                "TECH INFO BELEM - Erro",
+                "SKALON - Erro",
                 "OK",
                 "Error"
             )
@@ -2168,7 +2194,7 @@ function Abrir-HistoricoServicos {
         if (-not $script:UltimaTabelaResultados -or $script:UltimaTabelaResultados.Rows.Count -eq 0) {
             [System.Windows.Forms.MessageBox]::Show(
                 "Nao ha resultados para exportar. Clique em BUSCAR primeiro.",
-                "TECH INFO BELEM",
+                "SKALON",
                 "OK",
                 "Warning"
             )
@@ -2188,7 +2214,7 @@ function Abrir-HistoricoServicos {
 
                 [System.Windows.Forms.MessageBox]::Show(
                     "Arquivo exportado com sucesso!",
-                    "TECH INFO BELEM",
+                    "SKALON",
                     "OK",
                     "Information"
                 )
@@ -2196,7 +2222,7 @@ function Abrir-HistoricoServicos {
             catch {
                 [System.Windows.Forms.MessageBox]::Show(
                     "Erro ao exportar:`n`n$($_.Exception.Message)",
-                    "TECH INFO BELEM - Erro",
+                    "SKALON - Erro",
                     "OK",
                     "Error"
                 )
@@ -2220,7 +2246,7 @@ function Abrir-HistoricoServicos {
             else {
                 [System.Windows.Forms.MessageBox]::Show(
                     "O arquivo do relatorio nao foi encontrado no caminho original.",
-                    "TECH INFO BELEM",
+                    "SKALON",
                     "OK",
                     "Warning"
                 )
@@ -2246,21 +2272,21 @@ function Gerar-RelatorioServico {
     # ============================================================
 
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = "TECH INFO BELEM - Relatorio de Servico"
+    $form.Text = "SKALON - Relatorio de Servico"
     $form.Size = New-Object System.Drawing.Size(650,715)
     $form.StartPosition = "CenterScreen"
-    $form.BackColor = [System.Drawing.Color]::FromArgb(17,24,39)
+    $form.BackColor = [System.Drawing.Color]::FromArgb(17,17,17)
     $form.ForeColor = [System.Drawing.Color]::White
     $form.FormBorderStyle = "FixedDialog"
     $form.MaximizeBox = $false
     $form.MinimizeBox = $false
 
     $lblTitulo = New-Object System.Windows.Forms.Label
-    $lblTitulo.Text = "RELATORIO DE SERVICO TECH INFO BELEM"
+    $lblTitulo.Text = "RELATORIO DE SERVICO SKALON"
     $lblTitulo.Location = New-Object System.Drawing.Point(25,20)
     $lblTitulo.Size = New-Object System.Drawing.Size(580,35)
     $lblTitulo.Font = New-Object System.Drawing.Font("Arial",16,[System.Drawing.FontStyle]::Bold)
-    $lblTitulo.ForeColor = [System.Drawing.Color]::FromArgb(96,165,250)
+    $lblTitulo.ForeColor = [System.Drawing.Color]::FromArgb(255,106,0)
     $form.Controls.Add($lblTitulo)
 
     $lblCliente = New-Object System.Windows.Forms.Label
@@ -2411,7 +2437,7 @@ function Gerar-RelatorioServico {
     $btnCancelarForm.Text = "CANCELAR"
     $btnCancelarForm.Location = New-Object System.Drawing.Point(350,585)
     $btnCancelarForm.Size = New-Object System.Drawing.Size(120,40)
-    $btnCancelarForm.BackColor = [System.Drawing.Color]::FromArgb(55,65,81)
+    $btnCancelarForm.BackColor = [System.Drawing.Color]::FromArgb(42,42,42)
     $btnCancelarForm.ForeColor = [System.Drawing.Color]::White
     $btnCancelarForm.Add_Click({
         $form.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
@@ -2423,13 +2449,13 @@ function Gerar-RelatorioServico {
     $btnGerarForm.Text = "GERAR RELATORIO"
     $btnGerarForm.Location = New-Object System.Drawing.Point(480,585)
     $btnGerarForm.Size = New-Object System.Drawing.Size(125,40)
-    $btnGerarForm.BackColor = [System.Drawing.Color]::FromArgb(3,105,161)
+    $btnGerarForm.BackColor = [System.Drawing.Color]::FromArgb(255,106,0)
     $btnGerarForm.ForeColor = [System.Drawing.Color]::White
     $btnGerarForm.Add_Click({
         if ([string]::IsNullOrWhiteSpace($txtServicoForm.Text)) {
             [System.Windows.Forms.MessageBox]::Show(
                 "Digite o servico realizado.",
-                "TECH INFO BELEM",
+                "SKALON",
                 "OK",
                 "Warning"
             )
@@ -2538,19 +2564,20 @@ function Gerar-RelatorioServico {
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Relatorio de Servico - TECH INFO BELEM</title>
+<title>Relatorio de Servico - SKALON</title>
 <style>
-body { font-family: Arial; background:#f3f4f6; padding:30px; color:#1f2937; }
+body { font-family: Arial; background:#FFFFFF; padding:30px; color:#111111; }
 .container { max-width:1000px; margin:auto; background:white; padding:35px; }
-.header { border-bottom:3px solid #2563eb; padding-bottom:20px; }
-.header h1 { color:#1d4ed8; }
-h2 { background:#1f2937; color:white; padding:10px; }
+.header { border-bottom:3px solid #FF6A00; padding-bottom:20px; }
+.header h1 { color:#FF6A00; }
+.header .slogan { color:#666; font-style:italic; font-size:13px; margin-top:5px; }
+h2 { background:#111111; color:white; padding:10px; }
 .info { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .card { background:#f9fafb; border:1px solid #ddd; padding:15px; }
 .label { font-weight:bold; }
-.valor { font-size:24px; font-weight:bold; color:#166534; }
+.valor { font-size:24px; font-weight:bold; color:#FF6A00; }
 table { width:100%; border-collapse:collapse; }
-th { background:#2563eb; color:white; padding:10px; }
+th { background:#FF6A00; color:white; padding:10px; }
 td { border:1px solid #ddd; padding:10px; }
 .servico { background:#f9fafb; border:1px solid #ddd; padding:20px; min-height:80px; }
 .footer { margin-top:40px; border-top:1px solid #ddd; padding-top:15px; font-size:12px; color:#666; }
@@ -2559,7 +2586,8 @@ td { border:1px solid #ddd; padding:10px; }
 <body>
 <div class="container">
 <div class="header">
-<h1>TECH INFO BELEM</h1>
+<h1>SKALON</h1>
+<p class="slogan">Performance para quem trabalha. Potência para quem joga.</p>
 <p>RELATORIO DE SERVICO TECNICO</p>
 <p>Cleaner Pro v0.7</p>
 </div>
@@ -2594,7 +2622,7 @@ $diskHealthHtml
 <h2>OBSERVACOES</h2>
 <div class="servico">$observacoes</div>
 <div class="footer">
-TECH INFO BELEM - Assistencia Tecnica em Computadores, Notebooks e Celulares<br>
+SKALON - Performance para quem trabalha. Potência para quem joga.<br>
 Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
 </div>
 </div>
@@ -2642,7 +2670,7 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
 
         [System.Windows.MessageBox]::Show(
             "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile",
-            "TECH INFO BELEM",
+            "SKALON",
             "OK",
             "Information"
         )
@@ -2654,7 +2682,7 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
 
         [System.Windows.MessageBox]::Show(
             "ERRO AO GERAR RELATORIO:`n`n$($_.Exception.Message)",
-            "TECH INFO BELEM - Erro",
+            "SKALON - Erro",
             "OK",
             "Error"
         )
@@ -2691,7 +2719,7 @@ $btnAnalisar.Add_Click({
 $btnTemporarios.Add_Click({
     $confirmacao = [System.Windows.MessageBox]::Show(
         "Deseja limpar os arquivos temporarios do sistema?",
-        "TECH INFO BELEM",
+        "SKALON",
         "YesNo",
         "Question"
     )
@@ -2705,7 +2733,7 @@ $btnTemporarios.Add_Click({
 $btnNavegadores.Add_Click({
     $confirmacao = [System.Windows.MessageBox]::Show(
         "Deseja limpar os caches dos navegadores instalados?`n`nCookies, senhas, favoritos e historico nao serao removidos.",
-        "TECH INFO BELEM - Navegadores",
+        "SKALON - Navegadores",
         "YesNo",
         "Question"
     )
@@ -2719,7 +2747,7 @@ $btnNavegadores.Add_Click({
 $btnLixeira.Add_Click({
     $confirmacao = [System.Windows.MessageBox]::Show(
         "Deseja esvaziar a Lixeira do Windows?",
-        "TECH INFO BELEM - Lixeira",
+        "SKALON - Lixeira",
         "YesNo",
         "Warning"
     )
@@ -2828,8 +2856,8 @@ $btnLicenca.Add_Click({
 
 $btnSair.Add_Click({
     $confirmacao = [System.Windows.MessageBox]::Show(
-        "Deseja fechar o TECH INFO BELEM Cleaner Pro?",
-        "TECH INFO BELEM",
+        "Deseja fechar o SKALON Cleaner Pro?",
+        "SKALON",
         "YesNo",
         "Question"
     )
