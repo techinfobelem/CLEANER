@@ -211,6 +211,14 @@ if (-not (Test-Administrator)) {
                         Background="#0369A1"
                         Foreground="White"/>
 
+                    <Button
+                        Name="btnHistorico"
+                        Content="HISTORICO / FATURAMENTO"
+                        Height="40"
+                        Margin="15,3"
+                        Background="#155E75"
+                        Foreground="White"/>
+
                     <TextBlock
                         Text="FERRAMENTAS"
                         Foreground="#6B7280"
@@ -607,6 +615,7 @@ $btnMemoria = $Window.FindName("btnMemoria")
 $btnHardware = $Window.FindName("btnHardware")
 
 $btnRelatorio = $Window.FindName("btnRelatorio")
+$btnHistorico = $Window.FindName("btnHistorico")
 
 $btnChrisTitus = $Window.FindName("btnChrisTitus")
 $btnLicenca = $Window.FindName("btnLicenca")
@@ -1647,6 +1656,467 @@ function Verificar-StatusLicenca {
 
 }
 
+# ============================================================
+# BANCO DE DADOS (SQLite) - RELATORIOS DE SERVICO
+# ============================================================
+# O Cleaner Pro roda via "irm | iex" direto da internet, entao
+# nao ha garantia de que o modulo PSSQLite ja esteja instalado
+# no PC do cliente. Por isso, tentamos instalar na hora (precisa
+# de internet no primeiro uso). Se nao conseguir, o relatorio
+# HTML continua sendo salvo normalmente - so o registro no banco
+# fica pendente, com aviso claro para o tecnico.
+# ============================================================
+
+$Global:CaminhoPastaRelatorios = "C:\Relatorio Tech Info Belem"
+$Global:CaminhoBancoDados = Join-Path $Global:CaminhoPastaRelatorios "relatorios.sqlite"
+
+function ConvertTo-ValorNumerico {
+
+    param(
+        [string]$Texto
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Texto)) {
+        return 0.0
+    }
+
+    $limpo = $Texto -replace '[^\d,\.]', ''
+
+    if ($limpo -match ',\d{1,2}$') {
+        # formato brasileiro: 1.500,00 -> 1500.00
+        $limpo = $limpo -replace '\.', ''
+        $limpo = $limpo -replace ',', '.'
+    }
+    else {
+        $limpo = $limpo -replace ',', ''
+    }
+
+    $valor = 0.0
+    [void][double]::TryParse(
+        $limpo,
+        [Globalization.NumberStyles]::Any,
+        [Globalization.CultureInfo]::InvariantCulture,
+        [ref]$valor
+    )
+
+    return $valor
+
+}
+
+function Ensure-SQLiteModule {
+
+    if (Get-Module -ListAvailable -Name PSSQLite) {
+
+        try {
+            Import-Module PSSQLite -ErrorAction Stop
+            return $true
+        }
+        catch {
+            return $false
+        }
+
+    }
+
+    try {
+
+        [Net.ServicePointManager]::SecurityProtocol =
+            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+        $repositorio = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
+
+        if ($repositorio -and $repositorio.InstallationPolicy -ne 'Trusted') {
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+        }
+
+        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+            Install-PackageProvider -Name NuGet -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+        }
+
+        Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
+
+        Import-Module PSSQLite -ErrorAction Stop
+
+        return $true
+
+    }
+    catch {
+
+        return $false
+
+    }
+
+}
+
+function Initialize-BancoDeDados {
+
+    if (-not (Test-Path $Global:CaminhoPastaRelatorios)) {
+        New-Item -Path $Global:CaminhoPastaRelatorios -ItemType Directory -Force -ErrorAction Stop | Out-Null
+    }
+
+    $criarTabela = @"
+CREATE TABLE IF NOT EXISTS Relatorios (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    DataHoraIso TEXT,
+    DataFormatada TEXT,
+    Cliente TEXT,
+    Telefone TEXT,
+    Servico TEXT,
+    Valor REAL,
+    Pagamento TEXT,
+    Observacoes TEXT,
+    Computador TEXT,
+    ArquivoHTML TEXT
+);
+"@
+
+    Invoke-SqliteQuery -DataSource $Global:CaminhoBancoDados -Query $criarTabela
+
+}
+
+function Salvar-RelatorioNoBanco {
+
+    param(
+        [string]$DataHoraIso,
+        [string]$DataFormatada,
+        [string]$Cliente,
+        [string]$Telefone,
+        [string]$Servico,
+        [double]$Valor,
+        [string]$Pagamento,
+        [string]$Observacoes,
+        [string]$Computador,
+        [string]$ArquivoHTML
+    )
+
+    if (-not (Ensure-SQLiteModule)) {
+        return $false
+    }
+
+    try {
+
+        Initialize-BancoDeDados
+
+        $insertQuery = @"
+INSERT INTO Relatorios
+    (DataHoraIso, DataFormatada, Cliente, Telefone, Servico, Valor, Pagamento, Observacoes, Computador, ArquivoHTML)
+VALUES
+    (@DataHoraIso, @DataFormatada, @Cliente, @Telefone, @Servico, @Valor, @Pagamento, @Observacoes, @Computador, @ArquivoHTML);
+"@
+
+        $parametros = @{
+            DataHoraIso   = $DataHoraIso
+            DataFormatada = $DataFormatada
+            Cliente       = $Cliente
+            Telefone      = $Telefone
+            Servico       = $Servico
+            Valor         = $Valor
+            Pagamento     = $Pagamento
+            Observacoes   = $Observacoes
+            Computador    = $Computador
+            ArquivoHTML   = $ArquivoHTML
+        }
+
+        Invoke-SqliteQuery -DataSource $Global:CaminhoBancoDados -Query $insertQuery -SqlParameters $parametros
+
+        return $true
+
+    }
+    catch {
+
+        return $false
+
+    }
+
+}
+
+# ============================================================
+# JANELA DE HISTORICO / FATURAMENTO
+# ============================================================
+
+function Abrir-HistoricoServicos {
+
+    $txtStatus.Text = "Abrindo historico de servicos..."
+
+    if (-not (Ensure-SQLiteModule)) {
+
+        $txtStatus.Text = "Banco de dados indisponivel"
+
+        [System.Windows.MessageBox]::Show(
+            "Nao foi possivel carregar o banco de dados.`n`nIsso normalmente acontece por falta de conexao com a internet no primeiro uso (o modulo PSSQLite precisa ser baixado uma vez).`n`nVerifique sua internet e tente novamente.",
+            "TECH INFO BELEM - Banco de Dados",
+            "OK",
+            "Warning"
+        )
+
+        return
+
+    }
+
+    try {
+        Initialize-BancoDeDados
+    }
+    catch {
+
+        $txtStatus.Text = "Erro ao abrir o banco de dados"
+
+        [System.Windows.MessageBox]::Show(
+            "Nao foi possivel abrir o banco de dados.`n`nErro:`n$($_.Exception.Message)",
+            "TECH INFO BELEM - Erro",
+            "OK",
+            "Error"
+        )
+
+        return
+
+    }
+
+    # ------------------------------------------------------------
+    # JANELA
+    # ------------------------------------------------------------
+
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "TECH INFO BELEM - Historico e Faturamento"
+    $form.Size = New-Object System.Drawing.Size(950,650)
+    $form.StartPosition = "CenterScreen"
+    $form.BackColor = [System.Drawing.Color]::FromArgb(17,24,39)
+    $form.ForeColor = [System.Drawing.Color]::White
+    $form.FormBorderStyle = "Sizable"
+    $form.MinimumSize = New-Object System.Drawing.Size(750,500)
+
+    $lblPeriodo = New-Object System.Windows.Forms.Label
+    $lblPeriodo.Text = "PERIODO"
+    $lblPeriodo.Location = New-Object System.Drawing.Point(20,20)
+    $lblPeriodo.Size = New-Object System.Drawing.Size(150,25)
+    $form.Controls.Add($lblPeriodo)
+
+    $cmbPeriodo = New-Object System.Windows.Forms.ComboBox
+    $cmbPeriodo.Location = New-Object System.Drawing.Point(20,45)
+    $cmbPeriodo.Size = New-Object System.Drawing.Size(200,30)
+    $cmbPeriodo.DropDownStyle = "DropDownList"
+    [void]$cmbPeriodo.Items.Add("Mes atual")
+    [void]$cmbPeriodo.Items.Add("Mes anterior")
+    [void]$cmbPeriodo.Items.Add("Ano atual")
+    [void]$cmbPeriodo.Items.Add("Todos os periodos")
+    [void]$cmbPeriodo.Items.Add("Personalizado")
+    $cmbPeriodo.SelectedIndex = 0
+    $form.Controls.Add($cmbPeriodo)
+
+    $lblDe = New-Object System.Windows.Forms.Label
+    $lblDe.Text = "DE"
+    $lblDe.Location = New-Object System.Drawing.Point(240,20)
+    $lblDe.Size = New-Object System.Drawing.Size(100,25)
+    $form.Controls.Add($lblDe)
+
+    $dtInicio = New-Object System.Windows.Forms.DateTimePicker
+    $dtInicio.Location = New-Object System.Drawing.Point(240,45)
+    $dtInicio.Size = New-Object System.Drawing.Size(150,30)
+    $dtInicio.Format = "Short"
+    $dtInicio.Enabled = $false
+    $form.Controls.Add($dtInicio)
+
+    $lblAte = New-Object System.Windows.Forms.Label
+    $lblAte.Text = "ATE"
+    $lblAte.Location = New-Object System.Drawing.Point(410,20)
+    $lblAte.Size = New-Object System.Drawing.Size(100,25)
+    $form.Controls.Add($lblAte)
+
+    $dtFim = New-Object System.Windows.Forms.DateTimePicker
+    $dtFim.Location = New-Object System.Drawing.Point(410,45)
+    $dtFim.Size = New-Object System.Drawing.Size(150,30)
+    $dtFim.Format = "Short"
+    $dtFim.Enabled = $false
+    $form.Controls.Add($dtFim)
+
+    $cmbPeriodo.Add_SelectedIndexChanged({
+        $habilitado = ($cmbPeriodo.SelectedItem -eq "Personalizado")
+        $dtInicio.Enabled = $habilitado
+        $dtFim.Enabled = $habilitado
+    })
+
+    $btnBuscar = New-Object System.Windows.Forms.Button
+    $btnBuscar.Text = "BUSCAR"
+    $btnBuscar.Location = New-Object System.Drawing.Point(580,44)
+    $btnBuscar.Size = New-Object System.Drawing.Size(110,32)
+    $btnBuscar.BackColor = [System.Drawing.Color]::FromArgb(21,94,117)
+    $btnBuscar.ForeColor = [System.Drawing.Color]::White
+    $form.Controls.Add($btnBuscar)
+
+    $btnExportarCsv = New-Object System.Windows.Forms.Button
+    $btnExportarCsv.Text = "EXPORTAR CSV"
+    $btnExportarCsv.Location = New-Object System.Drawing.Point(700,44)
+    $btnExportarCsv.Size = New-Object System.Drawing.Size(130,32)
+    $btnExportarCsv.BackColor = [System.Drawing.Color]::FromArgb(55,65,81)
+    $btnExportarCsv.ForeColor = [System.Drawing.Color]::White
+    $form.Controls.Add($btnExportarCsv)
+
+    $dgvResultados = New-Object System.Windows.Forms.DataGridView
+    $dgvResultados.Location = New-Object System.Drawing.Point(20,90)
+    $dgvResultados.Size = New-Object System.Drawing.Size(890,440)
+    $dgvResultados.Anchor = "Top,Bottom,Left,Right"
+    $dgvResultados.ReadOnly = $true
+    $dgvResultados.AllowUserToAddRows = $false
+    $dgvResultados.AllowUserToDeleteRows = $false
+    $dgvResultados.SelectionMode = "FullRowSelect"
+    $dgvResultados.AutoSizeColumnsMode = "Fill"
+    $dgvResultados.BackgroundColor = [System.Drawing.Color]::FromArgb(31,41,55)
+    $form.Controls.Add($dgvResultados)
+
+    $lblTotal = New-Object System.Windows.Forms.Label
+    $lblTotal.Text = "Atendimentos: 0    |    Total faturado: R$ 0,00"
+    $lblTotal.Location = New-Object System.Drawing.Point(20,540)
+    $lblTotal.Size = New-Object System.Drawing.Size(890,30)
+    $lblTotal.Anchor = "Bottom,Left,Right"
+    $lblTotal.Font = New-Object System.Drawing.Font("Arial",12,[System.Drawing.FontStyle]::Bold)
+    $lblTotal.ForeColor = [System.Drawing.Color]::FromArgb(34,197,94)
+    $form.Controls.Add($lblTotal)
+
+    $script:UltimaTabelaResultados = $null
+
+    $buscar = {
+
+        try {
+
+            switch ($cmbPeriodo.SelectedItem) {
+
+                "Mes atual" {
+                    $inicio = Get-Date -Day 1 -Hour 0 -Minute 0 -Second 0
+                    $fim = $inicio.AddMonths(1)
+                }
+                "Mes anterior" {
+                    $inicioAtual = Get-Date -Day 1 -Hour 0 -Minute 0 -Second 0
+                    $inicio = $inicioAtual.AddMonths(-1)
+                    $fim = $inicioAtual
+                }
+                "Ano atual" {
+                    $inicio = Get-Date -Month 1 -Day 1 -Hour 0 -Minute 0 -Second 0
+                    $fim = $inicio.AddYears(1)
+                }
+                "Personalizado" {
+                    $inicio = $dtInicio.Value.Date
+                    $fim = $dtFim.Value.Date.AddDays(1)
+                }
+                default {
+                    $inicio = [DateTime]::MinValue
+                    $fim = [DateTime]::MaxValue
+                }
+
+            }
+
+            $inicioStr = $inicio.ToString("yyyy-MM-dd HH:mm:ss")
+            $fimStr = $fim.ToString("yyyy-MM-dd HH:mm:ss")
+
+            $query = "SELECT DataFormatada AS Data, Cliente, Servico, Valor, Pagamento, ArquivoHTML FROM Relatorios WHERE DataHoraIso >= @Inicio AND DataHoraIso < @Fim ORDER BY DataHoraIso DESC"
+
+            $tabela = Invoke-SqliteQuery -DataSource $Global:CaminhoBancoDados -Query $query -SqlParameters @{ Inicio = $inicioStr; Fim = $fimStr } -As DataTable
+
+            $dgvResultados.DataSource = $tabela
+
+            if ($dgvResultados.Columns["ArquivoHTML"]) {
+                $dgvResultados.Columns["ArquivoHTML"].Visible = $false
+            }
+
+            $script:UltimaTabelaResultados = $tabela
+
+            $total = 0.0
+
+            foreach ($linha in $tabela.Rows) {
+                $total += [double]$linha["Valor"]
+            }
+
+            $lblTotal.Text = "Atendimentos: $($tabela.Rows.Count)    |    Total faturado: R$ $([math]::Round($total,2))"
+
+        }
+        catch {
+
+            [System.Windows.Forms.MessageBox]::Show(
+                "Erro ao consultar o banco de dados:`n`n$($_.Exception.Message)",
+                "TECH INFO BELEM - Erro",
+                "OK",
+                "Error"
+            )
+
+        }
+
+    }
+
+    $btnBuscar.Add_Click($buscar)
+
+    $btnExportarCsv.Add_Click({
+
+        if (-not $script:UltimaTabelaResultados -or $script:UltimaTabelaResultados.Rows.Count -eq 0) {
+            [System.Windows.Forms.MessageBox]::Show(
+                "Nao ha resultados para exportar. Clique em BUSCAR primeiro.",
+                "TECH INFO BELEM",
+                "OK",
+                "Warning"
+            )
+            return
+        }
+
+        $salvarDialog = New-Object System.Windows.Forms.SaveFileDialog
+        $salvarDialog.Filter = "Arquivo CSV (*.csv)|*.csv"
+        $salvarDialog.FileName = "Faturamento_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
+
+        if ($salvarDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+
+            try {
+                $script:UltimaTabelaResultados |
+                    Select-Object Data, Cliente, Servico, Valor, Pagamento |
+                    Export-Csv -Path $salvarDialog.FileName -NoTypeInformation -Encoding UTF8 -Delimiter ";"
+
+                [System.Windows.Forms.MessageBox]::Show(
+                    "Arquivo exportado com sucesso!",
+                    "TECH INFO BELEM",
+                    "OK",
+                    "Information"
+                )
+            }
+            catch {
+                [System.Windows.Forms.MessageBox]::Show(
+                    "Erro ao exportar:`n`n$($_.Exception.Message)",
+                    "TECH INFO BELEM - Erro",
+                    "OK",
+                    "Error"
+                )
+            }
+
+        }
+
+    })
+
+    $dgvResultados.Add_CellDoubleClick({
+
+        param($sender, $e)
+
+        if ($e.RowIndex -ge 0 -and $script:UltimaTabelaResultados) {
+
+            $arquivo = $dgvResultados.Rows[$e.RowIndex].Cells["ArquivoHTML"].Value
+
+            if ($arquivo -and (Test-Path $arquivo)) {
+                Start-Process -FilePath $arquivo
+            }
+            else {
+                [System.Windows.Forms.MessageBox]::Show(
+                    "O arquivo do relatorio nao foi encontrado no caminho original.",
+                    "TECH INFO BELEM",
+                    "OK",
+                    "Warning"
+                )
+            }
+
+        }
+
+    })
+
+    # busca inicial (mes atual)
+    & $buscar
+
+    $txtStatus.Text = "Historico de servicos aberto"
+
+    [void]$form.ShowDialog()
+
+}
+
 function Gerar-RelatorioServico {
 
     # ============================================================
@@ -1807,12 +2277,24 @@ function Gerar-RelatorioServico {
 
         $data = Get-Date -Format "dd/MM/yyyy HH:mm"
 
-        $cliente = [System.Net.WebUtility]::HtmlEncode($txtClienteForm.Text)
-        $telefone = [System.Net.WebUtility]::HtmlEncode($txtTelefoneForm.Text)
-        $servico = [System.Net.WebUtility]::HtmlEncode($txtServicoForm.Text)
-        $valor = [System.Net.WebUtility]::HtmlEncode($txtValorForm.Text)
-        $pagamento = [System.Net.WebUtility]::HtmlEncode($cmbPagamentoForm.SelectedItem.ToString())
-        $observacoes = [System.Net.WebUtility]::HtmlEncode($txtObservacoesForm.Text)
+        $clienteRaw = $txtClienteForm.Text.Trim()
+
+        if ([string]::IsNullOrWhiteSpace($clienteRaw)) {
+            $clienteRaw = "Cliente nao informado"
+        }
+
+        $telefoneRaw = $txtTelefoneForm.Text
+        $servicoRaw = $txtServicoForm.Text
+        $valorRaw = $txtValorForm.Text
+        $pagamentoRaw = $cmbPagamentoForm.SelectedItem.ToString()
+        $observacoesRaw = $txtObservacoesForm.Text
+
+        $cliente = [System.Net.WebUtility]::HtmlEncode($clienteRaw)
+        $telefone = [System.Net.WebUtility]::HtmlEncode($telefoneRaw)
+        $servico = [System.Net.WebUtility]::HtmlEncode($servicoRaw)
+        $valor = [System.Net.WebUtility]::HtmlEncode($valorRaw)
+        $pagamento = [System.Net.WebUtility]::HtmlEncode($pagamentoRaw)
+        $observacoes = [System.Net.WebUtility]::HtmlEncode($observacoesRaw)
 
         $servico = $servico -replace "`r`n","<br>"
         $servico = $servico -replace "`n","<br>"
@@ -1825,9 +2307,18 @@ function Gerar-RelatorioServico {
             New-Item -Path $reportFolder -ItemType Directory -Force -ErrorAction Stop | Out-Null
         }
 
-        $safeComputerName = $env:COMPUTERNAME -replace '[\\/:*?"<>|]', '_'
-        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-        $reportFile = Join-Path $reportFolder "Relatorio_${safeComputerName}_${timestamp}.html"
+        $clienteArquivo = $clienteRaw -replace '[\\/:*?"<>|]', '_'
+        $dataArquivo = Get-Date -Format "dd-MM-yyyy"
+
+        $reportFile = Join-Path $reportFolder "$clienteArquivo - $dataArquivo.html"
+
+        # Se ja existe um relatorio do mesmo cliente no mesmo dia
+        # (ex: segunda visita), evita sobrescrever adicionando (2), (3)...
+        $contador = 2
+        while (Test-Path -LiteralPath $reportFile) {
+            $reportFile = Join-Path $reportFolder "$clienteArquivo - $dataArquivo ($contador).html"
+            $contador++
+        }
 
         $gpuHtml = ""
         foreach ($video in $gpu) {
@@ -1937,14 +2428,43 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
 
         $txtStatus.Text = "Relatorio criado com sucesso"
 
+        $dataHoraIso = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        $valorNumerico = ConvertTo-ValorNumerico -Texto $valorRaw
+
+        $salvouBanco = Salvar-RelatorioNoBanco `
+            -DataHoraIso $dataHoraIso `
+            -DataFormatada $data `
+            -Cliente $clienteRaw `
+            -Telefone $telefoneRaw `
+            -Servico $servicoRaw `
+            -Valor $valorNumerico `
+            -Pagamento $pagamentoRaw `
+            -Observacoes $observacoesRaw `
+            -Computador "$($computer.Manufacturer) $($computer.Model)" `
+            -ArquivoHTML $reportFile
+
         Start-Process -FilePath $reportFile
 
-        [System.Windows.MessageBox]::Show(
-            "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile",
-            "TECH INFO BELEM",
-            "OK",
-            "Information"
-        )
+        if ($salvouBanco) {
+
+            [System.Windows.MessageBox]::Show(
+                "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile`n`nRegistrado no banco de dados (Historico / Faturamento).",
+                "TECH INFO BELEM",
+                "OK",
+                "Information"
+            )
+
+        }
+        else {
+
+            [System.Windows.MessageBox]::Show(
+                "Relatorio HTML criado com sucesso!`n`nArquivo:`n$reportFile`n`nATENCAO: nao foi possivel registrar no banco de dados (verifique sua conexao com a internet). O arquivo HTML foi salvo normalmente.",
+                "TECH INFO BELEM",
+                "OK",
+                "Warning"
+            )
+
+        }
 
     }
     catch {
@@ -2091,6 +2611,16 @@ $btnRelatorio.Add_Click({
     $txtTitulo.Text = "Relatorio de Servico"
     $txtSubtitulo.Text = "Preencha os dados do atendimento e gere o relatorio tecnico"
     Gerar-RelatorioServico
+})
+
+# ============================================================
+# EVENTO - HISTORICO / FATURAMENTO
+# ============================================================
+
+$btnHistorico.Add_Click({
+    $txtTitulo.Text = "Historico e Faturamento"
+    $txtSubtitulo.Text = "Consulte os relatorios ja gerados e o total faturado por periodo"
+    Abrir-HistoricoServicos
 })
 
 # ============================================================
