@@ -1815,11 +1815,28 @@ function Ensure-SQLiteModule {
             Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
         }
 
-        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false -Scope CurrentUser -ErrorAction Stop | Out-Null
+        # Se estiver como Administrador, instala para todos os usuarios
+        # (C:\Program Files\WindowsPowerShell\Modules) - evita depender
+        # da pasta Documentos do usuario, que em alguns PCs (ex: com
+        # OneDrive redirecionando "Documentos") nao tem a subpasta
+        # WindowsPowerShell\Modules criada, causando erro de caminho.
+        $escopoInstalacao = "CurrentUser"
+
+        if (Test-Administrator) {
+            $escopoInstalacao = "AllUsers"
+        }
+        else {
+            $pastaModulosUsuario = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "WindowsPowerShell\Modules"
+            if (-not (Test-Path $pastaModulosUsuario)) {
+                New-Item -Path $pastaModulosUsuario -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+            }
         }
 
-        Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -Confirm:$false -ErrorAction Stop
+        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false -Scope $escopoInstalacao -ErrorAction Stop | Out-Null
+        }
+
+        Install-Module -Name PSSQLite -Scope $escopoInstalacao -Force -AllowClobber -Confirm:$false -ErrorAction Stop
 
         Import-Module PSSQLite -ErrorAction Stop
 
@@ -2778,11 +2795,25 @@ try {
                 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
             }
 
-            if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-                Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false -Scope CurrentUser -ErrorAction Stop | Out-Null
+            $identidadeJob = [Security.Principal.WindowsIdentity]::GetCurrent()
+            $principalJob = New-Object Security.Principal.WindowsPrincipal($identidadeJob)
+            $escopoInstalacao = "CurrentUser"
+
+            if ($principalJob.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+                $escopoInstalacao = "AllUsers"
+            }
+            else {
+                $pastaModulosUsuario = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "WindowsPowerShell\Modules"
+                if (-not (Test-Path $pastaModulosUsuario)) {
+                    New-Item -Path $pastaModulosUsuario -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+                }
             }
 
-            Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -Confirm:$false -ErrorAction Stop
+            if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+                Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false -Scope $escopoInstalacao -ErrorAction Stop | Out-Null
+            }
+
+            Install-Module -Name PSSQLite -Scope $escopoInstalacao -Force -AllowClobber -Confirm:$false -ErrorAction Stop
 
             return [PSCustomObject]@{ Sucesso = $true; Erro = $null }
 
