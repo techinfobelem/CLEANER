@@ -1705,6 +1705,12 @@ function ConvertTo-ValorNumerico {
 
 function Ensure-SQLiteModule {
 
+    # Ja importado nesta sessao - caminho mais rapido possivel
+    if (Get-Module -Name PSSQLite) {
+        return $true
+    }
+
+    # Ja esta instalado no PC (de uma execucao anterior) - so importar, e rapido
     if (Get-Module -ListAvailable -Name PSSQLite) {
 
         try {
@@ -1716,6 +1722,71 @@ function Ensure-SQLiteModule {
         }
 
     }
+
+    # Ainda nao esta instalado. Um job de instalacao em segundo plano
+    # ja foi disparado quando o programa abriu ($Global:JobInstalacaoSQLite).
+    # Em vez de instalar aqui (o que travaria a interface, como o DISM
+    # travava antes), esperamos esse job terminar processando os eventos
+    # da interface (DoEvents) para a janela continuar respondendo durante
+    # a espera - sem congelar, mesmo que demore.
+
+    if ($Global:JobInstalacaoSQLite) {
+
+        $txtStatus.Text = "Preparando banco de dados (primeira vez pode demorar um pouco)..."
+        $Window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $prgProgresso.Visibility = [System.Windows.Visibility]::Visible
+
+        $tempoLimite = (Get-Date).AddSeconds(180)
+
+        while (
+            $Global:JobInstalacaoSQLite.State -eq 'Running' -and
+            (Get-Date) -lt $tempoLimite
+        ) {
+
+            [System.Windows.Forms.Application]::DoEvents()
+
+            Start-Sleep -Milliseconds 150
+
+        }
+
+        $Window.Cursor = [System.Windows.Input.Cursors]::Arrow
+        $prgProgresso.Visibility = [System.Windows.Visibility]::Collapsed
+
+        if ($Global:JobInstalacaoSQLite.State -eq 'Running') {
+
+            # passou do tempo limite (provavelmente sem internet) - desiste
+            # deste job especifico, mas deixa ele rodando em segundo plano
+            # caso termine sozinho mais tarde.
+            $txtStatus.Text = "Banco de dados esta demorando para instalar"
+            return $false
+
+        }
+
+        $resultado = Receive-Job -Job $Global:JobInstalacaoSQLite -ErrorAction SilentlyContinue
+
+        Remove-Job -Job $Global:JobInstalacaoSQLite -Force -ErrorAction SilentlyContinue
+
+        $Global:JobInstalacaoSQLite = $null
+
+        if ($resultado -eq $true -or (Get-Module -ListAvailable -Name PSSQLite)) {
+
+            try {
+                Import-Module PSSQLite -ErrorAction Stop
+                return $true
+            }
+            catch {
+                return $false
+            }
+
+        }
+
+        return $false
+
+    }
+
+    # Fallback: por algum motivo o job de fundo nao foi iniciado.
+    # Tenta instalar agora mesmo (unica situacao em que ainda pode
+    # haver uma pequena espera perceptivel).
 
     try {
 
@@ -2660,5 +2731,55 @@ $btnSair.Add_Click({
 # ============================================================
 
 Atualizar-Informacoes
+
+# Dispara em segundo plano (nao bloqueia a abertura do programa)
+# a instalacao do modulo PSSQLite, usado pelo Relatorio de Servico
+# e pelo Historico/Faturamento. Se o PC ja tiver internet lenta ou
+# nenhuma, o programa abre normalmente do mesmo jeito - o modulo
+# so sera necessario quando o tecnico realmente usar essas funcoes.
+$Global:JobInstalacaoSQLite = $null
+
+try {
+
+    $Global:JobInstalacaoSQLite = Start-Job -ScriptBlock {
+
+        try {
+
+            if (Get-Module -ListAvailable -Name PSSQLite) {
+                return $true
+            }
+
+            [Net.ServicePointManager]::SecurityProtocol =
+                [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+            $repositorio = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
+
+            if ($repositorio -and $repositorio.InstallationPolicy -ne 'Trusted') {
+                Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+            }
+
+            if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+                Install-PackageProvider -Name NuGet -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+            }
+
+            Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop
+
+            return $true
+
+        }
+        catch {
+
+            return $false
+
+        }
+
+    }
+
+}
+catch {
+
+    $Global:JobInstalacaoSQLite = $null
+
+}
 
 $Window.ShowDialog() | Out-Null
