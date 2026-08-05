@@ -1,6 +1,13 @@
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
 
+# Libera a execucao de scripts apenas para ESTE processo do PowerShell
+# (nao altera nenhuma configuracao do sistema do cliente, nao precisa
+# de confirmacao, e volta ao padrao assim que o PowerShell for fechado).
+# Necessario porque, em muitos PCs, a politica de execucao padrao
+# (Restricted) bloqueia o carregamento de modulos como o PSSQLite.
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue
+
 # ============================================================
 # TECH INFO BELEM - CLEANER PRO
 # VERSAO 0.7
@@ -2779,6 +2786,8 @@ try {
     $Global:JobInstalacaoSQLite = Start-Job -ScriptBlock {
 
         try {
+
+            Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue
 
             if (Get-Module -ListAvailable -Name PSSQLite) {
                 return [PSCustomObject]@{ Sucesso = $true; Erro = $null }
