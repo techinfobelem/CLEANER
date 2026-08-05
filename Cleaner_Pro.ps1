@@ -1712,6 +1712,10 @@ function ConvertTo-ValorNumerico {
 
 function Ensure-SQLiteModule {
 
+    param(
+        [int]$TimeoutSegundos = 180
+    )
+
     # Ja importado nesta sessao - caminho mais rapido possivel
     if (Get-Module -Name PSSQLite) {
         return $true
@@ -1744,7 +1748,7 @@ function Ensure-SQLiteModule {
         $Window.Cursor = [System.Windows.Input.Cursors]::Wait
         $prgProgresso.Visibility = [System.Windows.Visibility]::Visible
 
-        $tempoLimite = (Get-Date).AddSeconds(180)
+        $tempoLimite = (Get-Date).AddSeconds($TimeoutSegundos)
 
         while (
             $Global:JobInstalacaoSQLite.State -eq 'Running' -and
@@ -1901,7 +1905,12 @@ function Salvar-RelatorioNoBanco {
         [string]$ArquivoHTML
     )
 
-    if (-not (Ensure-SQLiteModule)) {
+    # Timeout curto (5s): esta funcao roda toda vez que um relatorio e
+    # gerado, inclusive na casa do cliente. Nao faz sentido o tecnico
+    # ficar esperando minutos pela instalacao do banco no meio de um
+    # atendimento - se nao estiver pronto rapido, segue sem banco e
+    # o relatorio HTML e salvo normalmente do mesmo jeito.
+    if (-not (Ensure-SQLiteModule -TimeoutSegundos 5)) {
         return $false
     }
 
@@ -2238,7 +2247,7 @@ function Gerar-RelatorioServico {
 
     $form = New-Object System.Windows.Forms.Form
     $form.Text = "TECH INFO BELEM - Relatorio de Servico"
-    $form.Size = New-Object System.Drawing.Size(650,650)
+    $form.Size = New-Object System.Drawing.Size(650,715)
     $form.StartPosition = "CenterScreen"
     $form.BackColor = [System.Drawing.Color]::FromArgb(17,24,39)
     $form.ForeColor = [System.Drawing.Color]::White
@@ -2265,6 +2274,40 @@ function Gerar-RelatorioServico {
     $txtClienteForm.Size = New-Object System.Drawing.Size(580,30)
     $form.Controls.Add($txtClienteForm)
 
+    # Autocompletar com clientes ja cadastrados no banco de dados
+    # (melhor esforco - se o banco nao estiver disponivel nesta
+    # maquina, o campo continua funcionando normalmente como texto livre)
+    try {
+
+        if (Ensure-SQLiteModule -TimeoutSegundos 3) {
+
+            Initialize-BancoDeDados
+
+            $clientesExistentes = Invoke-SqliteQuery `
+                -DataSource $Global:CaminhoBancoDados `
+                -Query "SELECT DISTINCT Cliente FROM Relatorios WHERE Cliente IS NOT NULL AND Cliente <> '' ORDER BY Cliente"
+
+            if ($clientesExistentes) {
+
+                $listaAutocompletar = New-Object System.Windows.Forms.AutoCompleteStringCollection
+
+                foreach ($linha in $clientesExistentes) {
+                    [void]$listaAutocompletar.Add($linha.Cliente)
+                }
+
+                $txtClienteForm.AutoCompleteMode = "SuggestAppend"
+                $txtClienteForm.AutoCompleteSource = "CustomSource"
+                $txtClienteForm.AutoCompleteCustomSource = $listaAutocompletar
+
+            }
+
+        }
+
+    }
+    catch {
+        # sem autocompletar disponivel - o campo continua normal
+    }
+
     $lblTelefone = New-Object System.Windows.Forms.Label
     $lblTelefone.Text = "TELEFONE / CONTATO"
     $lblTelefone.Location = New-Object System.Drawing.Point(25,140)
@@ -2276,38 +2319,70 @@ function Gerar-RelatorioServico {
     $txtTelefoneForm.Size = New-Object System.Drawing.Size(580,30)
     $form.Controls.Add($txtTelefoneForm)
 
+    $lblTipoServico = New-Object System.Windows.Forms.Label
+    $lblTipoServico.Text = "TIPO DE SERVICO"
+    $lblTipoServico.Location = New-Object System.Drawing.Point(25,205)
+    $lblTipoServico.Size = New-Object System.Drawing.Size(250,25)
+    $form.Controls.Add($lblTipoServico)
+
+    $cmbTipoServico = New-Object System.Windows.Forms.ComboBox
+    $cmbTipoServico.Location = New-Object System.Drawing.Point(25,230)
+    $cmbTipoServico.Size = New-Object System.Drawing.Size(580,30)
+    $cmbTipoServico.DropDownStyle = "DropDownList"
+    [void]$cmbTipoServico.Items.Add("Formatacao e Instalacao do Windows")
+    [void]$cmbTipoServico.Items.Add("Limpeza Interna (Hardware)")
+    [void]$cmbTipoServico.Items.Add("Manutencao Preventiva")
+    [void]$cmbTipoServico.Items.Add("Instalacao de Programas")
+    [void]$cmbTipoServico.Items.Add("Remocao de Virus / Malware")
+    [void]$cmbTipoServico.Items.Add("Troca de Peca / Componente")
+    [void]$cmbTipoServico.Items.Add("Upgrade de Hardware (SSD/RAM)")
+    [void]$cmbTipoServico.Items.Add("Backup de Dados")
+    [void]$cmbTipoServico.Items.Add("Diagnostico Tecnico")
+    [void]$cmbTipoServico.Items.Add("Outro (descrever abaixo)")
+    $form.Controls.Add($cmbTipoServico)
+
     $lblServico = New-Object System.Windows.Forms.Label
     $lblServico.Text = "SERVICO REALIZADO"
-    $lblServico.Location = New-Object System.Drawing.Point(25,205)
+    $lblServico.Location = New-Object System.Drawing.Point(25,270)
     $lblServico.Size = New-Object System.Drawing.Size(200,25)
     $form.Controls.Add($lblServico)
 
     $txtServicoForm = New-Object System.Windows.Forms.TextBox
-    $txtServicoForm.Location = New-Object System.Drawing.Point(25,230)
+    $txtServicoForm.Location = New-Object System.Drawing.Point(25,295)
     $txtServicoForm.Size = New-Object System.Drawing.Size(580,80)
     $txtServicoForm.Multiline = $true
     $txtServicoForm.ScrollBars = "Vertical"
     $form.Controls.Add($txtServicoForm)
 
+    $cmbTipoServico.Add_SelectedIndexChanged({
+        if ($cmbTipoServico.SelectedItem -eq "Outro (descrever abaixo)") {
+            $txtServicoForm.Text = ""
+            $txtServicoForm.Focus()
+        }
+        elseif ($cmbTipoServico.SelectedItem) {
+            $txtServicoForm.Text = $cmbTipoServico.SelectedItem.ToString()
+        }
+    })
+
     $lblValor = New-Object System.Windows.Forms.Label
     $lblValor.Text = "VALOR DO SERVICO (R$)"
-    $lblValor.Location = New-Object System.Drawing.Point(25,320)
+    $lblValor.Location = New-Object System.Drawing.Point(25,385)
     $lblValor.Size = New-Object System.Drawing.Size(200,25)
     $form.Controls.Add($lblValor)
 
     $txtValorForm = New-Object System.Windows.Forms.TextBox
-    $txtValorForm.Location = New-Object System.Drawing.Point(25,345)
+    $txtValorForm.Location = New-Object System.Drawing.Point(25,410)
     $txtValorForm.Size = New-Object System.Drawing.Size(200,30)
     $form.Controls.Add($txtValorForm)
 
     $lblPagamento = New-Object System.Windows.Forms.Label
     $lblPagamento.Text = "FORMA DE PAGAMENTO"
-    $lblPagamento.Location = New-Object System.Drawing.Point(250,320)
+    $lblPagamento.Location = New-Object System.Drawing.Point(250,385)
     $lblPagamento.Size = New-Object System.Drawing.Size(200,25)
     $form.Controls.Add($lblPagamento)
 
     $cmbPagamentoForm = New-Object System.Windows.Forms.ComboBox
-    $cmbPagamentoForm.Location = New-Object System.Drawing.Point(250,345)
+    $cmbPagamentoForm.Location = New-Object System.Drawing.Point(250,410)
     $cmbPagamentoForm.Size = New-Object System.Drawing.Size(355,30)
     $cmbPagamentoForm.DropDownStyle = "DropDownList"
     [void]$cmbPagamentoForm.Items.Add("PIX")
@@ -2321,12 +2396,12 @@ function Gerar-RelatorioServico {
 
     $lblObservacoes = New-Object System.Windows.Forms.Label
     $lblObservacoes.Text = "OBSERVACOES TECNICAS"
-    $lblObservacoes.Location = New-Object System.Drawing.Point(25,390)
+    $lblObservacoes.Location = New-Object System.Drawing.Point(25,455)
     $lblObservacoes.Size = New-Object System.Drawing.Size(250,25)
     $form.Controls.Add($lblObservacoes)
 
     $txtObservacoesForm = New-Object System.Windows.Forms.TextBox
-    $txtObservacoesForm.Location = New-Object System.Drawing.Point(25,415)
+    $txtObservacoesForm.Location = New-Object System.Drawing.Point(25,480)
     $txtObservacoesForm.Size = New-Object System.Drawing.Size(580,70)
     $txtObservacoesForm.Multiline = $true
     $txtObservacoesForm.ScrollBars = "Vertical"
@@ -2334,7 +2409,7 @@ function Gerar-RelatorioServico {
 
     $btnCancelarForm = New-Object System.Windows.Forms.Button
     $btnCancelarForm.Text = "CANCELAR"
-    $btnCancelarForm.Location = New-Object System.Drawing.Point(350,520)
+    $btnCancelarForm.Location = New-Object System.Drawing.Point(350,585)
     $btnCancelarForm.Size = New-Object System.Drawing.Size(120,40)
     $btnCancelarForm.BackColor = [System.Drawing.Color]::FromArgb(55,65,81)
     $btnCancelarForm.ForeColor = [System.Drawing.Color]::White
@@ -2346,7 +2421,7 @@ function Gerar-RelatorioServico {
 
     $btnGerarForm = New-Object System.Windows.Forms.Button
     $btnGerarForm.Text = "GERAR RELATORIO"
-    $btnGerarForm.Location = New-Object System.Drawing.Point(480,520)
+    $btnGerarForm.Location = New-Object System.Drawing.Point(480,585)
     $btnGerarForm.Size = New-Object System.Drawing.Size(125,40)
     $btnGerarForm.BackColor = [System.Drawing.Color]::FromArgb(3,105,161)
     $btnGerarForm.ForeColor = [System.Drawing.Color]::White
@@ -2559,25 +2634,18 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
         Start-Process -FilePath $reportFile
 
         if ($salvouBanco) {
-
-            [System.Windows.MessageBox]::Show(
-                "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile`n`nRegistrado no banco de dados (Historico / Faturamento).",
-                "TECH INFO BELEM",
-                "OK",
-                "Information"
-            )
-
+            $txtStatus.Text = "Relatorio criado e registrado no banco de dados"
         }
         else {
-
-            [System.Windows.MessageBox]::Show(
-                "Relatorio HTML criado com sucesso!`n`nArquivo:`n$reportFile`n`nATENCAO: nao foi possivel registrar no banco de dados.`n`nMotivo: $($Global:UltimoErroSQLite)`n`nO arquivo HTML foi salvo normalmente.",
-                "TECH INFO BELEM",
-                "OK",
-                "Warning"
-            )
-
+            $txtStatus.Text = "Relatorio criado (banco de dados nao disponivel nesta maquina)"
         }
+
+        [System.Windows.MessageBox]::Show(
+            "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile",
+            "TECH INFO BELEM",
+            "OK",
+            "Information"
+        )
 
     }
     catch {
