@@ -1718,6 +1718,7 @@ function Ensure-SQLiteModule {
             return $true
         }
         catch {
+            $Global:UltimoErroSQLite = $_.Exception.Message
             return $false
         }
 
@@ -1754,27 +1755,40 @@ function Ensure-SQLiteModule {
 
         if ($Global:JobInstalacaoSQLite.State -eq 'Running') {
 
-            # passou do tempo limite (provavelmente sem internet) - desiste
-            # deste job especifico, mas deixa ele rodando em segundo plano
-            # caso termine sozinho mais tarde.
+            # passou do tempo limite - desiste deste job especifico, mas
+            # deixa ele rodando em segundo plano caso termine sozinho depois.
+            $Global:UltimoErroSQLite = "A instalacao passou de 3 minutos e ainda nao terminou (provavel problema de rede/proxy)."
             $txtStatus.Text = "Banco de dados esta demorando para instalar"
             return $false
 
         }
 
-        $resultado = Receive-Job -Job $Global:JobInstalacaoSQLite -ErrorAction SilentlyContinue
+        $resultadoJob = Receive-Job -Job $Global:JobInstalacaoSQLite -ErrorAction SilentlyContinue
 
         Remove-Job -Job $Global:JobInstalacaoSQLite -Force -ErrorAction SilentlyContinue
 
         $Global:JobInstalacaoSQLite = $null
 
-        if ($resultado -eq $true -or (Get-Module -ListAvailable -Name PSSQLite)) {
+        $sucessoJob = $false
+
+        if ($resultadoJob -is [System.Management.Automation.PSCustomObject] -and $resultadoJob.PSObject.Properties.Name -contains 'Sucesso') {
+            $sucessoJob = $resultadoJob.Sucesso
+            if (-not $sucessoJob) {
+                $Global:UltimoErroSQLite = $resultadoJob.Erro
+            }
+        }
+        else {
+            $sucessoJob = ($resultadoJob -eq $true)
+        }
+
+        if ($sucessoJob -or (Get-Module -ListAvailable -Name PSSQLite)) {
 
             try {
                 Import-Module PSSQLite -ErrorAction Stop
                 return $true
             }
             catch {
+                $Global:UltimoErroSQLite = $_.Exception.Message
                 return $false
             }
 
@@ -1813,6 +1827,8 @@ function Ensure-SQLiteModule {
 
     }
     catch {
+
+        $Global:UltimoErroSQLite = $_.Exception.Message
 
         return $false
 
@@ -1915,7 +1931,7 @@ function Abrir-HistoricoServicos {
         $txtStatus.Text = "Banco de dados indisponivel"
 
         [System.Windows.MessageBox]::Show(
-            "Nao foi possivel carregar o banco de dados.`n`nIsso normalmente acontece por falta de conexao com a internet no primeiro uso (o modulo PSSQLite precisa ser baixado uma vez).`n`nVerifique sua internet e tente novamente.",
+            "Nao foi possivel carregar o banco de dados.`n`nMotivo: $($Global:UltimoErroSQLite)`n`nVerifique sua internet/proxy e tente novamente.",
             "TECH INFO BELEM - Banco de Dados",
             "OK",
             "Warning"
@@ -2531,7 +2547,7 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
         else {
 
             [System.Windows.MessageBox]::Show(
-                "Relatorio HTML criado com sucesso!`n`nArquivo:`n$reportFile`n`nATENCAO: nao foi possivel registrar no banco de dados (verifique sua conexao com a internet). O arquivo HTML foi salvo normalmente.",
+                "Relatorio HTML criado com sucesso!`n`nArquivo:`n$reportFile`n`nATENCAO: nao foi possivel registrar no banco de dados.`n`nMotivo: $($Global:UltimoErroSQLite)`n`nO arquivo HTML foi salvo normalmente.",
                 "TECH INFO BELEM",
                 "OK",
                 "Warning"
@@ -2748,7 +2764,7 @@ try {
         try {
 
             if (Get-Module -ListAvailable -Name PSSQLite) {
-                return $true
+                return [PSCustomObject]@{ Sucesso = $true; Erro = $null }
             }
 
             $ConfirmPreference = 'None'
@@ -2768,12 +2784,12 @@ try {
 
             Install-Module -Name PSSQLite -Scope CurrentUser -Force -AllowClobber -Confirm:$false -ErrorAction Stop
 
-            return $true
+            return [PSCustomObject]@{ Sucesso = $true; Erro = $null }
 
         }
         catch {
 
-            return $false
+            return [PSCustomObject]@{ Sucesso = $false; Erro = $_.Exception.Message }
 
         }
 
