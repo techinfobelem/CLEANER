@@ -1716,6 +1716,37 @@ $Global:CaminhoBancoDados = Join-Path $Global:CaminhoPastaRelatorios "relatorios
 $Global:UrlPlanilhaRelatorios = "https://script.google.com/macros/s/AKfycbw326KHtqFkCKpkzRqxiRiDRMTnVmr4cLXU8K5RjVOf7qaK0KqGfX89yjaht90HWAKO/exec"
 $Global:ChavePlanilhaRelatorios = "techinfobelem"
 
+$Global:UltimoErroPlanilha = ""
+
+function Get-MensagemErroHttp {
+
+    param(
+        $ErroCapturado
+    )
+
+    if ($ErroCapturado.ErrorDetails -and $ErroCapturado.ErrorDetails.Message) {
+        return $ErroCapturado.ErrorDetails.Message
+    }
+
+    if ($ErroCapturado.Exception.Response) {
+
+        try {
+            $stream = $ErroCapturado.Exception.Response.GetResponseStream()
+            $leitor = New-Object IO.StreamReader($stream)
+            $corpo = $leitor.ReadToEnd()
+            if (-not [string]::IsNullOrWhiteSpace($corpo)) {
+                return $corpo
+            }
+        }
+        catch {
+        }
+
+    }
+
+    return $ErroCapturado.Exception.Message
+
+}
+
 function Enviar-RelatorioParaPlanilha {
 
     param(
@@ -1758,10 +1789,18 @@ function Enviar-RelatorioParaPlanilha {
             -ContentType "application/json; charset=utf-8" `
             -TimeoutSec 20
 
-        return [bool]$resposta.sucesso
+        if ($resposta.sucesso) {
+            $Global:UltimoErroPlanilha = ""
+            return $true
+        }
+
+        $Global:UltimoErroPlanilha = "A planilha respondeu com erro: $($resposta.erro)"
+        return $false
 
     }
     catch {
+
+        $Global:UltimoErroPlanilha = Get-MensagemErroHttp -ErroCapturado $_
 
         return $false
 
@@ -1781,13 +1820,17 @@ function Buscar-RelatoriosDaPlanilha {
         $resposta = Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 30
 
         if ($resposta.sucesso) {
+            $Global:UltimoErroPlanilha = ""
             return $resposta.dados
         }
 
+        $Global:UltimoErroPlanilha = "A planilha respondeu com erro: $($resposta.erro)"
         return $null
 
     }
     catch {
+
+        $Global:UltimoErroPlanilha = Get-MensagemErroHttp -ErroCapturado $_
 
         return $null
 
@@ -2219,7 +2262,7 @@ function Abrir-HistoricoServicos {
             if ($null -eq $dadosPlanilha) {
 
                 [System.Windows.Forms.MessageBox]::Show(
-                    "Nao foi possivel consultar a planilha central.`n`nVerifique sua conexao com a internet e tente novamente.",
+                    "Nao foi possivel consultar a planilha central.`n`nMotivo: $Global:UltimoErroPlanilha",
                     "SKALON - Historico",
                     "OK",
                     "Warning"
@@ -2796,12 +2839,12 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
             $txtStatus.Text = "Relatorio criado e sincronizado com a planilha central"
         }
         elseif ($salvouBanco) {
-            $txtStatus.Text = "Relatorio criado (salvo so localmente - sem internet para a planilha)"
-            $avisoBanco = "`n`nATENCAO: nao foi possivel sincronizar com a planilha central (verifique a internet). O relatorio ficou salvo apenas no banco local desta maquina."
+            $txtStatus.Text = "Relatorio criado (salvo so localmente)"
+            $avisoBanco = "`n`nATENCAO: nao foi possivel sincronizar com a planilha central. O relatorio ficou salvo apenas no banco local desta maquina.`n`nMotivo: $Global:UltimoErroPlanilha"
         }
         else {
             $txtStatus.Text = "Relatorio criado (banco de dados indisponivel)"
-            $avisoBanco = "`n`nATENCAO: nao foi possivel registrar nem na planilha central nem no banco local. O arquivo HTML foi salvo normalmente."
+            $avisoBanco = "`n`nATENCAO: nao foi possivel registrar nem na planilha central nem no banco local. O arquivo HTML foi salvo normalmente.`n`nMotivo (planilha): $Global:UltimoErroPlanilha"
         }
 
         [System.Windows.MessageBox]::Show(
