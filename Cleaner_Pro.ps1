@@ -1863,12 +1863,13 @@ function ConvertTo-ValorNumerico {
     }
 
     $valor = 0.0
-    [void][double]::TryParse(
-        $limpo,
-        [Globalization.NumberStyles]::Any,
-        [Globalization.CultureInfo]::InvariantCulture,
-        [ref]$valor
-    )
+
+    try {
+        $valor = [double]::Parse($limpo, [Globalization.NumberStyles]::Any, [Globalization.CultureInfo]::InvariantCulture)
+    }
+    catch {
+        $valor = 0.0
+    }
 
     return $valor
 
@@ -2287,14 +2288,14 @@ function Abrir-HistoricoServicos {
 
             foreach ($item in $dadosPlanilha) {
 
-                $dataHora = $null
-
-                if (-not [DateTime]::TryParse(
-                    [string]$item.dataHoraIso,
-                    [Globalization.CultureInfo]::InvariantCulture,
-                    [Globalization.DateTimeStyles]::None,
-                    [ref]$dataHora
-                )) {
+                try {
+                    $dataHora = [DateTime]::Parse(
+                        [string]$item.dataHoraIso,
+                        [Globalization.CultureInfo]::InvariantCulture,
+                        [Globalization.DateTimeStyles]::None
+                    )
+                }
+                catch {
                     continue
                 }
 
