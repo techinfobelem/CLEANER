@@ -1775,7 +1775,7 @@ function Enviar-RelatorioParaPlanilha {
             cliente       = $Cliente
             telefone      = $Telefone
             servico       = $Servico
-            valor         = $Valor
+            valor         = $Valor.ToString([Globalization.CultureInfo]::InvariantCulture)
             pagamento     = $Pagamento
             observacoes   = $Observacoes
             computador    = $Computador
