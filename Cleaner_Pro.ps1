@@ -1713,7 +1713,7 @@ $Global:CaminhoBancoDados = Join-Path $Global:CaminhoPastaRelatorios "relatorios
 # O SQLite local continua existindo como copia de seguranca.
 # ============================================================
 
-$Global:UrlPlanilhaRelatorios = "https://script.google.com/macros/s/AKfycbw326KHtqFkCKpkzRqxiRiDRMTnVmr4cLXU8K5RjVOf7qaK0KqGfX89yjaht90HWAKO/exec"
+$Global:UrlPlanilhaRelatorios = "https://script.google.com/macros/s/AKfycbzWP44HXJm3DuBdK8x1mIY5FwfFGFakUUtMiAp8PpDlDXDIPZ5XA2ZZWilVgSR3sacr/exec"
 $Global:ChavePlanilhaRelatorios = "techinfobelem"
 
 $Global:UltimoErroPlanilha = ""
