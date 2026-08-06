@@ -1703,6 +1703,98 @@ function Verificar-StatusLicenca {
 $Global:CaminhoPastaRelatorios = "C:\Relatorio Tech Info Belem"
 $Global:CaminhoBancoDados = Join-Path $Global:CaminhoPastaRelatorios "relatorios.sqlite"
 
+# ============================================================
+# PLANILHA CENTRAL (Google Sheets) - historico consolidado
+# ============================================================
+# Cada relatorio gerado, em qualquer PC, e enviado tambem para
+# esta planilha central. O botao HISTORICO / FATURAMENTO consulta
+# ela (em vez do banco SQLite local), para que o tecnico veja
+# todos os atendimentos de todas as maquinas, de qualquer lugar.
+# O SQLite local continua existindo como copia de seguranca.
+# ============================================================
+
+$Global:UrlPlanilhaRelatorios = "https://script.google.com/macros/s/AKfycbw326KHtqFkCKpkzRqxiRiDRMTnVmr4cLXU8K5RjVOf7qaK0KqGfX89yjaht90HWAKO/exec"
+$Global:ChavePlanilhaRelatorios = "techinfobelem"
+
+function Enviar-RelatorioParaPlanilha {
+
+    param(
+        [string]$DataHoraIso,
+        [string]$DataFormatada,
+        [string]$Cliente,
+        [string]$Telefone,
+        [string]$Servico,
+        [double]$Valor,
+        [string]$Pagamento,
+        [string]$Observacoes,
+        [string]$Computador,
+        [string]$ArquivoHTML
+    )
+
+    try {
+
+        [Net.ServicePointManager]::SecurityProtocol =
+            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+        $corpo = @{
+            chave         = $Global:ChavePlanilhaRelatorios
+            dataHoraIso   = $DataHoraIso
+            dataFormatada = $DataFormatada
+            cliente       = $Cliente
+            telefone      = $Telefone
+            servico       = $Servico
+            valor         = $Valor
+            pagamento     = $Pagamento
+            observacoes   = $Observacoes
+            computador    = $Computador
+            arquivoHtml   = $ArquivoHTML
+        } | ConvertTo-Json
+
+        $resposta =
+            Invoke-RestMethod `
+            -Uri $Global:UrlPlanilhaRelatorios `
+            -Method Post `
+            -Body $corpo `
+            -ContentType "application/json; charset=utf-8" `
+            -TimeoutSec 20
+
+        return [bool]$resposta.sucesso
+
+    }
+    catch {
+
+        return $false
+
+    }
+
+}
+
+function Buscar-RelatoriosDaPlanilha {
+
+    try {
+
+        [Net.ServicePointManager]::SecurityProtocol =
+            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+        $url = "$($Global:UrlPlanilhaRelatorios)?chave=$([Uri]::EscapeDataString($Global:ChavePlanilhaRelatorios))"
+
+        $resposta = Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 30
+
+        if ($resposta.sucesso) {
+            return $resposta.dados
+        }
+
+        return $null
+
+    }
+    catch {
+
+        return $null
+
+    }
+
+}
+
 function ConvertTo-ValorNumerico {
 
     param(
@@ -1985,39 +2077,6 @@ function Abrir-HistoricoServicos {
 
     $txtStatus.Text = "Abrindo historico de servicos..."
 
-    if (-not (Ensure-SQLiteModule)) {
-
-        $txtStatus.Text = "Banco de dados indisponivel"
-
-        [System.Windows.MessageBox]::Show(
-            "Nao foi possivel carregar o banco de dados.`n`nMotivo: $($Global:UltimoErroSQLite)`n`nVerifique sua internet/proxy e tente novamente.",
-            "SKALON - Banco de Dados",
-            "OK",
-            "Warning"
-        )
-
-        return
-
-    }
-
-    try {
-        Initialize-BancoDeDados
-    }
-    catch {
-
-        $txtStatus.Text = "Erro ao abrir o banco de dados"
-
-        [System.Windows.MessageBox]::Show(
-            "Nao foi possivel abrir o banco de dados.`n`nErro:`n$($_.Exception.Message)",
-            "SKALON - Erro",
-            "OK",
-            "Error"
-        )
-
-        return
-
-    }
-
     # ------------------------------------------------------------
     # JANELA
     # ------------------------------------------------------------
@@ -2150,12 +2209,66 @@ function Abrir-HistoricoServicos {
 
             }
 
-            $inicioStr = $inicio.ToString("yyyy-MM-dd HH:mm:ss")
-            $fimStr = $fim.ToString("yyyy-MM-dd HH:mm:ss")
+            $txtStatus.Text = "Consultando a planilha central..."
+            $Window.Cursor = [System.Windows.Input.Cursors]::Wait
 
-            $query = "SELECT DataFormatada AS Data, Cliente, Servico, Valor, Pagamento, ArquivoHTML FROM Relatorios WHERE DataHoraIso >= @Inicio AND DataHoraIso < @Fim ORDER BY DataHoraIso DESC"
+            $dadosPlanilha = Buscar-RelatoriosDaPlanilha
 
-            $tabela = Invoke-SqliteQuery -DataSource $Global:CaminhoBancoDados -Query $query -SqlParameters @{ Inicio = $inicioStr; Fim = $fimStr } -As DataTable
+            $Window.Cursor = [System.Windows.Input.Cursors]::Arrow
+
+            if ($null -eq $dadosPlanilha) {
+
+                [System.Windows.Forms.MessageBox]::Show(
+                    "Nao foi possivel consultar a planilha central.`n`nVerifique sua conexao com a internet e tente novamente.",
+                    "SKALON - Historico",
+                    "OK",
+                    "Warning"
+                )
+
+                $txtStatus.Text = "Falha ao consultar a planilha central"
+
+                return
+
+            }
+
+            $tabela = New-Object System.Data.DataTable
+            [void]$tabela.Columns.Add("Data", [string])
+            [void]$tabela.Columns.Add("Cliente", [string])
+            [void]$tabela.Columns.Add("Servico", [string])
+            [void]$tabela.Columns.Add("Valor", [double])
+            [void]$tabela.Columns.Add("Pagamento", [string])
+            [void]$tabela.Columns.Add("ArquivoHTML", [string])
+
+            foreach ($item in $dadosPlanilha) {
+
+                $dataHora = $null
+
+                if (-not [DateTime]::TryParse(
+                    [string]$item.dataHoraIso,
+                    [Globalization.CultureInfo]::InvariantCulture,
+                    [Globalization.DateTimeStyles]::None,
+                    [ref]$dataHora
+                )) {
+                    continue
+                }
+
+                if ($dataHora -lt $inicio -or $dataHora -ge $fim) {
+                    continue
+                }
+
+                $linha = $tabela.NewRow()
+                $linha["Data"] = [string]$item.dataFormatada
+                $linha["Cliente"] = [string]$item.cliente
+                $linha["Servico"] = [string]$item.servico
+                $linha["Valor"] = [double]$item.valor
+                $linha["Pagamento"] = [string]$item.pagamento
+                $linha["ArquivoHTML"] = [string]$item.arquivoHtml
+
+                [void]$tabela.Rows.Add($linha)
+
+            }
+
+            $tabela.DefaultView.Sort = "Data DESC"
 
             $dgvResultados.DataSource = $tabela
 
@@ -2173,11 +2286,15 @@ function Abrir-HistoricoServicos {
 
             $lblTotal.Text = "Atendimentos: $($tabela.Rows.Count)    |    Total faturado: R$ $([math]::Round($total,2))"
 
+            $txtStatus.Text = "Historico atualizado"
+
         }
         catch {
 
+            $Window.Cursor = [System.Windows.Input.Cursors]::Arrow
+
             [System.Windows.Forms.MessageBox]::Show(
-                "Erro ao consultar o banco de dados:`n`n$($_.Exception.Message)",
+                "Erro ao consultar a planilha central:`n`n$($_.Exception.Message)",
                 "SKALON - Erro",
                 "OK",
                 "Error"
@@ -2659,17 +2776,36 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
             -Computador "$($computer.Manufacturer) $($computer.Model)" `
             -ArquivoHTML $reportFile
 
+        $salvouPlanilha = Enviar-RelatorioParaPlanilha `
+            -DataHoraIso $dataHoraIso `
+            -DataFormatada $data `
+            -Cliente $clienteRaw `
+            -Telefone $telefoneRaw `
+            -Servico $servicoRaw `
+            -Valor $valorNumerico `
+            -Pagamento $pagamentoRaw `
+            -Observacoes $observacoesRaw `
+            -Computador "$($computer.Manufacturer) $($computer.Model)" `
+            -ArquivoHTML $reportFile
+
         Start-Process -FilePath $reportFile
 
-        if ($salvouBanco) {
-            $txtStatus.Text = "Relatorio criado e registrado no banco de dados"
+        $avisoBanco = ""
+
+        if ($salvouPlanilha) {
+            $txtStatus.Text = "Relatorio criado e sincronizado com a planilha central"
+        }
+        elseif ($salvouBanco) {
+            $txtStatus.Text = "Relatorio criado (salvo so localmente - sem internet para a planilha)"
+            $avisoBanco = "`n`nATENCAO: nao foi possivel sincronizar com a planilha central (verifique a internet). O relatorio ficou salvo apenas no banco local desta maquina."
         }
         else {
-            $txtStatus.Text = "Relatorio criado (banco de dados nao disponivel nesta maquina)"
+            $txtStatus.Text = "Relatorio criado (banco de dados indisponivel)"
+            $avisoBanco = "`n`nATENCAO: nao foi possivel registrar nem na planilha central nem no banco local. O arquivo HTML foi salvo normalmente."
         }
 
         [System.Windows.MessageBox]::Show(
-            "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile",
+            "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile$avisoBanco",
             "SKALON",
             "OK",
             "Information"
