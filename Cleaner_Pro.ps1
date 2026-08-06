@@ -1767,8 +1767,9 @@ function Enviar-RelatorioParaPlanilha {
         [Net.ServicePointManager]::SecurityProtocol =
             [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-        $corpo = @{
+        $parametros = [ordered]@{
             chave         = $Global:ChavePlanilhaRelatorios
+            acao          = "gravar"
             dataHoraIso   = $DataHoraIso
             dataFormatada = $DataFormatada
             cliente       = $Cliente
@@ -1779,15 +1780,17 @@ function Enviar-RelatorioParaPlanilha {
             observacoes   = $Observacoes
             computador    = $Computador
             arquivoHtml   = $ArquivoHTML
-        } | ConvertTo-Json
+        }
 
-        $resposta =
-            Invoke-RestMethod `
-            -Uri $Global:UrlPlanilhaRelatorios `
-            -Method Post `
-            -Body $corpo `
-            -ContentType "application/json; charset=utf-8" `
-            -TimeoutSec 20
+        $queryString = (
+            $parametros.GetEnumerator() | ForEach-Object {
+                "$($_.Key)=$([Uri]::EscapeDataString([string]$_.Value))"
+            }
+        ) -join "&"
+
+        $url = "$($Global:UrlPlanilhaRelatorios)?$queryString"
+
+        $resposta = Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 20
 
         if ($resposta.sucesso) {
             $Global:UltimoErroPlanilha = ""
