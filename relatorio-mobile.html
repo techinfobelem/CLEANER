@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SKALON - Relatório de Serviço</title>
+<style>
+    :root {
+        --laranja: #FF6A00;
+        --fundo: #111111;
+        --card: #1c1c1c;
+        --borda: #2e2e2e;
+        --texto: #f2f2f2;
+        --texto-suave: #9a9a9a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--fundo);
+        color: var(--texto);
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+
+    header {
+        padding: 28px 20px 16px 20px;
+        border-bottom: 3px solid var(--laranja);
+    }
+
+    header h1 {
+        margin: 0;
+        color: var(--laranja);
+        font-size: 22px;
+        letter-spacing: 1px;
+    }
+
+    header p {
+        margin: 4px 0 0 0;
+        font-size: 12px;
+        color: var(--texto-suave);
+        font-style: italic;
+    }
+
+    .progresso {
+        display: flex;
+        gap: 6px;
+        padding: 16px 20px 0 20px;
+    }
+
+    .progresso .passo {
+        flex: 1;
+        height: 5px;
+        border-radius: 3px;
+        background: var(--borda);
+    }
+
+    .progresso .passo.ativo {
+        background: var(--laranja);
+    }
+
+    main {
+        padding: 20px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    .etapa { display: none; }
+    .etapa.visivel { display: block; animation: entra 0.2s ease; }
+
+    @keyframes entra {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .etapa h2 {
+        font-size: 18px;
+        color: var(--texto);
+        margin: 0 0 4px 0;
+    }
+
+    .etapa .subtitulo {
+        font-size: 13px;
+        color: var(--texto-suave);
+        margin: 0 0 20px 0;
+    }
+
+    label {
+        display: block;
+        font-size: 12px;
+        font-weight: bold;
+        color: var(--laranja);
+        margin: 16px 0 6px 0;
+        letter-spacing: 0.5px;
+    }
+
+    label:first-of-type { margin-top: 0; }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 13px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--borda);
+        background: var(--card);
+        color: var(--texto);
+        font-size: 15px;
+        font-family: inherit;
+    }
+
+    textarea {
+        min-height: 90px;
+        resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--laranja);
+    }
+
+    .linha-dupla {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .botoes {
+        display: flex;
+        gap: 10px;
+        margin-top: 28px;
+    }
+
+    button {
+        flex: 1;
+        padding: 15px;
+        border-radius: 8px;
+        border: none;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+    }
+
+    .btn-avancar, .btn-gerar {
+        background: var(--laranja);
+        color: white;
+    }
+
+    .btn-voltar {
+        background: var(--card);
+        color: var(--texto);
+        border: 1px solid var(--borda);
+    }
+
+    .btn-secundario {
+        width: 100%;
+        background: var(--card);
+        color: var(--texto);
+        border: 1px solid var(--borda);
+        margin-top: 10px;
+        padding: 14px;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .resumo-card {
+        background: var(--card);
+        border: 1px solid var(--borda);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 10px;
+    }
+
+    .resumo-card .rotulo {
+        font-size: 11px;
+        color: var(--texto-suave);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .resumo-card .valor-texto {
+        font-size: 15px;
+        margin-top: 2px;
+        white-space: pre-wrap;
+    }
+
+    .status {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .status .icone {
+        font-size: 48px;
+        margin-bottom: 10px;
+    }
+
+    .status h2 {
+        margin-bottom: 6px;
+    }
+
+    .status p {
+        color: var(--texto-suave);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .spinner {
+        width: 34px;
+        height: 34px;
+        border: 3px solid var(--borda);
+        border-top: 3px solid var(--laranja);
+        border-radius: 50%;
+        margin: 0 auto 16px auto;
+        animation: girar 0.8s linear infinite;
+    }
+
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    .aviso {
+        background: #3a2a10;
+        border: 1px solid var(--laranja);
+        color: #ffd699;
+        border-radius: 8px;
+        padding: 12px 14px;
+        font-size: 13px;
+        margin-top: 16px;
+        line-height: 1.5;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>SKALON</h1>
+    <p>Relatório de Serviço - via celular</p>
+</header>
+
+<div class="progresso" id="barraProgresso">
+    <div class="passo ativo" data-passo="1"></div>
+    <div class="passo" data-passo="2"></div>
+    <div class="passo" data-passo="3"></div>
+    <div class="passo" data-passo="4"></div>
+    <div class="passo" data-passo="5"></div>
+</div>
+
+<main>
+
+    <!-- ETAPA 1 - CLIENTE -->
+    <section class="etapa visivel" data-etapa="1">
+        <h2>Dados do Cliente</h2>
+        <p class="subtitulo">Quem é o cliente deste atendimento?</p>
+
+        <label>Nome do cliente</label>
+        <input type="text" id="campoCliente" placeholder="Ex: Carlos Eduardo">
+
+        <label>WhatsApp / Telefone</label>
+        <input type="tel" id="campoTelefone" placeholder="Ex: 91 91234-5678">
+
+        <div class="botoes">
+            <button class="btn-avancar" onclick="avancar(1)">Continuar</button>
+        </div>
+    </section>
+
+    <!-- ETAPA 2 - SERVICO -->
+    <section class="etapa" data-etapa="2">
+        <h2>Serviço Realizado</h2>
+        <p class="subtitulo">O que foi feito e como foi pago?</p>
+
+        <label>Descrição do serviço</label>
+        <textarea id="campoServico" placeholder="Ex: Limpeza interna, troca de pasta térmica..."></textarea>
+
+        <div class="linha-dupla">
+            <div>
+                <label>Valor (R$)</label>
+                <input type="text" inputmode="decimal" id="campoValor" placeholder="Ex: 150,00">
+            </div>
+            <div>
+                <label>Pagamento</label>
+                <select id="campoPagamento">
+                    <option>PIX</option>
+                    <option>Dinheiro</option>
+                    <option>Cartão de Crédito</option>
+                    <option>Cartão de Débito</option>
+                    <option>Transferência</option>
+                    <option>Não informado</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="botoes">
+            <button class="btn-voltar" onclick="voltar(2)">Voltar</button>
+            <button class="btn-avancar" onclick="avancar(2)">Continuar</button>
+        </div>
+    </section>
+
+    <!-- ETAPA 3 - COMPUTADOR (MANUAL) -->
+    <section class="etapa" data-etapa="3">
+        <h2>Informações do Equipamento</h2>
+        <p class="subtitulo">Preencha manualmente (sem acesso automático ao hardware pelo celular)</p>
+
+        <label>Computador / Modelo</label>
+        <input type="text" id="campoComputador" placeholder="Ex: Dell Inspiron 15">
+
+        <label>Sistema Operacional</label>
+        <input type="text" id="campoSistema" placeholder="Ex: Windows 11 Pro">
+
+        <label>Processador</label>
+        <input type="text" id="campoProcessador" placeholder="Ex: Intel Core i5 10ª geração">
+
+        <div class="linha-dupla">
+            <div>
+                <label>Memória RAM</label>
+                <input type="text" id="campoRam" placeholder="Ex: 8 GB">
+            </div>
+            <div>
+                <label>Armazenamento</label>
+                <input type="text" id="campoArmazenamento" placeholder="Ex: 256 GB SSD">
+            </div>
+        </div>
+
+        <div class="botoes">
+            <button class="btn-voltar" onclick="voltar(3)">Voltar</button>
+            <button class="btn-avancar" onclick="avancar(3)">Continuar</button>
+        </div>
+    </section>
+
+    <!-- ETAPA 4 - OBSERVACOES -->
+    <section class="etapa" data-etapa="4">
+        <h2>Observações Técnicas</h2>
+        <p class="subtitulo">Algo mais o cliente deveria saber? (opcional)</p>
+
+        <label>Observações</label>
+        <textarea id="campoObservacoes" placeholder="Ex: Recomendado backup preventivo a cada 6 meses..."></textarea>
+
+        <div class="botoes">
+            <button class="btn-voltar" onclick="voltar(4)">Voltar</button>
+            <button class="btn-avancar" onclick="mostrarResumo()">Revisar</button>
+        </div>
+    </section>
+
+    <!-- ETAPA 5 - RESUMO -->
+    <section class="etapa" data-etapa="5">
+        <h2>Confirme os Dados</h2>
+        <p class="subtitulo">Revise antes de gerar o relatório</p>
+
+        <div id="areaResumo"></div>
+
+        <div class="botoes">
+            <button class="btn-voltar" onclick="voltar(5)">Voltar</button>
+            <button class="btn-gerar" onclick="gerarRelatorio()">Gerar Relatório</button>
+        </div>
+    </section>
+
+    <!-- STATUS: ENVIANDO -->
+    <section class="etapa" data-etapa="enviando">
+        <div class="status">
+            <div class="spinner"></div>
+            <h2>Gerando relatório...</h2>
+            <p>Registrando no histórico da Skalon</p>
+        </div>
+    </section>
+
+    <!-- STATUS: SUCESSO -->
+    <section class="etapa" data-etapa="sucesso">
+        <div class="status">
+            <div class="icone">✅</div>
+            <h2>Relatório criado!</h2>
+            <p id="mensagemSucesso">O atendimento já está registrado no histórico da Skalon.</p>
+
+            <button class="btn-gerar" style="width:100%; margin-top:20px;" onclick="compartilharRelatorio()">Compartilhar no WhatsApp</button>
+            <button class="btn-secundario" onclick="baixarRelatorio()">Baixar relatório (HTML)</button>
+            <button class="btn-secundario" onclick="location.reload()">Novo atendimento</button>
+
+            <div class="aviso" id="avisoCompartilhar" style="display:none;"></div>
+        </div>
+    </section>
+
+    <!-- STATUS: ERRO -->
+    <section class="etapa" data-etapa="erro">
+        <div class="status">
+            <div class="icone">⚠️</div>
+            <h2>Não foi possível sincronizar</h2>
+            <p id="mensagemErro">Verifique sua internet e tente novamente.</p>
+            <button class="btn-gerar" style="width:100%; margin-top:20px;" onclick="gerarRelatorio()">Tentar novamente</button>
+            <button class="btn-secundario" onclick="voltar('erro')">Voltar e revisar</button>
+        </div>
+    </section>
+
+</main>
+
+<script>
+
+    // ============================================================
+    // CONFIGURACAO - mesma planilha central usada pelo Cleaner Pro
+    // ============================================================
+    var URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzWP44HXJm3DuBdK8x1mIY5FwfFGFakUUtMiAp8PpDlDXDIPZ5XA2ZZWilVgSR3sacr/exec";
+    var CHAVE_PLANILHA = "techinfobelem";
+
+    var totalEtapas = 5;
+    var htmlRelatorioGerado = "";
+    var nomeArquivoGerado = "";
+
+    function mostrarEtapa(numero) {
+        document.querySelectorAll(".etapa").forEach(function (el) {
+            el.classList.remove("visivel");
+        });
+        document.querySelector('.etapa[data-etapa="' + numero + '"]').classList.add("visivel");
+
+        var barra = document.getElementById("barraProgresso");
+        if (typeof numero === "number") {
+            barra.style.display = "flex";
+            document.querySelectorAll(".passo").forEach(function (el) {
+                el.classList.toggle("ativo", parseInt(el.dataset.passo) <= numero);
+            });
+        } else {
+            barra.style.display = "none";
+        }
+    }
+
+    function avancar(etapaAtual) {
+        if (etapaAtual === 1) {
+            if (!document.getElementById("campoCliente").value.trim()) {
+                alert("Digite o nome do cliente.");
+                return;
+            }
+        }
+        if (etapaAtual === 2) {
+            if (!document.getElementById("campoServico").value.trim()) {
+                alert("Descreva o serviço realizado.");
+                return;
+            }
+        }
+        mostrarEtapa(etapaAtual + 1);
+    }
+
+    function voltar(etapaAtual) {
+        if (etapaAtual === "erro") {
+            mostrarEtapa(5);
+            return;
+        }
+        mostrarEtapa(etapaAtual - 1);
+    }
+
+    function pegar(id) {
+        return document.getElementById(id).value.trim();
+    }
+
+    function converterValor(texto) {
+        if (!texto) return 0;
+        var limpo = texto.replace(/[^\d,\.]/g, "");
+        if (/,\d{1,2}$/.test(limpo)) {
+            limpo = limpo.replace(/\./g, "").replace(",", ".");
+        } else {
+            limpo = limpo.replace(/,/g, "");
+        }
+        var valor = parseFloat(limpo);
+        return isNaN(valor) ? 0 : valor;
+    }
+
+    function mostrarResumo() {
+        var area = document.getElementById("areaResumo");
+        var valorNum = converterValor(pegar("campoValor"));
+
+        area.innerHTML =
+            '<div class="resumo-card"><div class="rotulo">Cliente</div><div class="valor-texto">' + pegar("campoCliente") + '</div></div>' +
+            '<div class="resumo-card"><div class="rotulo">Telefone</div><div class="valor-texto">' + pegar("campoTelefone") + '</div></div>' +
+            '<div class="resumo-card"><div class="rotulo">Serviço</div><div class="valor-texto">' + pegar("campoServico") + '</div></div>' +
+            '<div class="resumo-card"><div class="rotulo">Valor</div><div class="valor-texto">R$ ' + valorNum.toFixed(2).replace(".", ",") + ' — ' + pegar("campoPagamento") + '</div></div>' +
+            '<div class="resumo-card"><div class="rotulo">Equipamento</div><div class="valor-texto">' + pegar("campoComputador") + '</div></div>' +
+            '<div class="resumo-card"><div class="rotulo">Observações</div><div class="valor-texto">' + (pegar("campoObservacoes") || "-") + '</div></div>';
+
+        mostrarEtapa(5);
+    }
+
+    function montarHtmlRelatorio(dados) {
+        return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+        '<title>Relatorio de Servico - SKALON</title><style>' +
+        'body{font-family:Arial;background:#FFFFFF;padding:30px;color:#111111;}' +
+        '.container{max-width:1000px;margin:auto;background:white;padding:35px;}' +
+        '.header{border-bottom:3px solid #FF6A00;padding-bottom:20px;}' +
+        '.header h1{color:#FF6A00;}' +
+        '.header .slogan{color:#666;font-style:italic;font-size:13px;margin-top:5px;}' +
+        'h2{background:#111111;color:white;padding:10px;}' +
+        '.info{display:grid;grid-template-columns:1fr 1fr;gap:10px;}' +
+        '.card{background:#f9fafb;border:1px solid #ddd;padding:15px;}' +
+        '.label{font-weight:bold;}' +
+        '.valor{font-size:24px;font-weight:bold;color:#FF6A00;}' +
+        '.servico{background:#f9fafb;border:1px solid #ddd;padding:20px;min-height:80px;}' +
+        '.garantia{background:#f9fafb;border:1px solid #ddd;padding:20px;font-size:13px;line-height:1.6;text-align:justify;}' +
+        '.garantia h3{color:#FF6A00;margin-top:18px;margin-bottom:6px;font-size:15px;}' +
+        '.garantia h3:first-child{margin-top:0;}' +
+        '.garantia p{margin:8px 0;} .garantia ul{margin:6px 0 14px 22px;} .garantia li{margin-bottom:4px;}' +
+        '.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:15px;font-size:12px;color:#666;}' +
+        '</style></head><body><div class="container">' +
+        '<div class="header"><h1>SKALON</h1>' +
+        '<p class="slogan">Performance para quem trabalha. Potência para quem joga.</p>' +
+        '<p>RELATORIO DE SERVICO TECNICO</p><p>Gerado via celular</p></div>' +
+        '<h2>ATENDIMENTO</h2><div class="info">' +
+        '<div class="card"><span class="label">Cliente:</span><br>' + dados.cliente + '</div>' +
+        '<div class="card"><span class="label">Telefone:</span><br>' + dados.telefone + '</div>' +
+        '<div class="card"><span class="label">Data:</span><br>' + dados.dataFormatada + '</div>' +
+        '<div class="card"><span class="label">Computador:</span><br>' + dados.computador + '</div></div>' +
+        '<h2>SERVICO REALIZADO</h2><div class="servico">' + dados.servico.replace(/\n/g, "<br>") + '</div>' +
+        '<h2>VALOR E PAGAMENTO</h2><div class="info">' +
+        '<div class="card"><span class="label">Valor:</span><div class="valor">R$ ' + dados.valor.toFixed(2).replace(".", ",") + '</div></div>' +
+        '<div class="card"><span class="label">Pagamento:</span><br><br>' + dados.pagamento + '</div></div>' +
+        '<h2>INFORMACOES DO COMPUTADOR</h2><div class="info">' +
+        '<div class="card"><span class="label">Sistema:</span><br>' + dados.sistema + '</div>' +
+        '<div class="card"><span class="label">Processador:</span><br>' + dados.processador + '</div>' +
+        '<div class="card"><span class="label">Memoria RAM:</span><br>' + dados.ram + '</div>' +
+        '<div class="card"><span class="label">Armazenamento:</span><br>' + dados.armazenamento + '</div></div>' +
+        '<h2>OBSERVACOES</h2><div class="servico">' + (dados.observacoes || "-").replace(/\n/g, "<br>") + '</div>' +
+        '<h2>CONDICOES DE GARANTIA</h2><div class="garantia">' +
+        '<p>A <strong>Skalon Inform&aacute;tica</strong> oferece <strong>90 (noventa) dias de garantia</strong>, contados a partir da data de conclus&atilde;o do servi&ccedil;o, conforme previsto no C&oacute;digo de Defesa do Consumidor, exclusivamente para os servi&ccedil;os executados e para as pe&ccedil;as fornecidas pela assist&ecirc;ncia t&eacute;cnica.</p>' +
+        '<h3>A garantia cobre:</h3><ul>' +
+        '<li>Defeitos relacionados ao servi&ccedil;o executado;</li>' +
+        '<li>Falhas na instala&ccedil;&atilde;o, montagem ou aplica&ccedil;&atilde;o do reparo realizado pela assist&ecirc;ncia;</li>' +
+        '<li>Defeitos de fabrica&ccedil;&atilde;o das pe&ccedil;as fornecidas pela assist&ecirc;ncia, quando aplic&aacute;vel.</li></ul>' +
+        '<h3>Pe&ccedil;as fornecidas pelo cliente</h3>' +
+        '<p>Quando o cliente fornecer pe&ccedil;as, componentes ou acess&oacute;rios adquiridos por conta pr&oacute;pria, a <strong>Skalon Inform&aacute;tica</strong> ser&aacute; respons&aacute;vel exclusivamente pela correta instala&ccedil;&atilde;o e pelo servi&ccedil;o executado.</p>' +
+        '<p>A garantia das pe&ccedil;as, componentes ou acess&oacute;rios fornecidos pelo cliente &eacute; de responsabilidade do fabricante ou da loja onde foram adquiridos.</p>' +
+        '<h3>A garantia n&atilde;o cobre:</h3><ul>' +
+        '<li>Danos causados por mau uso, quedas, impactos ou press&atilde;o excessiva;</li>' +
+        '<li>Contato com l&iacute;quidos, umidade, oxida&ccedil;&atilde;o ou corros&atilde;o;</li>' +
+        '<li>Surtos el&eacute;tricos, descargas atmosf&eacute;ricas ou problemas na rede el&eacute;trica;</li>' +
+        '<li>Perda, corrup&ccedil;&atilde;o ou recupera&ccedil;&atilde;o de dados (mantenha sempre backup);</li>' +
+        '<li>Defeitos diferentes daqueles descritos neste relat&oacute;rio ou surgidos posteriormente ao reparo;</li>' +
+        '<li>Equipamentos abertos, violados ou reparados por terceiros durante a garantia;</li>' +
+        '<li>Equipamentos fora do prazo de garantia.</li></ul>' +
+        '<h3>Observa&ccedil;&otilde;es finais</h3><ul>' +
+        '<li>A garantia &eacute; limitada exclusivamente ao servi&ccedil;o executado e &agrave;s pe&ccedil;as substitu&iacute;das.</li>' +
+        '<li>Para atendimento em garantia, poder&aacute; ser solicitada a apresenta&ccedil;&atilde;o deste relat&oacute;rio.</li>' +
+        '</ul></div>' +
+        '<div class="footer">SKALON - Performance para quem trabalha. Potência para quem joga.<br>Relatorio gerado via celular.</div>' +
+        '</div></body></html>';
+    }
+
+    function gerarRelatorio() {
+
+        mostrarEtapa("enviando");
+
+        var agora = new Date();
+        var pad = function (n) { return n < 10 ? "0" + n : n; };
+
+        var dataHoraIso = agora.getFullYear() + "-" + pad(agora.getMonth() + 1) + "-" + pad(agora.getDate()) +
+            " " + pad(agora.getHours()) + ":" + pad(agora.getMinutes()) + ":" + pad(agora.getSeconds());
+
+        var dataFormatada = pad(agora.getDate()) + "/" + pad(agora.getMonth() + 1) + "/" + agora.getFullYear();
+
+        var dados = {
+            cliente: pegar("campoCliente") || "Cliente nao informado",
+            telefone: pegar("campoTelefone"),
+            servico: pegar("campoServico"),
+            valor: converterValor(pegar("campoValor")),
+            pagamento: pegar("campoPagamento"),
+            computador: pegar("campoComputador") || "Nao informado",
+            sistema: pegar("campoSistema") || "Nao informado",
+            processador: pegar("campoProcessador") || "Nao informado",
+            ram: pegar("campoRam") || "Nao informado",
+            armazenamento: pegar("campoArmazenamento") || "Nao informado",
+            observacoes: pegar("campoObservacoes"),
+            dataFormatada: dataFormatada
+        };
+
+        htmlRelatorioGerado = montarHtmlRelatorio(dados);
+        nomeArquivoGerado = (dados.cliente + " - " + dataFormatada.replace(/\//g, "-")).replace(/[\\\/:*?"<>|]/g, "_") + ".html";
+
+        var parametros = new URLSearchParams({
+            chave: CHAVE_PLANILHA,
+            acao: "gravar",
+            dataHoraIso: dataHoraIso,
+            dataFormatada: dataFormatada,
+            cliente: dados.cliente,
+            telefone: dados.telefone,
+            servico: dados.servico,
+            valor: dados.valor,
+            pagamento: dados.pagamento,
+            observacoes: dados.observacoes,
+            computador: dados.computador + " | " + dados.sistema + " | " + dados.processador + " | RAM " + dados.ram + " | " + dados.armazenamento,
+            arquivoHtml: "Gerado via celular"
+        });
+
+        fetch(URL_PLANILHA + "?" + parametros.toString())
+            .then(function (resp) { return resp.json(); })
+            .then(function (resposta) {
+                if (resposta.sucesso) {
+                    mostrarEtapa("sucesso");
+                } else {
+                    document.getElementById("mensagemErro").textContent = "Motivo: " + (resposta.erro || "desconhecido");
+                    mostrarEtapa("erro");
+                }
+            })
+            .catch(function (erro) {
+                document.getElementById("mensagemErro").textContent = "Erro de conexao: " + erro.message;
+                mostrarEtapa("erro");
+            });
+    }
+
+    function baixarRelatorio() {
+        var blob = new Blob([htmlRelatorioGerado], { type: "text/html" });
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = nomeArquivoGerado;
+        link.click();
+    }
+
+    function compartilharRelatorio() {
+        var aviso = document.getElementById("avisoCompartilhar");
+        var blob = new Blob([htmlRelatorioGerado], { type: "text/html" });
+        var arquivo = new File([blob], nomeArquivoGerado, { type: "text/html" });
+
+        var cliente = pegar("campoCliente") || "cliente";
+        var textoMensagem = "Olá! Segue o relatório do serviço realizado pela Skalon Informática.";
+
+        if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+            navigator.share({
+                files: [arquivo],
+                title: "Relatório de Serviço - SKALON",
+                text: textoMensagem
+            }).catch(function () {});
+        } else {
+            aviso.style.display = "block";
+            aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar relatório</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
+        }
+    }
+
+</script>
+
+</body>
+</html>
