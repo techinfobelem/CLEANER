@@ -2213,6 +2213,23 @@ function Abrir-HistoricoServicos {
     $dgvResultados.SelectionMode = "FullRowSelect"
     $dgvResultados.AutoSizeColumnsMode = "Fill"
     $dgvResultados.BackgroundColor = [System.Drawing.Color]::FromArgb(26,26,26)
+    $dgvResultados.GridColor = [System.Drawing.Color]::FromArgb(55,65,81)
+    $dgvResultados.BorderStyle = "None"
+    $dgvResultados.EnableHeadersVisualStyles = $false
+
+    $dgvResultados.DefaultCellStyle.BackColor = [System.Drawing.Color]::FromArgb(31,41,55)
+    $dgvResultados.DefaultCellStyle.ForeColor = [System.Drawing.Color]::White
+    $dgvResultados.DefaultCellStyle.SelectionBackColor = [System.Drawing.Color]::FromArgb(21,94,117)
+    $dgvResultados.DefaultCellStyle.SelectionForeColor = [System.Drawing.Color]::White
+
+    $dgvResultados.ColumnHeadersDefaultCellStyle.BackColor = [System.Drawing.Color]::FromArgb(17,24,39)
+    $dgvResultados.ColumnHeadersDefaultCellStyle.ForeColor = [System.Drawing.Color]::FromArgb(96,165,250)
+    $dgvResultados.ColumnHeadersDefaultCellStyle.Font = New-Object System.Drawing.Font("Arial",9,[System.Drawing.FontStyle]::Bold)
+
+    $dgvResultados.RowsDefaultCellStyle.BackColor = [System.Drawing.Color]::FromArgb(31,41,55)
+    $dgvResultados.AlternatingRowsDefaultCellStyle.BackColor = [System.Drawing.Color]::FromArgb(38,50,68)
+    $dgvResultados.AlternatingRowsDefaultCellStyle.ForeColor = [System.Drawing.Color]::White
+
     $form.Controls.Add($dgvResultados)
 
     $lblTotal = New-Object System.Windows.Forms.Label
@@ -2723,6 +2740,49 @@ function Gerar-RelatorioServico {
         $osEnc = [System.Net.WebUtility]::HtmlEncode($os.Caption)
         $cpuEnc = [System.Net.WebUtility]::HtmlEncode($cpu.Name)
 
+        $garantiaHtml = @'
+<p>A <strong>Skalon Inform&aacute;tica</strong> oferece <strong>90 (noventa) dias de garantia</strong>, contados a partir da data de conclus&atilde;o do servi&ccedil;o, conforme previsto no C&oacute;digo de Defesa do Consumidor, exclusivamente para os servi&ccedil;os executados e para as pe&ccedil;as fornecidas pela assist&ecirc;ncia t&eacute;cnica.</p>
+
+<h3>A garantia cobre:</h3>
+<ul>
+<li>Defeitos relacionados ao servi&ccedil;o executado;</li>
+<li>Falhas na instala&ccedil;&atilde;o, montagem ou aplica&ccedil;&atilde;o do reparo realizado pela assist&ecirc;ncia;</li>
+<li>Defeitos de fabrica&ccedil;&atilde;o das pe&ccedil;as fornecidas pela assist&ecirc;ncia, quando aplic&aacute;vel.</li>
+</ul>
+
+<h3>Pe&ccedil;as fornecidas pelo cliente</h3>
+<p>Quando o cliente fornecer pe&ccedil;as, componentes ou acess&oacute;rios adquiridos por conta pr&oacute;pria, a <strong>Skalon Inform&aacute;tica</strong> ser&aacute; respons&aacute;vel exclusivamente pela correta instala&ccedil;&atilde;o e pelo servi&ccedil;o executado.</p>
+<p>A garantia das pe&ccedil;as, componentes ou acess&oacute;rios fornecidos pelo cliente &eacute; de responsabilidade do fabricante ou da loja onde foram adquiridos. Em caso de defeito de fabrica&ccedil;&atilde;o, troca em garantia ou necessidade de substitui&ccedil;&atilde;o dessas pe&ccedil;as, o cliente dever&aacute; acionar diretamente o fornecedor.</p>
+<p>Caso seja necess&aacute;rio realizar nova desmontagem, testes, reinstala&ccedil;&atilde;o ou substitui&ccedil;&atilde;o de componentes em raz&atilde;o de defeitos apresentados nas pe&ccedil;as fornecidas pelo cliente, poder&aacute; ser cobrada nova m&atilde;o de obra, mediante or&ccedil;amento pr&eacute;vio.</p>
+
+<h3>A garantia n&atilde;o cobre:</h3>
+<ul>
+<li>Danos causados por mau uso, quedas, impactos ou press&atilde;o excessiva;</li>
+<li>Contato com l&iacute;quidos, umidade, oxida&ccedil;&atilde;o ou corros&atilde;o;</li>
+<li>Surtos el&eacute;tricos, descargas atmosf&eacute;ricas, oscila&ccedil;&otilde;es de energia ou problemas na rede el&eacute;trica;</li>
+<li>Defeitos decorrentes de v&iacute;rus, softwares de terceiros, atualiza&ccedil;&otilde;es de sistema operacional ou altera&ccedil;&otilde;es de configura&ccedil;&atilde;o realizadas ap&oacute;s a entrega do equipamento;</li>
+<li>Perda, corrup&ccedil;&atilde;o, bloqueio ou recupera&ccedil;&atilde;o de dados. &Eacute; de responsabilidade do cliente manter c&oacute;pia de seguran&ccedil;a (backup) de seus arquivos;</li>
+<li>Defeitos diferentes daqueles descritos na Ordem de Servi&ccedil;o ou surgidos posteriormente ao reparo;</li>
+<li>Defeitos de fabrica&ccedil;&atilde;o em pe&ccedil;as fornecidas pelo cliente;</li>
+<li>Custos relacionados &agrave; garantia, troca, envio ou devolu&ccedil;&atilde;o de pe&ccedil;as adquiridas pelo cliente em lojas f&iacute;sicas ou online;</li>
+<li>Pe&ccedil;as ou componentes quebrados, riscados ou danificados ap&oacute;s a entrega do equipamento;</li>
+<li>Equipamentos que tenham sido abertos, violados, modificados ou reparados por terceiros durante o per&iacute;odo de garantia;</li>
+<li>Equipamentos fora do prazo de garantia.</li>
+</ul>
+
+<h3>Equipamentos usados</h3>
+<p>Equipamentos eletr&ocirc;nicos est&atilde;o sujeitos ao desgaste natural de seus componentes. Em aparelhos com sinais de desgaste, oxida&ccedil;&atilde;o, adapta&ccedil;&otilde;es, manuten&ccedil;&atilde;o anterior ou reparos realizados por terceiros, poder&atilde;o surgir defeitos n&atilde;o relacionados ao servi&ccedil;o executado.</p>
+<p>Nessas situa&ccedil;&otilde;es, a garantia permanece restrita exclusivamente ao reparo descrito na Ordem de Servi&ccedil;o, n&atilde;o abrangendo outros componentes do equipamento.</p>
+
+<h3>Observa&ccedil;&otilde;es</h3>
+<ul>
+<li>A garantia &eacute; limitada exclusivamente ao servi&ccedil;o executado e &agrave;s pe&ccedil;as substitu&iacute;das pela assist&ecirc;ncia t&eacute;cnica, n&atilde;o abrangendo o equipamento como um todo.</li>
+<li>Caso seja constatado que o defeito apresentado n&atilde;o possui rela&ccedil;&atilde;o com o servi&ccedil;o anteriormente realizado, poder&aacute; ser cobrada uma nova avalia&ccedil;&atilde;o t&eacute;cnica e, se necess&aacute;rio, um novo or&ccedil;amento.</li>
+<li>Para atendimento em garantia, poder&aacute; ser solicitada a apresenta&ccedil;&atilde;o do Relat&oacute;rio de Servi&ccedil;o ou da Ordem de Servi&ccedil;o correspondente.</li>
+<li>A garantia ter&aacute; in&iacute;cio na data de conclus&atilde;o do servi&ccedil;o, seja na retirada do equipamento pelo cliente ou na finaliza&ccedil;&atilde;o do atendimento em domic&iacute;lio.</li>
+</ul>
+'@
+
         $html = @"
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -2744,6 +2804,12 @@ table { width:100%; border-collapse:collapse; }
 th { background:#FF6A00; color:white; padding:10px; }
 td { border:1px solid #ddd; padding:10px; }
 .servico { background:#f9fafb; border:1px solid #ddd; padding:20px; min-height:80px; }
+.garantia { background:#f9fafb; border:1px solid #ddd; padding:20px; font-size:13px; line-height:1.6; text-align:justify; }
+.garantia h3 { color:#FF6A00; margin-top:18px; margin-bottom:6px; font-size:15px; }
+.garantia h3:first-child { margin-top:0; }
+.garantia p { margin:8px 0; }
+.garantia ul { margin:6px 0 14px 22px; }
+.garantia li { margin-bottom:4px; }
 .footer { margin-top:40px; border-top:1px solid #ddd; padding-top:15px; font-size:12px; color:#666; }
 </style>
 </head>
@@ -2785,6 +2851,8 @@ $diskHealthHtml
 </table>
 <h2>OBSERVACOES</h2>
 <div class="servico">$observacoes</div>
+<h2>CONDICOES DE GARANTIA</h2>
+<div class="garantia">$garantiaHtml</div>
 <div class="footer">
 SKALON - Performance para quem trabalha. Potência para quem joga.<br>
 Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
