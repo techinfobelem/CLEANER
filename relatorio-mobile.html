@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SKALON - Relatório de Serviço</title>
+<title>SKALON - Relatorio / Orcamento</title>
 <style>
     :root {
         --laranja: #FF6A00;
@@ -164,6 +164,33 @@
         font-size: 14px;
     }
 
+    .cartao-tipo {
+        display: block;
+        width: 100%;
+        background: var(--card);
+        border: 1px solid var(--borda);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 14px;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .cartao-tipo:active { border-color: var(--laranja); }
+
+    .cartao-tipo .titulo {
+        font-size: 17px;
+        font-weight: bold;
+        color: var(--laranja);
+        margin-bottom: 4px;
+    }
+
+    .cartao-tipo .descricao {
+        font-size: 13px;
+        color: var(--texto-suave);
+        line-height: 1.4;
+    }
+
     .resumo-card {
         background: var(--card);
         border: 1px solid var(--borda);
@@ -227,16 +254,27 @@
         margin-top: 16px;
         line-height: 1.5;
     }
+
+    .selo-orcamento {
+        display: inline-block;
+        background: #3a2a10;
+        border: 1px solid var(--laranja);
+        color: #ffd699;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        margin-bottom: 16px;
+    }
 </style>
 </head>
 <body>
 
 <header>
     <h1>SKALON</h1>
-    <p>Relatório de Serviço - via celular</p>
+    <p id="subtituloHeader">Relatório / Orçamento - via celular</p>
 </header>
 
-<div class="progresso" id="barraProgresso">
+<div class="progresso" id="barraProgresso" style="display:none;">
     <div class="passo ativo" data-passo="1"></div>
     <div class="passo" data-passo="2"></div>
     <div class="passo" data-passo="3"></div>
@@ -246,8 +284,24 @@
 
 <main>
 
+    <!-- ETAPA 0 - TIPO -->
+    <section class="etapa visivel" data-etapa="tipo">
+        <h2>O que você quer gerar?</h2>
+        <p class="subtitulo">Escolha o tipo de documento</p>
+
+        <div class="cartao-tipo" onclick="escolherTipo('relatorio')">
+            <div class="titulo">📋 Relatório de Serviço</div>
+            <div class="descricao">Serviço já concluído e cobrado. Entra no histórico e no faturamento da Skalon.</div>
+        </div>
+
+        <div class="cartao-tipo" onclick="escolherTipo('orcamento')">
+            <div class="titulo">💰 Orçamento</div>
+            <div class="descricao">Proposta de serviço, ainda não realizado. Recebe numeração própria e NÃO entra no faturamento.</div>
+        </div>
+    </section>
+
     <!-- ETAPA 1 - CLIENTE -->
-    <section class="etapa visivel" data-etapa="1">
+    <section class="etapa" data-etapa="1">
         <h2>Dados do Cliente</h2>
         <p class="subtitulo">Quem é o cliente deste atendimento?</p>
 
@@ -258,24 +312,25 @@
         <input type="tel" id="campoTelefone" placeholder="Ex: 91 91234-5678">
 
         <div class="botoes">
+            <button class="btn-voltar" onclick="mostrarEtapa('tipo')">Voltar</button>
             <button class="btn-avancar" onclick="avancar(1)">Continuar</button>
         </div>
     </section>
 
-    <!-- ETAPA 2 - SERVICO -->
+    <!-- ETAPA 2 - SERVICO / ORCAMENTO -->
     <section class="etapa" data-etapa="2">
-        <h2>Serviço Realizado</h2>
-        <p class="subtitulo">O que foi feito e como foi pago?</p>
+        <h2 id="tituloEtapa2">Serviço Realizado</h2>
+        <p class="subtitulo" id="subtituloEtapa2">O que foi feito e como foi pago?</p>
 
-        <label>Descrição do serviço</label>
+        <label id="labelServico">Descrição do serviço</label>
         <textarea id="campoServico" placeholder="Ex: Limpeza interna, troca de pasta térmica..."></textarea>
 
         <div class="linha-dupla">
             <div>
-                <label>Valor (R$)</label>
+                <label id="labelValor">Valor (R$)</label>
                 <input type="text" inputmode="decimal" id="campoValor" placeholder="Ex: 150,00">
             </div>
-            <div>
+            <div id="blocoPagamento">
                 <label>Pagamento</label>
                 <select id="campoPagamento">
                     <option>PIX</option>
@@ -285,6 +340,10 @@
                     <option>Transferência</option>
                     <option>Não informado</option>
                 </select>
+            </div>
+            <div id="blocoValidade" style="display:none;">
+                <label>Validade (dias)</label>
+                <input type="number" id="campoValidade" value="7" min="1">
             </div>
         </div>
 
@@ -341,14 +400,14 @@
 
     <!-- ETAPA 5 - RESUMO -->
     <section class="etapa" data-etapa="5">
-        <h2>Confirme os Dados</h2>
-        <p class="subtitulo">Revise antes de gerar o relatório</p>
+        <h2 id="tituloResumo">Confirme os Dados</h2>
+        <p class="subtitulo">Revise antes de gerar</p>
 
         <div id="areaResumo"></div>
 
         <div class="botoes">
             <button class="btn-voltar" onclick="voltar(5)">Voltar</button>
-            <button class="btn-gerar" onclick="gerarRelatorio()">Gerar Relatório</button>
+            <button class="btn-gerar" id="botaoGerarFinal" onclick="gerarDocumento()">Gerar Relatório</button>
         </div>
     </section>
 
@@ -356,8 +415,8 @@
     <section class="etapa" data-etapa="enviando">
         <div class="status">
             <div class="spinner"></div>
-            <h2>Gerando relatório...</h2>
-            <p>Registrando no histórico da Skalon</p>
+            <h2 id="tituloEnviando">Gerando relatório...</h2>
+            <p id="subtituloEnviando">Registrando no histórico da Skalon</p>
         </div>
     </section>
 
@@ -365,11 +424,11 @@
     <section class="etapa" data-etapa="sucesso">
         <div class="status">
             <div class="icone">✅</div>
-            <h2>Relatório criado!</h2>
+            <h2 id="tituloSucesso">Relatório criado!</h2>
             <p id="mensagemSucesso">O atendimento já está registrado no histórico da Skalon.</p>
 
-            <button class="btn-gerar" style="width:100%; margin-top:20px;" onclick="compartilharRelatorio()">Compartilhar no WhatsApp</button>
-            <button class="btn-secundario" onclick="baixarRelatorio()">Baixar relatório (HTML)</button>
+            <button class="btn-gerar" style="width:100%; margin-top:20px;" onclick="compartilharDocumento()">Compartilhar no WhatsApp</button>
+            <button class="btn-secundario" onclick="baixarDocumento()">Baixar arquivo (HTML)</button>
             <button class="btn-secundario" onclick="location.reload()">Novo atendimento</button>
 
             <div class="aviso" id="avisoCompartilhar" style="display:none;"></div>
@@ -380,9 +439,9 @@
     <section class="etapa" data-etapa="erro">
         <div class="status">
             <div class="icone">⚠️</div>
-            <h2>Não foi possível sincronizar</h2>
+            <h2>Não foi possível concluir</h2>
             <p id="mensagemErro">Verifique sua internet e tente novamente.</p>
-            <button class="btn-gerar" style="width:100%; margin-top:20px;" onclick="gerarRelatorio()">Tentar novamente</button>
+            <button class="btn-gerar" style="width:100%; margin-top:20px;" onclick="gerarDocumento()">Tentar novamente</button>
             <button class="btn-secundario" onclick="voltar('erro')">Voltar e revisar</button>
         </div>
     </section>
@@ -397,9 +456,65 @@
     var URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzWP44HXJm3DuBdK8x1mIY5FwfFGFakUUtMiAp8PpDlDXDIPZ5XA2ZZWilVgSR3sacr/exec";
     var CHAVE_PLANILHA = "techinfobelem";
 
-    var totalEtapas = 5;
-    var htmlRelatorioGerado = "";
+    var tipoDocumento = "relatorio";
+    var htmlGerado = "";
     var nomeArquivoGerado = "";
+
+    var CONFIG = {
+        relatorio: {
+            subtituloHeader: "Relatório de Serviço - via celular",
+            tituloEtapa2: "Serviço Realizado",
+            subtituloEtapa2: "O que foi feito e como foi pago?",
+            labelServico: "Descrição do serviço",
+            labelValor: "Valor (R$)",
+            mostrarPagamento: true,
+            mostrarValidade: false,
+            botaoGerar: "Gerar Relatório",
+            tituloResumo: "Confirme os Dados",
+            tituloEnviando: "Gerando relatório...",
+            subtituloEnviando: "Registrando no histórico da Skalon",
+            tituloSucesso: "Relatório criado!",
+            mensagemSucesso: "O atendimento já está registrado no histórico da Skalon.",
+            textoWhatsapp: "Olá! Segue o relatório do serviço realizado pela Skalon Informática."
+        },
+        orcamento: {
+            subtituloHeader: "Orçamento - via celular",
+            tituloEtapa2: "Serviço a Orçar",
+            subtituloEtapa2: "O que será feito e qual o valor estimado?",
+            labelServico: "Descrição do serviço proposto",
+            labelValor: "Valor estimado (R$)",
+            mostrarPagamento: false,
+            mostrarValidade: true,
+            botaoGerar: "Gerar Orçamento",
+            tituloResumo: "Confirme o Orçamento",
+            tituloEnviando: "Gerando orçamento...",
+            subtituloEnviando: "Este documento não entra no faturamento",
+            tituloSucesso: "Orçamento criado!",
+            mensagemSucesso: "Este orçamento não foi registrado no histórico de faturamento.",
+            textoWhatsapp: "Olá! Segue o orçamento solicitado pela Skalon Informática."
+        }
+    };
+
+    function escolherTipo(tipo) {
+        tipoDocumento = tipo;
+        var cfg = CONFIG[tipo];
+
+        document.getElementById("subtituloHeader").textContent = cfg.subtituloHeader;
+        document.getElementById("tituloEtapa2").textContent = cfg.tituloEtapa2;
+        document.getElementById("subtituloEtapa2").textContent = cfg.subtituloEtapa2;
+        document.getElementById("labelServico").textContent = cfg.labelServico;
+        document.getElementById("labelValor").textContent = cfg.labelValor;
+        document.getElementById("blocoPagamento").style.display = cfg.mostrarPagamento ? "block" : "none";
+        document.getElementById("blocoValidade").style.display = cfg.mostrarValidade ? "block" : "none";
+        document.getElementById("botaoGerarFinal").textContent = cfg.botaoGerar;
+        document.getElementById("tituloResumo").textContent = cfg.tituloResumo;
+        document.getElementById("tituloEnviando").textContent = cfg.tituloEnviando;
+        document.getElementById("subtituloEnviando").textContent = cfg.subtituloEnviando;
+        document.getElementById("tituloSucesso").textContent = cfg.tituloSucesso;
+        document.getElementById("mensagemSucesso").textContent = cfg.mensagemSucesso;
+
+        mostrarEtapa(1);
+    }
 
     function mostrarEtapa(numero) {
         document.querySelectorAll(".etapa").forEach(function (el) {
@@ -427,7 +542,7 @@
         }
         if (etapaAtual === 2) {
             if (!document.getElementById("campoServico").value.trim()) {
-                alert("Descreva o serviço realizado.");
+                alert("Descreva o serviço.");
                 return;
             }
         }
@@ -459,28 +574,36 @@
     }
 
     function mostrarResumo() {
+        var cfg = CONFIG[tipoDocumento];
         var area = document.getElementById("areaResumo");
         var valorNum = converterValor(pegar("campoValor"));
+
+        var linhaValor = 'R$ ' + valorNum.toFixed(2).replace(".", ",");
+        if (cfg.mostrarPagamento) {
+            linhaValor += ' — ' + pegar("campoPagamento");
+        }
+        if (cfg.mostrarValidade) {
+            linhaValor += ' (válido por ' + (pegar("campoValidade") || "7") + ' dias)';
+        }
 
         area.innerHTML =
             '<div class="resumo-card"><div class="rotulo">Cliente</div><div class="valor-texto">' + pegar("campoCliente") + '</div></div>' +
             '<div class="resumo-card"><div class="rotulo">Telefone</div><div class="valor-texto">' + pegar("campoTelefone") + '</div></div>' +
-            '<div class="resumo-card"><div class="rotulo">Serviço</div><div class="valor-texto">' + pegar("campoServico") + '</div></div>' +
-            '<div class="resumo-card"><div class="rotulo">Valor</div><div class="valor-texto">R$ ' + valorNum.toFixed(2).replace(".", ",") + ' — ' + pegar("campoPagamento") + '</div></div>' +
+            '<div class="resumo-card"><div class="rotulo">' + cfg.labelServico + '</div><div class="valor-texto">' + pegar("campoServico") + '</div></div>' +
+            '<div class="resumo-card"><div class="rotulo">Valor</div><div class="valor-texto">' + linhaValor + '</div></div>' +
             '<div class="resumo-card"><div class="rotulo">Equipamento</div><div class="valor-texto">' + pegar("campoComputador") + '</div></div>' +
             '<div class="resumo-card"><div class="rotulo">Observações</div><div class="valor-texto">' + (pegar("campoObservacoes") || "-") + '</div></div>';
 
         mostrarEtapa(5);
     }
 
-    function montarHtmlRelatorio(dados) {
-        return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
-        '<title>Relatorio de Servico - SKALON</title><style>' +
-        'body{font-family:Arial;background:#FFFFFF;padding:30px;color:#111111;}' +
+    function estiloBase() {
+        return 'body{font-family:Arial;background:#FFFFFF;padding:30px;color:#111111;}' +
         '.container{max-width:1000px;margin:auto;background:white;padding:35px;}' +
         '.header{border-bottom:3px solid #FF6A00;padding-bottom:20px;}' +
         '.header h1{color:#FF6A00;}' +
         '.header .slogan{color:#666;font-style:italic;font-size:13px;margin-top:5px;}' +
+        '.header .numero{display:inline-block;background:#111111;color:#FF6A00;font-weight:bold;padding:6px 14px;border-radius:6px;margin-top:10px;font-size:15px;}' +
         'h2{background:#111111;color:white;padding:10px;}' +
         '.info{display:grid;grid-template-columns:1fr 1fr;gap:10px;}' +
         '.card{background:#f9fafb;border:1px solid #ddd;padding:15px;}' +
@@ -491,11 +614,16 @@
         '.garantia h3{color:#FF6A00;margin-top:18px;margin-bottom:6px;font-size:15px;}' +
         '.garantia h3:first-child{margin-top:0;}' +
         '.garantia p{margin:8px 0;} .garantia ul{margin:6px 0 14px 22px;} .garantia li{margin-bottom:4px;}' +
-        '.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:15px;font-size:12px;color:#666;}' +
-        '</style></head><body><div class="container">' +
+        '.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:15px;font-size:12px;color:#666;}';
+    }
+
+    function montarHtmlRelatorio(dados, numero) {
+        var seloNumero = numero ? '<div class="numero">OS N&ordm; ' + numero + '</div>' : '';
+        return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+        '<title>Relatorio de Servico - SKALON</title><style>' + estiloBase() + '</style></head><body><div class="container">' +
         '<div class="header"><h1>SKALON</h1>' +
         '<p class="slogan">Performance para quem trabalha. Potência para quem joga.</p>' +
-        '<p>RELATORIO DE SERVICO TECNICO</p><p>Gerado via celular</p></div>' +
+        '<p>RELATORIO DE SERVICO TECNICO</p><p>Gerado via celular</p>' + seloNumero + '</div>' +
         '<h2>ATENDIMENTO</h2><div class="info">' +
         '<div class="card"><span class="label">Cliente:</span><br>' + dados.cliente + '</div>' +
         '<div class="card"><span class="label">Telefone:</span><br>' + dados.telefone + '</div>' +
@@ -517,9 +645,6 @@
         '<li>Defeitos relacionados ao servi&ccedil;o executado;</li>' +
         '<li>Falhas na instala&ccedil;&atilde;o, montagem ou aplica&ccedil;&atilde;o do reparo realizado pela assist&ecirc;ncia;</li>' +
         '<li>Defeitos de fabrica&ccedil;&atilde;o das pe&ccedil;as fornecidas pela assist&ecirc;ncia, quando aplic&aacute;vel.</li></ul>' +
-        '<h3>Pe&ccedil;as fornecidas pelo cliente</h3>' +
-        '<p>Quando o cliente fornecer pe&ccedil;as, componentes ou acess&oacute;rios adquiridos por conta pr&oacute;pria, a <strong>Skalon Inform&aacute;tica</strong> ser&aacute; respons&aacute;vel exclusivamente pela correta instala&ccedil;&atilde;o e pelo servi&ccedil;o executado.</p>' +
-        '<p>A garantia das pe&ccedil;as, componentes ou acess&oacute;rios fornecidos pelo cliente &eacute; de responsabilidade do fabricante ou da loja onde foram adquiridos.</p>' +
         '<h3>A garantia n&atilde;o cobre:</h3><ul>' +
         '<li>Danos causados por mau uso, quedas, impactos ou press&atilde;o excessiva;</li>' +
         '<li>Contato com l&iacute;quidos, umidade, oxida&ccedil;&atilde;o ou corros&atilde;o;</li>' +
@@ -528,100 +653,147 @@
         '<li>Defeitos diferentes daqueles descritos neste relat&oacute;rio ou surgidos posteriormente ao reparo;</li>' +
         '<li>Equipamentos abertos, violados ou reparados por terceiros durante a garantia;</li>' +
         '<li>Equipamentos fora do prazo de garantia.</li></ul>' +
-        '<h3>Observa&ccedil;&otilde;es finais</h3><ul>' +
-        '<li>A garantia &eacute; limitada exclusivamente ao servi&ccedil;o executado e &agrave;s pe&ccedil;as substitu&iacute;das.</li>' +
-        '<li>Para atendimento em garantia, poder&aacute; ser solicitada a apresenta&ccedil;&atilde;o deste relat&oacute;rio.</li>' +
-        '</ul></div>' +
+        '</div>' +
         '<div class="footer">SKALON - Performance para quem trabalha. Potência para quem joga.<br>Relatorio gerado via celular.</div>' +
         '</div></body></html>';
     }
 
-    function gerarRelatorio() {
+    function montarHtmlOrcamento(dados, numero) {
+        return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+        '<title>Orcamento ' + numero + ' - SKALON</title><style>' + estiloBase() + '</style></head><body><div class="container">' +
+        '<div class="header"><h1>SKALON</h1>' +
+        '<p class="slogan">Performance para quem trabalha. Potência para quem joga.</p>' +
+        '<p>ORCAMENTO</p>' +
+        '<div class="numero">N&ordm; ' + numero + '</div></div>' +
+        '<h2>CLIENTE</h2><div class="info">' +
+        '<div class="card"><span class="label">Cliente:</span><br>' + dados.cliente + '</div>' +
+        '<div class="card"><span class="label">Telefone:</span><br>' + dados.telefone + '</div>' +
+        '<div class="card"><span class="label">Data:</span><br>' + dados.dataFormatada + '</div>' +
+        '<div class="card"><span class="label">Validade da proposta:</span><br>' + dados.validade + ' dias</div></div>' +
+        '<h2>SERVICO PROPOSTO</h2><div class="servico">' + dados.servico.replace(/\n/g, "<br>") + '</div>' +
+        '<h2>VALOR ESTIMADO</h2><div class="info">' +
+        '<div class="card" style="grid-column: span 2;"><span class="label">Valor:</span><div class="valor">R$ ' + dados.valor.toFixed(2).replace(".", ",") + '</div></div></div>' +
+        '<h2>EQUIPAMENTO</h2><div class="info">' +
+        '<div class="card"><span class="label">Computador:</span><br>' + dados.computador + '</div>' +
+        '<div class="card"><span class="label">Sistema:</span><br>' + dados.sistema + '</div>' +
+        '<div class="card"><span class="label">Processador:</span><br>' + dados.processador + '</div>' +
+        '<div class="card"><span class="label">Memoria RAM:</span><br>' + dados.ram + '</div></div>' +
+        '<h2>OBSERVACOES</h2><div class="servico">' + (dados.observacoes || "-").replace(/\n/g, "<br>") + '</div>' +
+        '<div class="garantia" style="margin-top:20px;"><p><strong>Este documento &eacute; um or&ccedil;amento</strong> e n&atilde;o representa cobran&ccedil;a. Os valores podem ser alterados ap&oacute;s avalia&ccedil;&atilde;o t&eacute;cnica presencial do equipamento. Proposta v&aacute;lida por ' + dados.validade + ' dias a partir da data acima.</p></div>' +
+        '<div class="footer">SKALON - Performance para quem trabalha. Potência para quem joga.<br>Orcamento gerado via celular.</div>' +
+        '</div></body></html>';
+    }
 
-        mostrarEtapa("enviando");
-
+    function coletarDados() {
         var agora = new Date();
         var pad = function (n) { return n < 10 ? "0" + n : n; };
 
-        var dataHoraIso = agora.getFullYear() + "-" + pad(agora.getMonth() + 1) + "-" + pad(agora.getDate()) +
-            " " + pad(agora.getHours()) + ":" + pad(agora.getMinutes()) + ":" + pad(agora.getSeconds());
-
-        var dataFormatada = pad(agora.getDate()) + "/" + pad(agora.getMonth() + 1) + "/" + agora.getFullYear();
-
-        var dados = {
+        return {
             cliente: pegar("campoCliente") || "Cliente nao informado",
             telefone: pegar("campoTelefone"),
             servico: pegar("campoServico"),
             valor: converterValor(pegar("campoValor")),
             pagamento: pegar("campoPagamento"),
+            validade: pegar("campoValidade") || "7",
             computador: pegar("campoComputador") || "Nao informado",
             sistema: pegar("campoSistema") || "Nao informado",
             processador: pegar("campoProcessador") || "Nao informado",
             ram: pegar("campoRam") || "Nao informado",
             armazenamento: pegar("campoArmazenamento") || "Nao informado",
             observacoes: pegar("campoObservacoes"),
-            dataFormatada: dataFormatada
+            dataHoraIso: agora.getFullYear() + "-" + pad(agora.getMonth() + 1) + "-" + pad(agora.getDate()) + " " + pad(agora.getHours()) + ":" + pad(agora.getMinutes()) + ":" + pad(agora.getSeconds()),
+            dataFormatada: pad(agora.getDate()) + "/" + pad(agora.getMonth() + 1) + "/" + agora.getFullYear()
         };
-
-        htmlRelatorioGerado = montarHtmlRelatorio(dados);
-        nomeArquivoGerado = (dados.cliente + " - " + dataFormatada.replace(/\//g, "-")).replace(/[\\\/:*?"<>|]/g, "_") + ".html";
-
-        var parametros = new URLSearchParams({
-            chave: CHAVE_PLANILHA,
-            acao: "gravar",
-            dataHoraIso: dataHoraIso,
-            dataFormatada: dataFormatada,
-            cliente: dados.cliente,
-            telefone: dados.telefone,
-            servico: dados.servico,
-            valor: dados.valor,
-            pagamento: dados.pagamento,
-            observacoes: dados.observacoes,
-            computador: dados.computador + " | " + dados.sistema + " | " + dados.processador + " | RAM " + dados.ram + " | " + dados.armazenamento,
-            arquivoHtml: "Gerado via celular"
-        });
-
-        fetch(URL_PLANILHA + "?" + parametros.toString())
-            .then(function (resp) { return resp.json(); })
-            .then(function (resposta) {
-                if (resposta.sucesso) {
-                    mostrarEtapa("sucesso");
-                } else {
-                    document.getElementById("mensagemErro").textContent = "Motivo: " + (resposta.erro || "desconhecido");
-                    mostrarEtapa("erro");
-                }
-            })
-            .catch(function (erro) {
-                document.getElementById("mensagemErro").textContent = "Erro de conexao: " + erro.message;
-                mostrarEtapa("erro");
-            });
     }
 
-    function baixarRelatorio() {
-        var blob = new Blob([htmlRelatorioGerado], { type: "text/html" });
+    function gerarDocumento() {
+
+        mostrarEtapa("enviando");
+
+        var dados = coletarDados();
+
+        if (tipoDocumento === "relatorio") {
+
+            var parametros = new URLSearchParams({
+                chave: CHAVE_PLANILHA,
+                acao: "gravar",
+                dataHoraIso: dados.dataHoraIso,
+                dataFormatada: dados.dataFormatada,
+                cliente: dados.cliente,
+                telefone: dados.telefone,
+                servico: dados.servico,
+                valor: dados.valor,
+                pagamento: dados.pagamento,
+                observacoes: dados.observacoes,
+                computador: dados.computador + " | " + dados.sistema + " | " + dados.processador + " | RAM " + dados.ram + " | " + dados.armazenamento,
+                arquivoHtml: "Gerado via celular"
+            });
+
+            fetch(URL_PLANILHA + "?" + parametros.toString())
+                .then(function (resp) { return resp.json(); })
+                .then(function (resposta) {
+                    if (resposta.sucesso) {
+                        htmlGerado = montarHtmlRelatorio(dados, resposta.numero);
+                        nomeArquivoGerado = (dados.cliente + " - " + dados.dataFormatada.replace(/\//g, "-")).replace(/[\\\/:*?"<>|]/g, "_") + ".html";
+                        mostrarEtapa("sucesso");
+                    } else {
+                        document.getElementById("mensagemErro").textContent = "Motivo: " + (resposta.erro || "desconhecido");
+                        mostrarEtapa("erro");
+                    }
+                })
+                .catch(function (erro) {
+                    document.getElementById("mensagemErro").textContent = "Erro de conexao: " + erro.message;
+                    mostrarEtapa("erro");
+                });
+
+        } else {
+
+            // ORCAMENTO: nao grava na planilha, so busca o proximo numero
+            var parametrosNumero = new URLSearchParams({ chave: CHAVE_PLANILHA, acao: "numeroOrcamento" });
+
+            fetch(URL_PLANILHA + "?" + parametrosNumero.toString())
+                .then(function (resp) { return resp.json(); })
+                .then(function (resposta) {
+                    if (resposta.sucesso) {
+                        htmlGerado = montarHtmlOrcamento(dados, resposta.numero);
+                        nomeArquivoGerado = ("Orcamento " + resposta.numero + " - " + dados.cliente).replace(/[\\\/:*?"<>|]/g, "_") + ".html";
+                        mostrarEtapa("sucesso");
+                    } else {
+                        document.getElementById("mensagemErro").textContent = "Motivo: " + (resposta.erro || "desconhecido");
+                        mostrarEtapa("erro");
+                    }
+                })
+                .catch(function (erro) {
+                    document.getElementById("mensagemErro").textContent = "Erro de conexao: " + erro.message;
+                    mostrarEtapa("erro");
+                });
+
+        }
+    }
+
+    function baixarDocumento() {
+        var blob = new Blob([htmlGerado], { type: "text/html" });
         var link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = nomeArquivoGerado;
         link.click();
     }
 
-    function compartilharRelatorio() {
+    function compartilharDocumento() {
         var aviso = document.getElementById("avisoCompartilhar");
-        var blob = new Blob([htmlRelatorioGerado], { type: "text/html" });
+        var blob = new Blob([htmlGerado], { type: "text/html" });
         var arquivo = new File([blob], nomeArquivoGerado, { type: "text/html" });
-
-        var cliente = pegar("campoCliente") || "cliente";
-        var textoMensagem = "Olá! Segue o relatório do serviço realizado pela Skalon Informática.";
+        var textoMensagem = CONFIG[tipoDocumento].textoWhatsapp;
 
         if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
             navigator.share({
                 files: [arquivo],
-                title: "Relatório de Serviço - SKALON",
+                title: tipoDocumento === "relatorio" ? "Relatório de Serviço - SKALON" : "Orçamento - SKALON",
                 text: textoMensagem
             }).catch(function () {});
         } else {
             aviso.style.display = "block";
-            aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar relatório</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
+            aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar arquivo</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
         }
     }
 
