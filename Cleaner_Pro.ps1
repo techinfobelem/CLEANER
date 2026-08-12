@@ -1717,6 +1717,7 @@ $Global:UrlPlanilhaRelatorios = "https://script.google.com/macros/s/AKfycbzWP44H
 $Global:ChavePlanilhaRelatorios = "techinfobelem"
 
 $Global:UltimoErroPlanilha = ""
+$Global:UltimoNumeroOS = $null
 
 function Get-MensagemErroHttp {
 
@@ -1794,16 +1795,19 @@ function Enviar-RelatorioParaPlanilha {
 
         if ($resposta.sucesso) {
             $Global:UltimoErroPlanilha = ""
+            $Global:UltimoNumeroOS = $resposta.numero
             return $true
         }
 
         $Global:UltimoErroPlanilha = "A planilha respondeu com erro: $($resposta.erro)"
+        $Global:UltimoNumeroOS = $null
         return $false
 
     }
     catch {
 
         $Global:UltimoErroPlanilha = Get-MensagemErroHttp -ErroCapturado $_
+        $Global:UltimoNumeroOS = $null
 
         return $false
 
@@ -2740,6 +2744,32 @@ function Gerar-RelatorioServico {
         $osEnc = [System.Net.WebUtility]::HtmlEncode($os.Caption)
         $cpuEnc = [System.Net.WebUtility]::HtmlEncode($cpu.Name)
 
+        # ------------------------------------------------------------
+        # Sincroniza com a planilha central ANTES de montar o HTML,
+        # para que o numero de OS (gerado pela planilha) ja va
+        # embutido no relatorio final.
+        # ------------------------------------------------------------
+
+        $dataHoraIso = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        $valorNumerico = ConvertTo-ValorNumerico -Texto $valorRaw
+
+        $salvouPlanilha = Enviar-RelatorioParaPlanilha `
+            -DataHoraIso $dataHoraIso `
+            -DataFormatada $data `
+            -Cliente $clienteRaw `
+            -Telefone $telefoneRaw `
+            -Servico $servicoRaw `
+            -Valor $valorNumerico `
+            -Pagamento $pagamentoRaw `
+            -Observacoes $observacoesRaw `
+            -Computador "$($computer.Manufacturer) $($computer.Model)" `
+            -ArquivoHTML $reportFile
+
+        $seloNumeroOS = ""
+        if ($salvouPlanilha -and $Global:UltimoNumeroOS) {
+            $seloNumeroOS = '<div class="numero">OS N&ordm; ' + $Global:UltimoNumeroOS + '</div>'
+        }
+
         $garantiaHtml = @'
 <p>A <strong>Skalon Inform&aacute;tica</strong> oferece <strong>90 (noventa) dias de garantia</strong>, contados a partir da data de conclus&atilde;o do servi&ccedil;o, conforme previsto no C&oacute;digo de Defesa do Consumidor, exclusivamente para os servi&ccedil;os executados e para as pe&ccedil;as fornecidas pela assist&ecirc;ncia t&eacute;cnica.</p>
 
@@ -2795,6 +2825,7 @@ body { font-family: Arial; background:#FFFFFF; padding:30px; color:#111111; }
 .header { border-bottom:3px solid #FF6A00; padding-bottom:20px; }
 .header h1 { color:#FF6A00; }
 .header .slogan { color:#666; font-style:italic; font-size:13px; margin-top:5px; }
+.header .numero { display:inline-block; background:#111111; color:#FF6A00; font-weight:bold; padding:6px 14px; border-radius:6px; margin-top:10px; font-size:15px; }
 h2 { background:#111111; color:white; padding:10px; }
 .info { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .card { background:#f9fafb; border:1px solid #ddd; padding:15px; }
@@ -2820,6 +2851,7 @@ td { border:1px solid #ddd; padding:10px; }
 <p class="slogan">Performance para quem trabalha. Potência para quem joga.</p>
 <p>RELATORIO DE SERVICO TECNICO</p>
 <p>Cleaner Pro v0.7</p>
+$seloNumeroOS
 </div>
 <h2>ATENDIMENTO</h2>
 <div class="info">
@@ -2876,22 +2908,7 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
 
         $txtStatus.Text = "Relatorio criado com sucesso"
 
-        $dataHoraIso = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        $valorNumerico = ConvertTo-ValorNumerico -Texto $valorRaw
-
         $salvouBanco = Salvar-RelatorioNoBanco `
-            -DataHoraIso $dataHoraIso `
-            -DataFormatada $data `
-            -Cliente $clienteRaw `
-            -Telefone $telefoneRaw `
-            -Servico $servicoRaw `
-            -Valor $valorNumerico `
-            -Pagamento $pagamentoRaw `
-            -Observacoes $observacoesRaw `
-            -Computador "$($computer.Manufacturer) $($computer.Model)" `
-            -ArquivoHTML $reportFile
-
-        $salvouPlanilha = Enviar-RelatorioParaPlanilha `
             -DataHoraIso $dataHoraIso `
             -DataFormatada $data `
             -Cliente $clienteRaw `
@@ -2906,21 +2923,25 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
         Start-Process -FilePath $reportFile
 
         $avisoBanco = ""
+        $tituloOS = ""
 
         if ($salvouPlanilha) {
             $txtStatus.Text = "Relatorio criado e sincronizado com a planilha central"
+            if ($Global:UltimoNumeroOS) {
+                $tituloOS = "`n`nOS N$([char]0x00BA) $Global:UltimoNumeroOS"
+            }
         }
         elseif ($salvouBanco) {
             $txtStatus.Text = "Relatorio criado (salvo so localmente)"
-            $avisoBanco = "`n`nATENCAO: nao foi possivel sincronizar com a planilha central. O relatorio ficou salvo apenas no banco local desta maquina.`n`nMotivo: $Global:UltimoErroPlanilha"
+            $avisoBanco = "`n`nATENCAO: nao foi possivel sincronizar com a planilha central. O relatorio ficou salvo apenas no banco local desta maquina (sem numero de OS).`n`nMotivo: $Global:UltimoErroPlanilha"
         }
         else {
             $txtStatus.Text = "Relatorio criado (banco de dados indisponivel)"
-            $avisoBanco = "`n`nATENCAO: nao foi possivel registrar nem na planilha central nem no banco local. O arquivo HTML foi salvo normalmente.`n`nMotivo (planilha): $Global:UltimoErroPlanilha"
+            $avisoBanco = "`n`nATENCAO: nao foi possivel registrar nem na planilha central nem no banco local (sem numero de OS). O arquivo HTML foi salvo normalmente.`n`nMotivo (planilha): $Global:UltimoErroPlanilha"
         }
 
         [System.Windows.MessageBox]::Show(
-            "Relatorio criado com sucesso!`n`nArquivo:`n$reportFile$avisoBanco",
+            "Relatorio criado com sucesso!$tituloOS`n`nArquivo:`n$reportFile$avisoBanco",
             "SKALON",
             "OK",
             "Information"
