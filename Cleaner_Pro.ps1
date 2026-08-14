@@ -2706,19 +2706,6 @@ function Gerar-RelatorioServico {
             New-Item -Path $reportFolder -ItemType Directory -Force -ErrorAction Stop | Out-Null
         }
 
-        $clienteArquivo = $clienteRaw -replace '[\\/:*?"<>|]', '_'
-        $dataArquivo = Get-Date -Format "dd-MM-yyyy"
-
-        $reportFile = Join-Path $reportFolder "$clienteArquivo - $dataArquivo.html"
-
-        # Se ja existe um relatorio do mesmo cliente no mesmo dia
-        # (ex: segunda visita), evita sobrescrever adicionando (2), (3)...
-        $contador = 2
-        while (Test-Path -LiteralPath $reportFile) {
-            $reportFile = Join-Path $reportFolder "$clienteArquivo - $dataArquivo ($contador).html"
-            $contador++
-        }
-
         $gpuHtml = ""
         foreach ($video in $gpu) {
             $gpuName = [System.Net.WebUtility]::HtmlEncode($video.Name)
@@ -2763,11 +2750,33 @@ function Gerar-RelatorioServico {
             -Pagamento $pagamentoRaw `
             -Observacoes $observacoesRaw `
             -Computador "$($computer.Manufacturer) $($computer.Model)" `
-            -ArquivoHTML $reportFile
+            -ArquivoHTML $reportFolder
 
         $seloNumeroOS = ""
         if ($salvouPlanilha -and $Global:UltimoNumeroOS) {
             $seloNumeroOS = '<div class="numero">OS N&ordm; ' + $Global:UltimoNumeroOS + '</div>'
+        }
+
+        # Agora que ja sabemos (ou nao) o numero da OS, montamos o nome
+        # final do arquivo: "RelatorioServico 0002-26 - Cliente - dd-MM-yyyy.html"
+        $clienteArquivo = $clienteRaw -replace '[\\/:*?"<>|]', '_'
+        $dataArquivo = Get-Date -Format "dd-MM-yyyy"
+
+        if ($salvouPlanilha -and $Global:UltimoNumeroOS) {
+            $prefixoArquivo = "RelatorioServico $($Global:UltimoNumeroOS) - $clienteArquivo - $dataArquivo"
+        }
+        else {
+            $prefixoArquivo = "RelatorioServico SEM-NUMERO - $clienteArquivo - $dataArquivo"
+        }
+
+        $reportFile = Join-Path $reportFolder "$prefixoArquivo.html"
+
+        # Se ja existe um relatorio com o mesmo nome (raro, mas possivel
+        # em reenvios manuais), evita sobrescrever adicionando (2), (3)...
+        $contador = 2
+        while (Test-Path -LiteralPath $reportFile) {
+            $reportFile = Join-Path $reportFolder "$prefixoArquivo ($contador).html"
+            $contador++
         }
 
         $garantiaHtml = @'
