@@ -750,7 +750,8 @@
                 .then(function (resposta) {
                     if (resposta.sucesso) {
                         htmlGerado = montarHtmlRelatorio(dados, resposta.numero);
-                        nomeArquivoGerado = (dados.cliente + " - " + dados.dataFormatada.replace(/\//g, "-")).replace(/[\\\/:*?"<>|]/g, "_") + ".html";
+                        var prefixoNumero = resposta.numero ? resposta.numero : "SEM-NUMERO";
+                        nomeArquivoGerado = ("RelatorioServico " + prefixoNumero + " - " + dados.cliente + " - " + dados.dataFormatada.replace(/\//g, "-")).replace(/[\\\/:*?"<>|]/g, "_") + ".html";
                         mostrarEtapa("sucesso");
                     } else {
                         document.getElementById("mensagemErro").textContent = "Motivo: " + (resposta.erro || "desconhecido");
