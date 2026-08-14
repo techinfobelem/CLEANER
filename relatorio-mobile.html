@@ -347,6 +347,11 @@
             </div>
         </div>
 
+        <div id="blocoCusto">
+            <label>Custo de peças (R$) — uso interno, não aparece no relatório do cliente</label>
+            <input type="text" inputmode="decimal" id="campoCusto" placeholder="Ex: 60,00 (deixe em branco se não houve)">
+        </div>
+
         <div class="botoes">
             <button class="btn-voltar" onclick="voltar(2)">Voltar</button>
             <button class="btn-avancar" onclick="avancar(2)">Continuar</button>
@@ -506,6 +511,7 @@
         document.getElementById("labelValor").textContent = cfg.labelValor;
         document.getElementById("blocoPagamento").style.display = cfg.mostrarPagamento ? "block" : "none";
         document.getElementById("blocoValidade").style.display = cfg.mostrarValidade ? "block" : "none";
+        document.getElementById("blocoCusto").style.display = (tipo === "relatorio") ? "block" : "none";
         document.getElementById("botaoGerarFinal").textContent = cfg.botaoGerar;
         document.getElementById("tituloResumo").textContent = cfg.tituloResumo;
         document.getElementById("tituloEnviando").textContent = cfg.tituloEnviando;
@@ -586,11 +592,19 @@
             linhaValor += ' (válido por ' + (pegar("campoValidade") || "7") + ' dias)';
         }
 
+        var cardCusto = "";
+        if (tipoDocumento === "relatorio") {
+            var custoNum = converterValor(pegar("campoCusto"));
+            var lucroNum = valorNum - custoNum;
+            cardCusto = '<div class="resumo-card"><div class="rotulo">Custo de peças / Lucro estimado</div><div class="valor-texto">R$ ' + custoNum.toFixed(2).replace(".", ",") + ' — Lucro: R$ ' + lucroNum.toFixed(2).replace(".", ",") + '</div></div>';
+        }
+
         area.innerHTML =
             '<div class="resumo-card"><div class="rotulo">Cliente</div><div class="valor-texto">' + pegar("campoCliente") + '</div></div>' +
             '<div class="resumo-card"><div class="rotulo">Telefone</div><div class="valor-texto">' + pegar("campoTelefone") + '</div></div>' +
             '<div class="resumo-card"><div class="rotulo">' + cfg.labelServico + '</div><div class="valor-texto">' + pegar("campoServico") + '</div></div>' +
             '<div class="resumo-card"><div class="rotulo">Valor</div><div class="valor-texto">' + linhaValor + '</div></div>' +
+            cardCusto +
             '<div class="resumo-card"><div class="rotulo">Equipamento</div><div class="valor-texto">' + pegar("campoComputador") + '</div></div>' +
             '<div class="resumo-card"><div class="rotulo">Observações</div><div class="valor-texto">' + (pegar("campoObservacoes") || "-") + '</div></div>';
 
@@ -709,6 +723,7 @@
             telefone: pegar("campoTelefone"),
             servico: pegar("campoServico"),
             valor: converterValor(pegar("campoValor")),
+            custo: converterValor(pegar("campoCusto")),
             pagamento: pegar("campoPagamento"),
             validade: pegar("campoValidade") || "7",
             computador: pegar("campoComputador") || "Nao informado",
@@ -739,6 +754,7 @@
                 telefone: dados.telefone,
                 servico: dados.servico,
                 valor: dados.valor,
+                custo: dados.custo,
                 pagamento: dados.pagamento,
                 observacoes: dados.observacoes,
                 computador: dados.computador + " | " + dados.sistema + " | " + dados.processador + " | RAM " + dados.ram + " | " + dados.armazenamento,
