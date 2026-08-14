@@ -802,12 +802,24 @@
         var arquivo = new File([blob], nomeArquivoGerado, { type: "text/html" });
         var textoMensagem = CONFIG[tipoDocumento].textoWhatsapp;
 
+        // Copia a mensagem para a area de transferencia como rede de seguranca:
+        // no Android, muitos apps (incluindo o WhatsApp) ignoram o texto
+        // quando ha um arquivo anexado junto no compartilhamento nativo.
+        // No iPhone o texto ja aparece pre-preenchido normalmente, mas
+        // copiar tambem nao atrapalha.
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textoMensagem).catch(function () {});
+        }
+
         if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
             navigator.share({
                 files: [arquivo],
                 title: tipoDocumento === "relatorio" ? "Relatório de Serviço - SKALON" : "Orçamento - SKALON",
                 text: textoMensagem
             }).catch(function () {});
+
+            aviso.style.display = "block";
+            aviso.innerHTML = "Mensagem copiada! Se o texto não vier junto automaticamente (comum no Android), é só colar no campo de mensagem do WhatsApp antes de enviar.";
         } else {
             aviso.style.display = "block";
             aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar arquivo</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
