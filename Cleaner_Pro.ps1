@@ -1700,7 +1700,7 @@ function Verificar-StatusLicenca {
 # fica pendente, com aviso claro para o tecnico.
 # ============================================================
 
-$Global:CaminhoPastaRelatorios = "C:\Relatorio Tech Info Belem"
+$Global:CaminhoPastaRelatorios = "C:\Relatorio Skalon Informática"
 $Global:CaminhoBancoDados = Join-Path $Global:CaminhoPastaRelatorios "relatorios.sqlite"
 
 # ============================================================
@@ -2700,7 +2700,7 @@ function Gerar-RelatorioServico {
         $observacoes = $observacoes -replace "`r`n","<br>"
         $observacoes = $observacoes -replace "`n","<br>"
 
-        $reportFolder = "C:\Relatorio Tech Info Belem"
+        $reportFolder = "C:\Relatorio Skalon Informática"
 
         if (!(Test-Path -LiteralPath $reportFolder)) {
             New-Item -Path $reportFolder -ItemType Directory -Force -ErrorAction Stop | Out-Null
