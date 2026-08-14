@@ -1757,6 +1757,7 @@ function Enviar-RelatorioParaPlanilha {
         [string]$Telefone,
         [string]$Servico,
         [double]$Valor,
+        [double]$Custo = 0,
         [string]$Pagamento,
         [string]$Observacoes,
         [string]$Computador,
@@ -1777,6 +1778,7 @@ function Enviar-RelatorioParaPlanilha {
             telefone      = $Telefone
             servico       = $Servico
             valor         = $Valor.ToString([Globalization.CultureInfo]::InvariantCulture)
+            custo         = $Custo.ToString([Globalization.CultureInfo]::InvariantCulture)
             pagamento     = $Pagamento
             observacoes   = $Observacoes
             computador    = $Computador
@@ -2237,11 +2239,11 @@ function Abrir-HistoricoServicos {
     $form.Controls.Add($dgvResultados)
 
     $lblTotal = New-Object System.Windows.Forms.Label
-    $lblTotal.Text = "Atendimentos: 0    |    Total faturado: R$ 0,00"
+    $lblTotal.Text = "Atendimentos: 0   |   Faturado: R$ 0,00   |   Custo pecas: R$ 0,00   |   Lucro: R$ 0,00"
     $lblTotal.Location = New-Object System.Drawing.Point(20,540)
     $lblTotal.Size = New-Object System.Drawing.Size(890,30)
     $lblTotal.Anchor = "Bottom,Left,Right"
-    $lblTotal.Font = New-Object System.Drawing.Font("Arial",12,[System.Drawing.FontStyle]::Bold)
+    $lblTotal.Font = New-Object System.Drawing.Font("Arial",11,[System.Drawing.FontStyle]::Bold)
     $lblTotal.ForeColor = [System.Drawing.Color]::FromArgb(255,106,0)
     $form.Controls.Add($lblTotal)
 
@@ -2304,6 +2306,8 @@ function Abrir-HistoricoServicos {
             [void]$tabela.Columns.Add("Cliente", [string])
             [void]$tabela.Columns.Add("Servico", [string])
             [void]$tabela.Columns.Add("Valor", [double])
+            [void]$tabela.Columns.Add("Custo", [double])
+            [void]$tabela.Columns.Add("Lucro", [double])
             [void]$tabela.Columns.Add("Pagamento", [string])
             [void]$tabela.Columns.Add("ArquivoHTML", [string])
 
@@ -2324,11 +2328,16 @@ function Abrir-HistoricoServicos {
                     continue
                 }
 
+                $valorItem = [double]$item.valor
+                $custoItem = if ($item.custo) { [double]$item.custo } else { 0.0 }
+
                 $linha = $tabela.NewRow()
                 $linha["Data"] = [string]$item.dataFormatada
                 $linha["Cliente"] = [string]$item.cliente
                 $linha["Servico"] = [string]$item.servico
-                $linha["Valor"] = [double]$item.valor
+                $linha["Valor"] = $valorItem
+                $linha["Custo"] = $custoItem
+                $linha["Lucro"] = $valorItem - $custoItem
                 $linha["Pagamento"] = [string]$item.pagamento
                 $linha["ArquivoHTML"] = [string]$item.arquivoHtml
 
@@ -2346,13 +2355,17 @@ function Abrir-HistoricoServicos {
 
             $script:UltimaTabelaResultados = $tabela
 
-            $total = 0.0
+            $totalValor = 0.0
+            $totalCusto = 0.0
 
             foreach ($linha in $tabela.Rows) {
-                $total += [double]$linha["Valor"]
+                $totalValor += [double]$linha["Valor"]
+                $totalCusto += [double]$linha["Custo"]
             }
 
-            $lblTotal.Text = "Atendimentos: $($tabela.Rows.Count)    |    Total faturado: R$ $([math]::Round($total,2))"
+            $totalLucro = $totalValor - $totalCusto
+
+            $lblTotal.Text = "Atendimentos: $($tabela.Rows.Count)   |   Faturado: R$ $([math]::Round($totalValor,2))   |   Custo pecas: R$ $([math]::Round($totalCusto,2))   |   Lucro: R$ $([math]::Round($totalLucro,2))"
 
             $txtStatus.Text = "Historico atualizado"
 
@@ -2394,7 +2407,7 @@ function Abrir-HistoricoServicos {
 
             try {
                 $script:UltimaTabelaResultados |
-                    Select-Object Data, Cliente, Servico, Valor, Pagamento |
+                    Select-Object Data, Cliente, Servico, Valor, Custo, Lucro, Pagamento |
                     Export-Csv -Path $salvarDialog.FileName -NoTypeInformation -Encoding UTF8 -Delimiter ";"
 
                 [System.Windows.Forms.MessageBox]::Show(
@@ -2578,23 +2591,35 @@ function Gerar-RelatorioServico {
     $lblValor = New-Object System.Windows.Forms.Label
     $lblValor.Text = "VALOR DO SERVICO (R$)"
     $lblValor.Location = New-Object System.Drawing.Point(25,385)
-    $lblValor.Size = New-Object System.Drawing.Size(200,25)
+    $lblValor.Size = New-Object System.Drawing.Size(175,25)
     $form.Controls.Add($lblValor)
 
     $txtValorForm = New-Object System.Windows.Forms.TextBox
     $txtValorForm.Location = New-Object System.Drawing.Point(25,410)
-    $txtValorForm.Size = New-Object System.Drawing.Size(200,30)
+    $txtValorForm.Size = New-Object System.Drawing.Size(175,30)
     $form.Controls.Add($txtValorForm)
+
+    $lblCusto = New-Object System.Windows.Forms.Label
+    $lblCusto.Text = "CUSTO DE PECAS (R$)"
+    $lblCusto.Location = New-Object System.Drawing.Point(212,385)
+    $lblCusto.Size = New-Object System.Drawing.Size(175,25)
+    $form.Controls.Add($lblCusto)
+
+    $txtCustoForm = New-Object System.Windows.Forms.TextBox
+    $txtCustoForm.Location = New-Object System.Drawing.Point(212,410)
+    $txtCustoForm.Size = New-Object System.Drawing.Size(175,30)
+    $txtCustoForm.Text = "0"
+    $form.Controls.Add($txtCustoForm)
 
     $lblPagamento = New-Object System.Windows.Forms.Label
     $lblPagamento.Text = "FORMA DE PAGAMENTO"
-    $lblPagamento.Location = New-Object System.Drawing.Point(250,385)
+    $lblPagamento.Location = New-Object System.Drawing.Point(399,385)
     $lblPagamento.Size = New-Object System.Drawing.Size(200,25)
     $form.Controls.Add($lblPagamento)
 
     $cmbPagamentoForm = New-Object System.Windows.Forms.ComboBox
-    $cmbPagamentoForm.Location = New-Object System.Drawing.Point(250,410)
-    $cmbPagamentoForm.Size = New-Object System.Drawing.Size(355,30)
+    $cmbPagamentoForm.Location = New-Object System.Drawing.Point(399,410)
+    $cmbPagamentoForm.Size = New-Object System.Drawing.Size(206,30)
     $cmbPagamentoForm.DropDownStyle = "DropDownList"
     [void]$cmbPagamentoForm.Items.Add("PIX")
     [void]$cmbPagamentoForm.Items.Add("Dinheiro")
@@ -2685,6 +2710,7 @@ function Gerar-RelatorioServico {
         $telefoneRaw = $txtTelefoneForm.Text
         $servicoRaw = $txtServicoForm.Text
         $valorRaw = $txtValorForm.Text
+        $custoRaw = $txtCustoForm.Text
         $pagamentoRaw = $cmbPagamentoForm.SelectedItem.ToString()
         $observacoesRaw = $txtObservacoesForm.Text
 
@@ -2739,6 +2765,7 @@ function Gerar-RelatorioServico {
 
         $dataHoraIso = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         $valorNumerico = ConvertTo-ValorNumerico -Texto $valorRaw
+        $custoNumerico = ConvertTo-ValorNumerico -Texto $custoRaw
 
         $salvouPlanilha = Enviar-RelatorioParaPlanilha `
             -DataHoraIso $dataHoraIso `
@@ -2747,6 +2774,7 @@ function Gerar-RelatorioServico {
             -Telefone $telefoneRaw `
             -Servico $servicoRaw `
             -Valor $valorNumerico `
+            -Custo $custoNumerico `
             -Pagamento $pagamentoRaw `
             -Observacoes $observacoesRaw `
             -Computador "$($computer.Manufacturer) $($computer.Model)" `
