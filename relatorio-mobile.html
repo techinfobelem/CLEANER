@@ -266,6 +266,7 @@
         margin-bottom: 16px;
     }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -433,7 +434,7 @@
             <p id="mensagemSucesso">O atendimento já está registrado no histórico da Skalon.</p>
 
             <button class="btn-gerar" style="width:100%; margin-top:20px;" onclick="compartilharDocumento()">Compartilhar no WhatsApp</button>
-            <button class="btn-secundario" onclick="baixarDocumento()">Baixar arquivo (HTML)</button>
+            <button class="btn-secundario" onclick="baixarDocumento()">Baixar PDF</button>
             <button class="btn-secundario" onclick="location.reload()">Novo atendimento</button>
 
             <div class="aviso" id="avisoCompartilhar" style="display:none;"></div>
@@ -804,29 +805,86 @@
         }
     }
 
-    function baixarDocumento() {
-        var blob = new Blob([htmlGerado], { type: "text/html" });
-        var link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = nomeArquivoGerado;
-        link.click();
+    function gerarArquivoPdf() {
+        return new Promise(function (resolve, reject) {
+
+            if (typeof html2pdf === "undefined") {
+                reject(new Error("html2pdf indisponivel"));
+                return;
+            }
+
+            var iframe = document.createElement("iframe");
+            iframe.style.position = "fixed";
+            iframe.style.left = "-9999px";
+            iframe.style.top = "0";
+            iframe.style.width = "800px";
+            iframe.style.height = "1px";
+            document.body.appendChild(iframe);
+
+            var finalizado = false;
+
+            var limpar = function () {
+                if (iframe.parentNode) {
+                    document.body.removeChild(iframe);
+                }
+            };
+
+            iframe.onload = function () {
+                try {
+                    var corpo = iframe.contentDocument.body;
+
+                    var opcoes = {
+                        margin: 0,
+                        filename: nomeArquivoGerado.replace(/\.html$/, ".pdf"),
+                        image: { type: "jpeg", quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+                        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+                    };
+
+                    html2pdf().set(opcoes).from(corpo).outputPdf("blob").then(function (blobPdf) {
+                        finalizado = true;
+                        limpar();
+                        resolve(blobPdf);
+                    }).catch(function (erro) {
+                        finalizado = true;
+                        limpar();
+                        reject(erro);
+                    });
+                } catch (erro) {
+                    finalizado = true;
+                    limpar();
+                    reject(erro);
+                }
+            };
+
+            // rede de seguranca: se o iframe nunca disparar onload por algum motivo
+            setTimeout(function () {
+                if (!finalizado) {
+                    limpar();
+                    reject(new Error("Tempo esgotado ao gerar PDF"));
+                }
+            }, 15000);
+
+            iframe.srcdoc = htmlGerado;
+        });
     }
 
-    function compartilharDocumento() {
-        var aviso = document.getElementById("avisoCompartilhar");
-        var blob = new Blob([htmlGerado], { type: "text/html" });
-        var arquivo = new File([blob], nomeArquivoGerado, { type: "text/html" });
-        var textoMensagem = CONFIG[tipoDocumento].textoWhatsapp;
+    function baixarDocumento() {
+        gerarArquivoPdf().then(function (blobPdf) {
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blobPdf);
+            link.download = nomeArquivoGerado.replace(/\.html$/, ".pdf");
+            link.click();
+        }).catch(function () {
+            var blob = new Blob([htmlGerado], { type: "text/html" });
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = nomeArquivoGerado;
+            link.click();
+        });
+    }
 
-        // Copia a mensagem para a area de transferencia como rede de seguranca:
-        // no Android, muitos apps (incluindo o WhatsApp) ignoram o texto
-        // quando ha um arquivo anexado junto no compartilhamento nativo.
-        // No iPhone o texto ja aparece pre-preenchido normalmente, mas
-        // copiar tambem nao atrapalha.
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(textoMensagem).catch(function () {});
-        }
-
+    function compartilharArquivoFinal(arquivo, textoMensagem, aviso) {
         if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
             navigator.share({
                 files: [arquivo],
@@ -838,8 +896,35 @@
             aviso.innerHTML = "Mensagem copiada! Se o texto não vier junto automaticamente (comum no Android), é só colar no campo de mensagem do WhatsApp antes de enviar.";
         } else {
             aviso.style.display = "block";
-            aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar arquivo</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
+            aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar PDF</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
         }
+    }
+
+    function compartilharDocumento() {
+        var aviso = document.getElementById("avisoCompartilhar");
+        var textoMensagem = CONFIG[tipoDocumento].textoWhatsapp;
+
+        // Copia a mensagem para a area de transferencia como rede de seguranca:
+        // no Android, muitos apps (incluindo o WhatsApp) ignoram o texto
+        // quando ha um arquivo anexado junto no compartilhamento nativo.
+        // No iPhone o texto ja aparece pre-preenchido normalmente, mas
+        // copiar tambem nao atrapalha.
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textoMensagem).catch(function () {});
+        }
+
+        aviso.style.display = "block";
+        aviso.innerHTML = "Gerando PDF...";
+
+        gerarArquivoPdf().then(function (blobPdf) {
+            var nomePdf = nomeArquivoGerado.replace(/\.html$/, ".pdf");
+            var arquivo = new File([blobPdf], nomePdf, { type: "application/pdf" });
+            compartilharArquivoFinal(arquivo, textoMensagem, aviso);
+        }).catch(function () {
+            var blob = new Blob([htmlGerado], { type: "text/html" });
+            var arquivo = new File([blob], nomeArquivoGerado, { type: "text/html" });
+            compartilharArquivoFinal(arquivo, textoMensagem, aviso);
+        });
     }
 
 </script>
