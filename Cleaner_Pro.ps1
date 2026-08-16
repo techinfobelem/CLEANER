@@ -2516,7 +2516,7 @@ function Convert-HtmlParaPdf {
             "--headless"
             "--disable-gpu"
             "--print-to-pdf=`"$CaminhoPdf`""
-            "--print-to-pdf-no-header"
+            "--no-pdf-header-footer"
             "--no-margins"
             "`"$htmlUri`""
         )
