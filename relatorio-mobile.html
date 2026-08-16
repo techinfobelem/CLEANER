@@ -815,10 +815,11 @@
 
             var iframe = document.createElement("iframe");
             iframe.style.position = "fixed";
-            iframe.style.left = "-9999px";
-            iframe.style.top = "0";
+            iframe.style.left = "0";
+            iframe.style.top = "-99999px";
             iframe.style.width = "800px";
-            iframe.style.height = "1px";
+            iframe.style.height = "1200px";
+            iframe.style.border = "0";
             document.body.appendChild(iframe);
 
             var finalizado = false;
@@ -833,23 +834,41 @@
                 try {
                     var corpo = iframe.contentDocument.body;
 
-                    var opcoes = {
-                        margin: 0,
-                        filename: nomeArquivoGerado.replace(/\.html$/, ".pdf"),
-                        image: { type: "jpeg", quality: 0.98 },
-                        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-                        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-                    };
+                    // Ajusta o iframe ao tamanho real do conteudo e da um
+                    // instante para o navegador terminar de pintar (cores,
+                    // fontes, etc.) antes de capturar - em alguns celulares,
+                    // capturar cedo demais ou com o iframe muito pequeno
+                    // resulta num PDF sem estilo nenhum.
+                    iframe.style.height = (corpo.scrollHeight + 60) + "px";
 
-                    html2pdf().set(opcoes).from(corpo).outputPdf("blob").then(function (blobPdf) {
-                        finalizado = true;
-                        limpar();
-                        resolve(blobPdf);
-                    }).catch(function (erro) {
-                        finalizado = true;
-                        limpar();
-                        reject(erro);
-                    });
+                    setTimeout(function () {
+
+                        var opcoes = {
+                            margin: 0,
+                            filename: nomeArquivoGerado.replace(/\.html$/, ".pdf"),
+                            image: { type: "jpeg", quality: 0.98 },
+                            html2canvas: {
+                                scale: 2,
+                                useCORS: true,
+                                backgroundColor: "#ffffff",
+                                windowWidth: 800,
+                                windowHeight: corpo.scrollHeight + 60
+                            },
+                            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+                        };
+
+                        html2pdf().set(opcoes).from(corpo).outputPdf("blob").then(function (blobPdf) {
+                            finalizado = true;
+                            limpar();
+                            resolve(blobPdf);
+                        }).catch(function (erro) {
+                            finalizado = true;
+                            limpar();
+                            reject(erro);
+                        });
+
+                    }, 300);
+
                 } catch (erro) {
                     finalizado = true;
                     limpar();
