@@ -856,16 +856,48 @@
                 var corpoMatch = htmlGerado.match(/<body>([\s\S]*)<\/body>/i);
                 var conteudoInterno = corpoMatch ? corpoMatch[1] : htmlGerado;
 
+                // IMPORTANTE: nao colocamos a area "fora da tela" (ex:
+                // left:-9999px). Em varios navegadores de celular, algo
+                // posicionado muito longe da tela visivel simplesmente
+                // nao e pintado de verdade pelo motor grafico, e o
+                // html2canvas captura uma pagina em branco. Por isso,
+                // deixamos ela na posicao normal (0,0), soterrada por
+                // uma tela de carregamento opaca por cima - o navegador
+                // ainda pinta o conteudo normalmente, so que voce nao
+                // ve o "flash" dele na tela.
+
+                var overlay = document.createElement("div");
+                overlay.id = "overlayImpressaoPdf";
+                overlay.style.position = "fixed";
+                overlay.style.top = "0";
+                overlay.style.left = "0";
+                overlay.style.width = "100%";
+                overlay.style.height = "100%";
+                overlay.style.background = "#111111";
+                overlay.style.zIndex = "99999";
+                overlay.style.display = "flex";
+                overlay.style.flexDirection = "column";
+                overlay.style.alignItems = "center";
+                overlay.style.justifyContent = "center";
+                overlay.style.color = "#f2f2f2";
+                overlay.innerHTML = '<div class="spinner"></div><p style="margin-top:14px;">Gerando PDF...</p>';
+
                 var area = document.createElement("div");
                 area.id = "areaImpressaoPdf";
                 area.style.position = "fixed";
-                area.style.left = "-9999px";
+                area.style.left = "0";
                 area.style.top = "0";
                 area.style.width = "800px";
-                area.style.zIndex = "-1";
+                area.style.zIndex = "99998";
                 area.innerHTML = conteudoInterno;
 
                 document.body.appendChild(area);
+                document.body.appendChild(overlay);
+
+                var limpar = function () {
+                    if (area.parentNode) { document.body.removeChild(area); }
+                    if (overlay.parentNode) { document.body.removeChild(overlay); }
+                };
 
                 // dois requestAnimationFrame garantem que o navegador
                 // terminou de calcular layout e pintar (cores, fontes)
@@ -887,10 +919,10 @@
                         };
 
                         html2pdf().set(opcoes).from(area).outputPdf("blob").then(function (blobPdf) {
-                            document.body.removeChild(area);
+                            limpar();
                             resolve(blobPdf);
                         }).catch(function (erro) {
-                            document.body.removeChild(area);
+                            limpar();
                             reject(erro);
                         });
 
