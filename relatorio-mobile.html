@@ -632,6 +632,31 @@
         '.footer{margin-top:40px;border-top:1px solid #ddd;padding-top:15px;font-size:12px;color:#666;}';
     }
 
+    // Mesmo CSS de cima, mas com todos os seletores prefixados por
+    // #areaImpressaoPdf, para poder ser injetado no <head> da propria
+    // pagina (necessario para o html2canvas funcionar bem) sem vazar
+    // estilo nenhum para o resto do app (ex: o "h2{...}" acima e um
+    // seletor solto que bagunçaria os titulos do proprio quiz).
+    function estiloBaseEscopado() {
+        return '#areaImpressaoPdf{font-family:Arial;background:#FFFFFF;padding:30px;color:#111111;}' +
+        '#areaImpressaoPdf .container{max-width:1000px;margin:auto;background:white;padding:35px;}' +
+        '#areaImpressaoPdf .header{border-bottom:3px solid #FF6A00;padding-bottom:20px;}' +
+        '#areaImpressaoPdf .header h1{color:#FF6A00;}' +
+        '#areaImpressaoPdf .header .slogan{color:#666;font-style:italic;font-size:13px;margin-top:5px;}' +
+        '#areaImpressaoPdf .header .numero{display:inline-block;background:#111111;color:#FF6A00;font-weight:bold;padding:6px 14px;border-radius:6px;margin-top:10px;font-size:15px;}' +
+        '#areaImpressaoPdf h2{background:#111111;color:white;padding:10px;}' +
+        '#areaImpressaoPdf .info{display:grid;grid-template-columns:1fr 1fr;gap:10px;}' +
+        '#areaImpressaoPdf .card{background:#f9fafb;border:1px solid #ddd;padding:15px;}' +
+        '#areaImpressaoPdf .label{font-weight:bold;}' +
+        '#areaImpressaoPdf .valor{font-size:24px;font-weight:bold;color:#FF6A00;}' +
+        '#areaImpressaoPdf .servico{background:#f9fafb;border:1px solid #ddd;padding:20px;min-height:80px;}' +
+        '#areaImpressaoPdf .garantia{background:#f9fafb;border:1px solid #ddd;padding:20px;font-size:13px;line-height:1.6;text-align:justify;}' +
+        '#areaImpressaoPdf .garantia h3{color:#FF6A00;margin-top:18px;margin-bottom:6px;font-size:15px;}' +
+        '#areaImpressaoPdf .garantia h3:first-child{margin-top:0;}' +
+        '#areaImpressaoPdf .garantia p{margin:8px 0;} #areaImpressaoPdf .garantia ul{margin:6px 0 14px 22px;} #areaImpressaoPdf .garantia li{margin-bottom:4px;}' +
+        '#areaImpressaoPdf .footer{margin-top:40px;border-top:1px solid #ddd;padding-top:15px;font-size:12px;color:#666;}';
+    }
+
     function montarHtmlRelatorio(dados, numero) {
         var seloNumero = numero ? '<div class="numero">OS N&ordm; ' + numero + '</div>' : '';
         return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
@@ -813,35 +838,40 @@
                 return;
             }
 
-            var iframe = document.createElement("iframe");
-            iframe.style.position = "fixed";
-            iframe.style.left = "0";
-            iframe.style.top = "-99999px";
-            iframe.style.width = "800px";
-            iframe.style.height = "1200px";
-            iframe.style.border = "0";
-            document.body.appendChild(iframe);
+            try {
 
-            var finalizado = false;
-
-            var limpar = function () {
-                if (iframe.parentNode) {
-                    document.body.removeChild(iframe);
+                // Garante que o CSS escopado foi injetado no <head> uma unica vez
+                if (!document.getElementById("estiloImpressaoPdf")) {
+                    var estiloTag = document.createElement("style");
+                    estiloTag.id = "estiloImpressaoPdf";
+                    estiloTag.textContent = estiloBaseEscopado();
+                    document.head.appendChild(estiloTag);
                 }
-            };
 
-            iframe.onload = function () {
-                try {
-                    var corpo = iframe.contentDocument.body;
+                // Extrai so o conteudo de dentro do <body> do documento
+                // completo que ja foi montado (montarHtmlRelatorio /
+                // montarHtmlOrcamento), sem precisar de outro documento
+                // (iframe) - assim o html2canvas trabalha no mesmo
+                // documento da pagina, cenario em que ele e mais confiavel.
+                var corpoMatch = htmlGerado.match(/<body>([\s\S]*)<\/body>/i);
+                var conteudoInterno = corpoMatch ? corpoMatch[1] : htmlGerado;
 
-                    // Ajusta o iframe ao tamanho real do conteudo e da um
-                    // instante para o navegador terminar de pintar (cores,
-                    // fontes, etc.) antes de capturar - em alguns celulares,
-                    // capturar cedo demais ou com o iframe muito pequeno
-                    // resulta num PDF sem estilo nenhum.
-                    iframe.style.height = (corpo.scrollHeight + 60) + "px";
+                var area = document.createElement("div");
+                area.id = "areaImpressaoPdf";
+                area.style.position = "fixed";
+                area.style.left = "-9999px";
+                area.style.top = "0";
+                area.style.width = "800px";
+                area.style.zIndex = "-1";
+                area.innerHTML = conteudoInterno;
 
-                    setTimeout(function () {
+                document.body.appendChild(area);
+
+                // dois requestAnimationFrame garantem que o navegador
+                // terminou de calcular layout e pintar (cores, fontes)
+                // antes de capturar - evita o PDF sair "sem estilo".
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
 
                         var opcoes = {
                             margin: 0,
@@ -851,40 +881,26 @@
                                 scale: 2,
                                 useCORS: true,
                                 backgroundColor: "#ffffff",
-                                windowWidth: 800,
-                                windowHeight: corpo.scrollHeight + 60
+                                windowWidth: 800
                             },
                             jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
                         };
 
-                        html2pdf().set(opcoes).from(corpo).outputPdf("blob").then(function (blobPdf) {
-                            finalizado = true;
-                            limpar();
+                        html2pdf().set(opcoes).from(area).outputPdf("blob").then(function (blobPdf) {
+                            document.body.removeChild(area);
                             resolve(blobPdf);
                         }).catch(function (erro) {
-                            finalizado = true;
-                            limpar();
+                            document.body.removeChild(area);
                             reject(erro);
                         });
 
-                    }, 300);
+                    });
+                });
 
-                } catch (erro) {
-                    finalizado = true;
-                    limpar();
-                    reject(erro);
-                }
-            };
+            } catch (erro) {
+                reject(erro);
+            }
 
-            // rede de seguranca: se o iframe nunca disparar onload por algum motivo
-            setTimeout(function () {
-                if (!finalizado) {
-                    limpar();
-                    reject(new Error("Tempo esgotado ao gerar PDF"));
-                }
-            }, 15000);
-
-            iframe.srcdoc = htmlGerado;
         });
     }
 
