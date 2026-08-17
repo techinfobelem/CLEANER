@@ -266,6 +266,7 @@
         margin-bottom: 16px;
     }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -433,7 +434,7 @@
             <p id="mensagemSucesso">O atendimento já está registrado no histórico da Skalon.</p>
 
             <button class="btn-gerar" style="width:100%; margin-top:20px;" onclick="compartilharDocumento()">Compartilhar no WhatsApp</button>
-            <button class="btn-secundario" onclick="baixarDocumento()">Baixar arquivo (HTML)</button>
+            <button class="btn-secundario" onclick="baixarDocumento()">Baixar PDF</button>
             <button class="btn-secundario" onclick="location.reload()">Novo atendimento</button>
 
             <div class="aviso" id="avisoCompartilhar" style="display:none;"></div>
@@ -464,6 +465,8 @@
     var tipoDocumento = "relatorio";
     var htmlGerado = "";
     var nomeArquivoGerado = "";
+    var dadosGerados = null;
+    var numeroGerado = null;
 
     var CONFIG = {
         relatorio: {
@@ -766,6 +769,8 @@
                 .then(function (resposta) {
                     if (resposta.sucesso) {
                         htmlGerado = montarHtmlRelatorio(dados, resposta.numero);
+                        dadosGerados = dados;
+                        numeroGerado = resposta.numero || null;
                         var prefixoNumero = resposta.numero ? resposta.numero : "SEM-NUMERO";
                         nomeArquivoGerado = ("RelatorioServico " + prefixoNumero + " - " + dados.cliente + " - " + dados.dataFormatada.replace(/\//g, "-")).replace(/[\\\/:*?"<>|]/g, "_") + ".html";
                         mostrarEtapa("sucesso");
@@ -789,6 +794,8 @@
                 .then(function (resposta) {
                     if (resposta.sucesso) {
                         htmlGerado = montarHtmlOrcamento(dados, resposta.numero);
+                        dadosGerados = dados;
+                        numeroGerado = resposta.numero || null;
                         nomeArquivoGerado = ("Orcamento " + resposta.numero + " - " + dados.cliente).replace(/[\\\/:*?"<>|]/g, "_") + ".html";
                         mostrarEtapa("sucesso");
                     } else {
@@ -804,29 +811,296 @@
         }
     }
 
-    function baixarDocumento() {
-        var blob = new Blob([htmlGerado], { type: "text/html" });
-        var link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = nomeArquivoGerado;
-        link.click();
+    // ============================================================
+    // GERACAO NATIVA DE PDF (jsPDF puro, sem capturar HTML)
+    // ============================================================
+    // Desenha o documento diretamente com texto/caixas/cores, em vez
+    // de tentar "fotografar" a pagina HTML. Mais trabalho de codigo,
+    // mas 100% confiavel entre navegadores/celulares, sem depender
+    // de peculiaridades de renderizacao de CSS de cada aparelho.
+    // ============================================================
+
+    var TEXTOS_GARANTIA = [
+        { tipo: "p", texto: "A Skalon Informática oferece 90 (noventa) dias de garantia, contados a partir da data de conclusão do serviço, conforme previsto no Código de Defesa do Consumidor, exclusivamente para os serviços executados e para as peças fornecidas pela assistência técnica." },
+        { tipo: "h3", texto: "A garantia cobre:" },
+        { tipo: "li", texto: "Defeitos relacionados ao serviço executado;" },
+        { tipo: "li", texto: "Falhas na instalação, montagem ou aplicação do reparo realizado pela assistência;" },
+        { tipo: "li", texto: "Defeitos de fabricação das peças fornecidas pela assistência, quando aplicável." },
+        { tipo: "h3", texto: "Peças fornecidas pelo cliente" },
+        { tipo: "p", texto: "Quando o cliente fornecer peças, componentes ou acessórios adquiridos por conta própria, a Skalon Informática será responsável exclusivamente pela correta instalação e pelo serviço executado." },
+        { tipo: "p", texto: "A garantia das peças, componentes ou acessórios fornecidos pelo cliente é de responsabilidade do fabricante ou da loja onde foram adquiridos. Em caso de defeito de fabricação, troca em garantia ou necessidade de substituição dessas peças, o cliente deverá acionar diretamente o fornecedor." },
+        { tipo: "p", texto: "Caso seja necessário realizar nova desmontagem, testes, reinstalação ou substituição de componentes em razão de defeitos apresentados nas peças fornecidas pelo cliente, poderá ser cobrada nova mão de obra, mediante orçamento prévio." },
+        { tipo: "h3", texto: "A garantia não cobre:" },
+        { tipo: "li", texto: "Danos causados por mau uso, quedas, impactos ou pressão excessiva;" },
+        { tipo: "li", texto: "Contato com líquidos, umidade, oxidação ou corrosão;" },
+        { tipo: "li", texto: "Surtos elétricos, descargas atmosféricas, oscilações de energia ou problemas na rede elétrica;" },
+        { tipo: "li", texto: "Defeitos decorrentes de vírus, softwares de terceiros, atualizações de sistema operacional ou alterações de configuração realizadas após a entrega do equipamento;" },
+        { tipo: "li", texto: "Perda, corrupção, bloqueio ou recuperação de dados. É de responsabilidade do cliente manter cópia de segurança (backup) de seus arquivos;" },
+        { tipo: "li", texto: "Defeitos diferentes daqueles descritos na Ordem de Serviço ou surgidos posteriormente ao reparo;" },
+        { tipo: "li", texto: "Defeitos de fabricação em peças fornecidas pelo cliente;" },
+        { tipo: "li", texto: "Custos relacionados à garantia, troca, envio ou devolução de peças adquiridas pelo cliente em lojas físicas ou online;" },
+        { tipo: "li", texto: "Peças ou componentes quebrados, riscados ou danificados após a entrega do equipamento;" },
+        { tipo: "li", texto: "Equipamentos que tenham sido abertos, violados, modificados ou reparados por terceiros durante o período de garantia;" },
+        { tipo: "li", texto: "Equipamentos fora do prazo de garantia." },
+        { tipo: "h3", texto: "Equipamentos usados" },
+        { tipo: "p", texto: "Equipamentos eletrônicos estão sujeitos ao desgaste natural de seus componentes. Em aparelhos com sinais de desgaste, oxidação, adaptações, manutenção anterior ou reparos realizados por terceiros, poderão surgir defeitos não relacionados ao serviço executado." },
+        { tipo: "p", texto: "Nessas situações, a garantia permanece restrita exclusivamente ao reparo descrito na Ordem de Serviço, não abrangendo outros componentes do equipamento." },
+        { tipo: "h3", texto: "Observações" },
+        { tipo: "li", texto: "A garantia é limitada exclusivamente ao serviço executado e às peças substituídas pela assistência técnica, não abrangendo o equipamento como um todo." },
+        { tipo: "li", texto: "Caso seja constatado que o defeito apresentado não possui relação com o serviço anteriormente realizado, poderá ser cobrada uma nova avaliação técnica e, se necessário, um novo orçamento." },
+        { tipo: "li", texto: "Para atendimento em garantia, poderá ser solicitada a apresentação do Relatório de Serviço ou da Ordem de Serviço correspondente." },
+        { tipo: "li", texto: "A garantia terá início na data de conclusão do serviço, seja na retirada do equipamento pelo cliente ou na finalização do atendimento em domicílio." }
+    ];
+
+    function gerarArquivoPdf() {
+        return new Promise(function (resolve, reject) {
+
+            try {
+
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    reject(new Error("jsPDF indisponivel"));
+                    return;
+                }
+
+                if (!dadosGerados) {
+                    reject(new Error("Nenhum documento gerado ainda"));
+                    return;
+                }
+
+                var dados = dadosGerados;
+                var numero = numeroGerado;
+
+                var doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+                var margem = 15;
+                var largura = 210 - margem * 2;
+                var alturaPagina = 297;
+                var y = margem;
+
+                function novaPaginaSeNecessario(alturaNecessaria) {
+                    if (y + alturaNecessaria > alturaPagina - margem) {
+                        doc.addPage();
+                        y = margem;
+                    }
+                }
+
+                function tituloSecao(texto) {
+                    novaPaginaSeNecessario(13);
+                    doc.setFillColor(17, 17, 17);
+                    doc.rect(margem, y, largura, 8, "F");
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(10);
+                    doc.text(texto, margem + 3, y + 5.5);
+                    y += 12;
+                    doc.setTextColor(17, 17, 17);
+                    doc.setFont("helvetica", "normal");
+                }
+
+                function campoCaixa(rotulo, valor, corTexto) {
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(10);
+                    var linhasValor = doc.splitTextToSize(String(valor || "-"), largura - 6);
+                    var altura = 6 + linhasValor.length * 5 + 3;
+                    novaPaginaSeNecessario(altura + 3);
+                    doc.setDrawColor(221, 221, 221);
+                    doc.setFillColor(249, 250, 251);
+                    doc.rect(margem, y, largura, altura, "FD");
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(8);
+                    doc.setTextColor(120, 120, 120);
+                    doc.text(rotulo.toUpperCase(), margem + 3, y + 5);
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(10);
+                    if (corTexto) { doc.setTextColor(corTexto[0], corTexto[1], corTexto[2]); }
+                    else { doc.setTextColor(17, 17, 17); }
+                    doc.text(linhasValor, margem + 3, y + 10);
+                    doc.setTextColor(17, 17, 17);
+                    y += altura + 4;
+                }
+
+                function textoLivre(texto, tamanho) {
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(tamanho || 10);
+                    var linhas = doc.splitTextToSize(String(texto || "-"), largura);
+                    linhas.forEach(function (linha) {
+                        novaPaginaSeNecessario(5.5);
+                        doc.text(linha, margem, y);
+                        y += 5;
+                    });
+                    y += 4;
+                }
+
+                function linhaSeparadora() {
+                    doc.setDrawColor(255, 106, 0);
+                    doc.setLineWidth(0.8);
+                    doc.line(margem, y, margem + largura, y);
+                    y += 8;
+                }
+
+                // ---------------- CABECALHO ----------------
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(22);
+                doc.setTextColor(255, 106, 0);
+                doc.text("SKALON", margem, y + 6);
+                y += 10;
+
+                doc.setFont("helvetica", "italic");
+                doc.setFontSize(9);
+                doc.setTextColor(102, 102, 102);
+                doc.text("Performance para quem trabalha. Potência para quem joga.", margem, y);
+                y += 7;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.setTextColor(17, 17, 17);
+                doc.text(tipoDocumento === "relatorio" ? "RELATORIO DE SERVICO TECNICO (gerado via celular)" : "ORCAMENTO (gerado via celular)", margem, y);
+                y += 7;
+
+                if (numero) {
+                    var textoNumero = (tipoDocumento === "relatorio" ? "OS N. " : "N. ") + numero;
+                    var largNumero = doc.getTextWidth(textoNumero) + 8;
+                    doc.setFillColor(17, 17, 17);
+                    doc.rect(margem, y, largNumero, 8, "F");
+                    doc.setTextColor(255, 106, 0);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(10);
+                    doc.text(textoNumero, margem + 4, y + 5.5);
+                    y += 13;
+                }
+                else {
+                    y += 3;
+                }
+
+                doc.setTextColor(17, 17, 17);
+                linhaSeparadora();
+
+                if (tipoDocumento === "relatorio") {
+
+                    tituloSecao("ATENDIMENTO");
+                    campoCaixa("Cliente", dados.cliente);
+                    campoCaixa("Telefone", dados.telefone);
+                    campoCaixa("Data", dados.dataFormatada);
+                    campoCaixa("Computador", dados.computador);
+
+                    tituloSecao("SERVICO REALIZADO");
+                    textoLivre(dados.servico);
+
+                    tituloSecao("VALOR E PAGAMENTO");
+                    campoCaixa("Valor", "R$ " + dados.valor.toFixed(2).replace(".", ","), [255, 106, 0]);
+                    campoCaixa("Pagamento", dados.pagamento);
+
+                    tituloSecao("INFORMACOES DO COMPUTADOR");
+                    campoCaixa("Sistema", dados.sistema);
+                    campoCaixa("Processador", dados.processador);
+                    campoCaixa("Memoria RAM", dados.ram);
+                    campoCaixa("Armazenamento", dados.armazenamento);
+
+                    tituloSecao("OBSERVACOES");
+                    textoLivre(dados.observacoes);
+
+                    tituloSecao("CONDICOES DE GARANTIA");
+
+                    TEXTOS_GARANTIA.forEach(function (item) {
+                        if (item.tipo === "h3") {
+                            novaPaginaSeNecessario(8);
+                            doc.setFont("helvetica", "bold");
+                            doc.setFontSize(10.5);
+                            doc.setTextColor(255, 106, 0);
+                            doc.text(item.texto, margem, y);
+                            doc.setTextColor(17, 17, 17);
+                            y += 6;
+                        } else if (item.tipo === "li") {
+                            doc.setFont("helvetica", "normal");
+                            doc.setFontSize(9);
+                            var linhasLi = doc.splitTextToSize("• " + item.texto, largura - 4);
+                            linhasLi.forEach(function (linha, indice) {
+                                novaPaginaSeNecessario(5);
+                                doc.text(linha, margem + 2, y);
+                                y += 4.5;
+                            });
+                            y += 1;
+                        } else {
+                            doc.setFont("helvetica", "normal");
+                            doc.setFontSize(9);
+                            var linhasP = doc.splitTextToSize(item.texto, largura);
+                            linhasP.forEach(function (linha) {
+                                novaPaginaSeNecessario(5);
+                                doc.text(linha, margem, y);
+                                y += 4.5;
+                            });
+                            y += 3;
+                        }
+                    });
+
+                }
+                else {
+
+                    tituloSecao("CLIENTE");
+                    campoCaixa("Cliente", dados.cliente);
+                    campoCaixa("Telefone", dados.telefone);
+                    campoCaixa("Data", dados.dataFormatada);
+                    campoCaixa("Validade da proposta", dados.validade + " dias");
+
+                    tituloSecao("SERVICO PROPOSTO");
+                    textoLivre(dados.servico);
+
+                    tituloSecao("VALOR ESTIMADO");
+                    campoCaixa("Valor", "R$ " + dados.valor.toFixed(2).replace(".", ","), [255, 106, 0]);
+
+                    tituloSecao("EQUIPAMENTO");
+                    campoCaixa("Computador", dados.computador);
+                    campoCaixa("Sistema", dados.sistema);
+                    campoCaixa("Processador", dados.processador);
+                    campoCaixa("Memoria RAM", dados.ram);
+
+                    tituloSecao("OBSERVACOES");
+                    textoLivre(dados.observacoes);
+
+                    novaPaginaSeNecessario(20);
+                    doc.setFont("helvetica", "italic");
+                    doc.setFontSize(9);
+                    doc.setTextColor(120, 120, 120);
+                    textoLivre("Este documento é um orçamento e não representa cobrança. Os valores podem ser alterados após avaliação técnica presencial do equipamento. Proposta válida por " + dados.validade + " dias a partir da data acima.", 9);
+                    doc.setTextColor(17, 17, 17);
+
+                }
+
+                // ---------------- RODAPE ----------------
+                novaPaginaSeNecessario(14);
+                doc.setDrawColor(221, 221, 221);
+                doc.line(margem, y, margem + largura, y);
+                y += 5;
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(102, 102, 102);
+                doc.text("SKALON - Performance para quem trabalha. Potência para quem joga.", margem, y);
+
+                var blobPdf = doc.output("blob");
+                resolve(blobPdf);
+
+            } catch (erro) {
+                reject(erro);
+            }
+
+        });
     }
 
-    function compartilharDocumento() {
-        var aviso = document.getElementById("avisoCompartilhar");
-        var blob = new Blob([htmlGerado], { type: "text/html" });
-        var arquivo = new File([blob], nomeArquivoGerado, { type: "text/html" });
-        var textoMensagem = CONFIG[tipoDocumento].textoWhatsapp;
+    function baixarDocumento() {
+        gerarArquivoPdf().then(function (blobPdf) {
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blobPdf);
+            link.download = nomeArquivoGerado.replace(/\.html$/, ".pdf");
+            link.click();
+        }).catch(function () {
+            var blob = new Blob([htmlGerado], { type: "text/html" });
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = nomeArquivoGerado;
+            link.click();
+        });
+    }
 
-        // Copia a mensagem para a area de transferencia como rede de seguranca:
-        // no Android, muitos apps (incluindo o WhatsApp) ignoram o texto
-        // quando ha um arquivo anexado junto no compartilhamento nativo.
-        // No iPhone o texto ja aparece pre-preenchido normalmente, mas
-        // copiar tambem nao atrapalha.
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(textoMensagem).catch(function () {});
-        }
-
+    function compartilharArquivoFinal(arquivo, textoMensagem, aviso) {
         if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
             navigator.share({
                 files: [arquivo],
@@ -838,8 +1112,35 @@
             aviso.innerHTML = "Mensagem copiada! Se o texto não vier junto automaticamente (comum no Android), é só colar no campo de mensagem do WhatsApp antes de enviar.";
         } else {
             aviso.style.display = "block";
-            aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar arquivo</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
+            aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar PDF</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
         }
+    }
+
+    function compartilharDocumento() {
+        var aviso = document.getElementById("avisoCompartilhar");
+        var textoMensagem = CONFIG[tipoDocumento].textoWhatsapp;
+
+        // Copia a mensagem para a area de transferencia como rede de seguranca:
+        // no Android, muitos apps (incluindo o WhatsApp) ignoram o texto
+        // quando ha um arquivo anexado junto no compartilhamento nativo.
+        // No iPhone o texto ja aparece pre-preenchido normalmente, mas
+        // copiar tambem nao atrapalha.
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textoMensagem).catch(function () {});
+        }
+
+        aviso.style.display = "block";
+        aviso.innerHTML = "Gerando PDF...";
+
+        gerarArquivoPdf().then(function (blobPdf) {
+            var nomePdf = nomeArquivoGerado.replace(/\.html$/, ".pdf");
+            var arquivo = new File([blobPdf], nomePdf, { type: "application/pdf" });
+            compartilharArquivoFinal(arquivo, textoMensagem, aviso);
+        }).catch(function () {
+            var blob = new Blob([htmlGerado], { type: "text/html" });
+            var arquivo = new File([blob], nomeArquivoGerado, { type: "text/html" });
+            compartilharArquivoFinal(arquivo, textoMensagem, aviso);
+        });
     }
 
 </script>
