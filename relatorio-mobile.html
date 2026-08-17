@@ -956,6 +956,30 @@
                     y += 4;
                 }
 
+                // Caixa com borda/fundo cinza claro para textos livres
+                // (Servico Realizado, Observacoes), igual ao estilo
+                // ".servico" usado no relatorio HTML do desktop.
+                function caixaTexto(texto, alturaMinima) {
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(10);
+
+                    var larguraInterna = largura - 10;
+                    var linhas = doc.splitTextToSize(String(texto || "-"), larguraInterna);
+                    var alturaConteudo = linhas.length * 5;
+                    var altura = Math.max(alturaMinima || 22, alturaConteudo + 10);
+
+                    novaPaginaSeNecessario(Math.min(altura, 250) + 4);
+
+                    doc.setDrawColor(221, 221, 221);
+                    doc.setFillColor(249, 250, 251);
+                    doc.rect(margem, y, largura, altura, "FD");
+
+                    doc.setTextColor(17, 17, 17);
+                    doc.text(linhas, margem + 5, y + 8);
+
+                    y += altura + 4;
+                }
+
                 function linhaSeparadora() {
                     doc.setDrawColor(255, 106, 0);
                     doc.setLineWidth(0.8);
