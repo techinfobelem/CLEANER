@@ -956,30 +956,6 @@
                     y += 4;
                 }
 
-                // Caixa com borda/fundo cinza claro para textos livres
-                // (Servico Realizado, Observacoes), igual ao estilo
-                // ".servico" usado no relatorio HTML do desktop.
-                function caixaTexto(texto, alturaMinima) {
-                    doc.setFont("helvetica", "normal");
-                    doc.setFontSize(10);
-
-                    var larguraInterna = largura - 10;
-                    var linhas = doc.splitTextToSize(String(texto || "-"), larguraInterna);
-                    var alturaConteudo = linhas.length * 5;
-                    var altura = Math.max(alturaMinima || 22, alturaConteudo + 10);
-
-                    novaPaginaSeNecessario(Math.min(altura, 250) + 4);
-
-                    doc.setDrawColor(221, 221, 221);
-                    doc.setFillColor(249, 250, 251);
-                    doc.rect(margem, y, largura, altura, "FD");
-
-                    doc.setTextColor(17, 17, 17);
-                    doc.text(linhas, margem + 5, y + 8);
-
-                    y += altura + 4;
-                }
-
                 function linhaSeparadora() {
                     doc.setDrawColor(255, 106, 0);
                     doc.setLineWidth(0.8);
@@ -1132,7 +1108,9 @@
             link.href = URL.createObjectURL(blobPdf);
             link.download = nomeArquivoGerado.replace(/\.html$/, ".pdf");
             link.click();
-        }).catch(function () {
+            alert("PDF gerado: " + blobPdf.size + " bytes. Se abrir em branco, me avise esse numero de bytes.");
+        }).catch(function (erro) {
+            alert("Falha ao gerar PDF: " + (erro && erro.message ? erro.message : erro) + "\n\nBaixando o HTML como alternativa.");
             var blob = new Blob([htmlGerado], { type: "text/html" });
             var link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
@@ -1150,7 +1128,7 @@
             }).catch(function () {});
 
             aviso.style.display = "block";
-            aviso.innerHTML = "Mensagem copiada! Se o texto não vier junto automaticamente (comum no Android), é só colar no campo de mensagem do WhatsApp antes de enviar.";
+            aviso.innerHTML = "Mensagem copiada! Se o texto não vier junto automaticamente (comum no Android), é só colar no campo de mensagem do WhatsApp antes de enviar. (Arquivo: " + arquivo.name + ", " + arquivo.size + " bytes)";
         } else {
             aviso.style.display = "block";
             aviso.innerHTML = "Seu navegador não suporta compartilhar arquivos diretamente. Toque em <strong>Baixar PDF</strong> abaixo, depois abra o WhatsApp do cliente e anexe o arquivo manualmente pelo menu de anexos.";
@@ -1177,7 +1155,9 @@
             var nomePdf = nomeArquivoGerado.replace(/\.html$/, ".pdf");
             var arquivo = new File([blobPdf], nomePdf, { type: "application/pdf" });
             compartilharArquivoFinal(arquivo, textoMensagem, aviso);
-        }).catch(function () {
+        }).catch(function (erro) {
+            aviso.style.display = "block";
+            aviso.innerHTML = "ERRO ao gerar PDF: " + (erro && erro.message ? erro.message : erro) + " — compartilhando o HTML como alternativa.";
             var blob = new Blob([htmlGerado], { type: "text/html" });
             var arquivo = new File([blob], nomeArquivoGerado, { type: "text/html" });
             compartilharArquivoFinal(arquivo, textoMensagem, aviso);
