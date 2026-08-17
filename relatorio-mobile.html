@@ -896,26 +896,52 @@
                     doc.setFont("helvetica", "normal");
                 }
 
-                function campoCaixa(rotulo, valor, corTexto) {
-                    doc.setFont("helvetica", "normal");
-                    doc.setFontSize(10);
-                    var linhasValor = doc.splitTextToSize(String(valor || "-"), largura - 6);
-                    var altura = 6 + linhasValor.length * 5 + 3;
-                    novaPaginaSeNecessario(altura + 3);
+                function desenharCaixa(x, yPos, larguraCaixa, altura, rotulo, linhasValor, corTexto) {
                     doc.setDrawColor(221, 221, 221);
                     doc.setFillColor(249, 250, 251);
-                    doc.rect(margem, y, largura, altura, "FD");
+                    doc.rect(x, yPos, larguraCaixa, altura, "FD");
                     doc.setFont("helvetica", "bold");
-                    doc.setFontSize(8);
-                    doc.setTextColor(120, 120, 120);
-                    doc.text(rotulo.toUpperCase(), margem + 3, y + 5);
+                    doc.setFontSize(9.5);
+                    doc.setTextColor(17, 17, 17);
+                    doc.text(rotulo + ":", x + 3, yPos + 6);
                     doc.setFont("helvetica", "normal");
                     doc.setFontSize(10);
                     if (corTexto) { doc.setTextColor(corTexto[0], corTexto[1], corTexto[2]); }
                     else { doc.setTextColor(17, 17, 17); }
-                    doc.text(linhasValor, margem + 3, y + 10);
+                    doc.text(linhasValor, x + 3, yPos + 11.5);
                     doc.setTextColor(17, 17, 17);
+                }
+
+                function campoCaixa(rotulo, valor, corTexto) {
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(10);
+                    var linhasValor = doc.splitTextToSize(String(valor || "-"), largura - 6);
+                    var altura = 8 + linhasValor.length * 5 + 3;
+                    novaPaginaSeNecessario(altura + 3);
+                    desenharCaixa(margem, y, largura, altura, rotulo, linhasValor, corTexto);
                     y += altura + 4;
+                }
+
+                // Duas caixas lado a lado, igual ao layout em grade do
+                // relatorio do desktop (ex: Cliente | Telefone).
+                function linhaDupla(rotulo1, valor1, rotulo2, valor2, corTexto1, corTexto2) {
+                    var gap = 4;
+                    var larguraColuna = (largura - gap) / 2;
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(10);
+                    var linhas1 = doc.splitTextToSize(String(valor1 || "-"), larguraColuna - 6);
+                    var linhas2 = doc.splitTextToSize(String(valor2 || "-"), larguraColuna - 6);
+                    var altura1 = 8 + linhas1.length * 5 + 3;
+                    var altura2 = 8 + linhas2.length * 5 + 3;
+                    var alturaMax = Math.max(altura1, altura2);
+
+                    novaPaginaSeNecessario(alturaMax + 3);
+
+                    desenharCaixa(margem, y, larguraColuna, alturaMax, rotulo1, linhas1, corTexto1);
+                    desenharCaixa(margem + larguraColuna + gap, y, larguraColuna, alturaMax, rotulo2, linhas2, corTexto2);
+
+                    y += alturaMax + 4;
                 }
 
                 function textoLivre(texto, tamanho) {
@@ -957,7 +983,7 @@
                 y += 7;
 
                 if (numero) {
-                    var textoNumero = (tipoDocumento === "relatorio" ? "OS N. " : "N. ") + numero;
+                    var textoNumero = (tipoDocumento === "relatorio" ? "OS N\u00BA " : "N\u00BA ") + numero;
                     var largNumero = doc.getTextWidth(textoNumero) + 8;
                     doc.setFillColor(17, 17, 17);
                     doc.rect(margem, y, largNumero, 8, "F");
@@ -977,23 +1003,18 @@
                 if (tipoDocumento === "relatorio") {
 
                     tituloSecao("ATENDIMENTO");
-                    campoCaixa("Cliente", dados.cliente);
-                    campoCaixa("Telefone", dados.telefone);
-                    campoCaixa("Data", dados.dataFormatada);
-                    campoCaixa("Computador", dados.computador);
+                    linhaDupla("Cliente", dados.cliente, "Telefone", dados.telefone);
+                    linhaDupla("Data", dados.dataFormatada, "Computador", dados.computador);
 
                     tituloSecao("SERVICO REALIZADO");
                     textoLivre(dados.servico);
 
                     tituloSecao("VALOR E PAGAMENTO");
-                    campoCaixa("Valor", "R$ " + dados.valor.toFixed(2).replace(".", ","), [255, 106, 0]);
-                    campoCaixa("Pagamento", dados.pagamento);
+                    linhaDupla("Valor", "R$ " + dados.valor.toFixed(2).replace(".", ","), "Pagamento", dados.pagamento, [255, 106, 0]);
 
                     tituloSecao("INFORMACOES DO COMPUTADOR");
-                    campoCaixa("Sistema", dados.sistema);
-                    campoCaixa("Processador", dados.processador);
-                    campoCaixa("Memoria RAM", dados.ram);
-                    campoCaixa("Armazenamento", dados.armazenamento);
+                    linhaDupla("Sistema", dados.sistema, "Processador", dados.processador);
+                    linhaDupla("Memoria RAM", dados.ram, "Armazenamento", dados.armazenamento);
 
                     tituloSecao("OBSERVACOES");
                     textoLivre(dados.observacoes);
@@ -1036,10 +1057,8 @@
                 else {
 
                     tituloSecao("CLIENTE");
-                    campoCaixa("Cliente", dados.cliente);
-                    campoCaixa("Telefone", dados.telefone);
-                    campoCaixa("Data", dados.dataFormatada);
-                    campoCaixa("Validade da proposta", dados.validade + " dias");
+                    linhaDupla("Cliente", dados.cliente, "Telefone", dados.telefone);
+                    linhaDupla("Data", dados.dataFormatada, "Validade da proposta", dados.validade + " dias");
 
                     tituloSecao("SERVICO PROPOSTO");
                     textoLivre(dados.servico);
@@ -1048,10 +1067,8 @@
                     campoCaixa("Valor", "R$ " + dados.valor.toFixed(2).replace(".", ","), [255, 106, 0]);
 
                     tituloSecao("EQUIPAMENTO");
-                    campoCaixa("Computador", dados.computador);
-                    campoCaixa("Sistema", dados.sistema);
-                    campoCaixa("Processador", dados.processador);
-                    campoCaixa("Memoria RAM", dados.ram);
+                    linhaDupla("Computador", dados.computador, "Sistema", dados.sistema);
+                    linhaDupla("Processador", dados.processador, "Memoria RAM", dados.ram);
 
                     tituloSecao("OBSERVACOES");
                     textoLivre(dados.observacoes);
