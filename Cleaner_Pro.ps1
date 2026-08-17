@@ -2463,81 +2463,6 @@ function Abrir-HistoricoServicos {
 
 }
 
-# ============================================================
-# CONVERSAO HTML -> PDF (via Microsoft Edge headless)
-# ============================================================
-# O Edge ja vem instalado por padrao no Windows 10/11, entao nao
-# precisamos baixar/instalar nada extra. Se por algum motivo nao
-# for encontrado (versao antiga do Windows, Edge removido, etc.),
-# a funcao retorna $null e o programa segue usando o HTML normal.
-# ============================================================
-
-function Find-EdgePath {
-
-    $caminhos = @(
-        "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
-        "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
-        "$env:LOCALAPPDATA\Microsoft\Edge\Application\msedge.exe"
-    )
-
-    foreach ($caminho in $caminhos) {
-        if ($caminho -and (Test-Path -LiteralPath $caminho)) {
-            return $caminho
-        }
-    }
-
-    $comando = Get-Command msedge.exe -ErrorAction SilentlyContinue
-    if ($comando) {
-        return $comando.Source
-    }
-
-    return $null
-
-}
-
-function Convert-HtmlParaPdf {
-
-    param(
-        [string]$CaminhoHtml,
-        [string]$CaminhoPdf
-    )
-
-    $edge = Find-EdgePath
-
-    if (-not $edge) {
-        return $false
-    }
-
-    try {
-
-        $htmlUri = "file:///" + ($CaminhoHtml -replace '\\', '/')
-
-        $argumentos = @(
-            "--headless"
-            "--disable-gpu"
-            "--print-to-pdf=`"$CaminhoPdf`""
-            "--no-pdf-header-footer"
-            "--no-margins"
-            "`"$htmlUri`""
-        )
-
-        $processo = Start-Process -FilePath $edge -ArgumentList $argumentos -Wait -PassThru -WindowStyle Hidden -ErrorAction Stop
-
-        if ($processo.ExitCode -eq 0 -and (Test-Path -LiteralPath $CaminhoPdf)) {
-            return $true
-        }
-
-        return $false
-
-    }
-    catch {
-
-        return $false
-
-    }
-
-}
-
 function Gerar-RelatorioServico {
 
     # ============================================================
@@ -3018,11 +2943,6 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
             throw "O arquivo foi criado, mas esta vazio."
         }
 
-        $txtStatus.Text = "Convertendo para PDF..."
-
-        $pdfFile = $reportFile -replace '\.html$', '.pdf'
-        $gerouPdf = Convert-HtmlParaPdf -CaminhoHtml $reportFile -CaminhoPdf $pdfFile
-
         $txtStatus.Text = "Relatorio criado com sucesso"
 
         $salvouBanco = Salvar-RelatorioNoBanco `
@@ -3037,12 +2957,7 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
             -Computador "$($computer.Manufacturer) $($computer.Model)" `
             -ArquivoHTML $reportFile
 
-        if ($gerouPdf) {
-            Start-Process -FilePath $pdfFile
-        }
-        else {
-            Start-Process -FilePath $reportFile
-        }
+        Start-Process -FilePath $reportFile
 
         $avisoBanco = ""
         $tituloOS = ""
@@ -3062,10 +2977,8 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
             $avisoBanco = "`n`nATENCAO: nao foi possivel registrar nem na planilha central nem no banco local (sem numero de OS). O arquivo HTML foi salvo normalmente.`n`nMotivo (planilha): $Global:UltimoErroPlanilha"
         }
 
-        $linhaArquivo = if ($gerouPdf) { "Arquivo (PDF):`n$pdfFile" } else { "Arquivo (HTML):`n$reportFile`n`nObs: nao foi possivel gerar o PDF automaticamente (Microsoft Edge nao encontrado nesta maquina)." }
-
         [System.Windows.MessageBox]::Show(
-            "Relatorio criado com sucesso!$tituloOS`n`n$linhaArquivo$avisoBanco",
+            "Relatorio criado com sucesso!$tituloOS`n`nArquivo:`n$reportFile$avisoBanco",
             "SKALON",
             "OK",
             "Information"
