@@ -38,7 +38,7 @@ if (-not (Test-Administrator)) {
 
     [System.Windows.MessageBox]::Show(
         "O Cleaner Pro nao esta sendo executado como Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente.`n`nRecomendamos executar o PowerShell como Administrador.",
-        "SKALON - Cleaner Pro v0.7",
+        "SKALON - Cleaner Pro v0.8",
         "OK",
         "Warning"
     )
@@ -52,7 +52,7 @@ if (-not (Test-Administrator)) {
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="SKALON - Cleaner Pro v0.7"
+    Title="SKALON - Cleaner Pro v0.8"
     Height="760"
     Width="1200"
     WindowStartupLocation="CenterScreen"
@@ -609,7 +609,7 @@ if (-not (Test-Administrator)) {
             <TextBlock
                 Name="txtRodape"
                 Grid.Row="3"
-                Text="SKALON - Cleaner Pro v0.7"
+                Text="SKALON - Cleaner Pro v0.8"
                 Foreground="#8A8A8A"
                 HorizontalAlignment="Right"
                 Margin="0,20,0,0"/>
@@ -1329,7 +1329,7 @@ function Limpeza-Completa {
             "Espaco liberado: $freedMB MB`n`n" +
             "O Cleaner Pro concluiu a manutencao.",
 
-            "SKALON - Cleaner Pro v0.7",
+            "SKALON - Cleaner Pro v0.8",
             "OK",
             "Information"
         )
@@ -1758,6 +1758,9 @@ function Enviar-RelatorioParaPlanilha {
         [string]$Servico,
         [double]$Valor,
         [double]$Custo = 0,
+        [double]$ValorPecas = 0,
+        [double]$ValorServico = 0,
+        [double]$Desconto = 0,
         [string]$Pagamento,
         [string]$Observacoes,
         [string]$Computador,
@@ -1779,6 +1782,9 @@ function Enviar-RelatorioParaPlanilha {
             servico       = $Servico
             valor         = $Valor.ToString([Globalization.CultureInfo]::InvariantCulture)
             custo         = $Custo.ToString([Globalization.CultureInfo]::InvariantCulture)
+            valorPecas    = $ValorPecas.ToString([Globalization.CultureInfo]::InvariantCulture)
+            valorServico  = $ValorServico.ToString([Globalization.CultureInfo]::InvariantCulture)
+            desconto      = $Desconto.ToString([Globalization.CultureInfo]::InvariantCulture)
             pagamento     = $Pagamento
             observacoes   = $Observacoes
             computador    = $Computador
@@ -2546,7 +2552,7 @@ function Gerar-RelatorioServico {
 
     $form = New-Object System.Windows.Forms.Form
     $form.Text = "SKALON - Relatorio de Servico"
-    $form.Size = New-Object System.Drawing.Size(650,715)
+    $form.Size = New-Object System.Drawing.Size(650,765)
     $form.StartPosition = "CenterScreen"
     $form.BackColor = [System.Drawing.Color]::FromArgb(17,17,17)
     $form.ForeColor = [System.Drawing.Color]::White
@@ -2663,38 +2669,63 @@ function Gerar-RelatorioServico {
         }
     })
 
-    $lblValor = New-Object System.Windows.Forms.Label
-    $lblValor.Text = "VALOR DO SERVICO (R$)"
-    $lblValor.Location = New-Object System.Drawing.Point(25,385)
-    $lblValor.Size = New-Object System.Drawing.Size(175,25)
-    $form.Controls.Add($lblValor)
+    $lblValorPecas = New-Object System.Windows.Forms.Label
+    $lblValorPecas.Text = "VALOR DAS PECAS (R$)"
+    $lblValorPecas.Location = New-Object System.Drawing.Point(25,385)
+    $lblValorPecas.Size = New-Object System.Drawing.Size(180,25)
+    $form.Controls.Add($lblValorPecas)
 
-    $txtValorForm = New-Object System.Windows.Forms.TextBox
-    $txtValorForm.Location = New-Object System.Drawing.Point(25,410)
-    $txtValorForm.Size = New-Object System.Drawing.Size(175,30)
-    $form.Controls.Add($txtValorForm)
+    $txtValorPecasForm = New-Object System.Windows.Forms.TextBox
+    $txtValorPecasForm.Location = New-Object System.Drawing.Point(25,410)
+    $txtValorPecasForm.Size = New-Object System.Drawing.Size(180,30)
+    $txtValorPecasForm.Text = "0"
+    $form.Controls.Add($txtValorPecasForm)
+
+    $lblValorServico = New-Object System.Windows.Forms.Label
+    $lblValorServico.Text = "VALOR DO SERVICO (R$)"
+    $lblValorServico.Location = New-Object System.Drawing.Point(215,385)
+    $lblValorServico.Size = New-Object System.Drawing.Size(180,25)
+    $form.Controls.Add($lblValorServico)
+
+    $txtValorServicoForm = New-Object System.Windows.Forms.TextBox
+    $txtValorServicoForm.Location = New-Object System.Drawing.Point(215,410)
+    $txtValorServicoForm.Size = New-Object System.Drawing.Size(180,30)
+    $txtValorServicoForm.Text = "0"
+    $form.Controls.Add($txtValorServicoForm)
+
+    $lblDesconto = New-Object System.Windows.Forms.Label
+    $lblDesconto.Text = "DESCONTO (R$)"
+    $lblDesconto.Location = New-Object System.Drawing.Point(405,385)
+    $lblDesconto.Size = New-Object System.Drawing.Size(180,25)
+    $form.Controls.Add($lblDesconto)
+
+    $txtDescontoForm = New-Object System.Windows.Forms.TextBox
+    $txtDescontoForm.Location = New-Object System.Drawing.Point(405,410)
+    $txtDescontoForm.Size = New-Object System.Drawing.Size(180,30)
+    $txtDescontoForm.Text = "0"
+    $form.Controls.Add($txtDescontoForm)
 
     $lblCusto = New-Object System.Windows.Forms.Label
-    $lblCusto.Text = "CUSTO DE PECAS (R$)"
-    $lblCusto.Location = New-Object System.Drawing.Point(212,385)
-    $lblCusto.Size = New-Object System.Drawing.Size(175,25)
+    $lblCusto.Text = "CUSTO DE PECAS (R$) - uso interno"
+    $lblCusto.Location = New-Object System.Drawing.Point(25,452)
+    $lblCusto.Size = New-Object System.Drawing.Size(280,25)
     $form.Controls.Add($lblCusto)
 
     $txtCustoForm = New-Object System.Windows.Forms.TextBox
-    $txtCustoForm.Location = New-Object System.Drawing.Point(212,410)
-    $txtCustoForm.Size = New-Object System.Drawing.Size(175,30)
+    $txtCustoForm.Location = New-Object System.Drawing.Point(25,477)
+    $txtCustoForm.Size = New-Object System.Drawing.Size(280,30)
     $txtCustoForm.Text = "0"
     $form.Controls.Add($txtCustoForm)
 
     $lblPagamento = New-Object System.Windows.Forms.Label
     $lblPagamento.Text = "FORMA DE PAGAMENTO"
-    $lblPagamento.Location = New-Object System.Drawing.Point(399,385)
-    $lblPagamento.Size = New-Object System.Drawing.Size(200,25)
+    $lblPagamento.Location = New-Object System.Drawing.Point(320,452)
+    $lblPagamento.Size = New-Object System.Drawing.Size(260,25)
     $form.Controls.Add($lblPagamento)
 
     $cmbPagamentoForm = New-Object System.Windows.Forms.ComboBox
-    $cmbPagamentoForm.Location = New-Object System.Drawing.Point(399,410)
-    $cmbPagamentoForm.Size = New-Object System.Drawing.Size(206,30)
+    $cmbPagamentoForm.Location = New-Object System.Drawing.Point(320,477)
+    $cmbPagamentoForm.Size = New-Object System.Drawing.Size(260,30)
     $cmbPagamentoForm.DropDownStyle = "DropDownList"
     [void]$cmbPagamentoForm.Items.Add("PIX")
     [void]$cmbPagamentoForm.Items.Add("Dinheiro")
@@ -2707,12 +2738,12 @@ function Gerar-RelatorioServico {
 
     $lblObservacoes = New-Object System.Windows.Forms.Label
     $lblObservacoes.Text = "OBSERVACOES TECNICAS"
-    $lblObservacoes.Location = New-Object System.Drawing.Point(25,455)
+    $lblObservacoes.Location = New-Object System.Drawing.Point(25,522)
     $lblObservacoes.Size = New-Object System.Drawing.Size(250,25)
     $form.Controls.Add($lblObservacoes)
 
     $txtObservacoesForm = New-Object System.Windows.Forms.TextBox
-    $txtObservacoesForm.Location = New-Object System.Drawing.Point(25,480)
+    $txtObservacoesForm.Location = New-Object System.Drawing.Point(25,547)
     $txtObservacoesForm.Size = New-Object System.Drawing.Size(580,70)
     $txtObservacoesForm.Multiline = $true
     $txtObservacoesForm.ScrollBars = "Vertical"
@@ -2720,7 +2751,7 @@ function Gerar-RelatorioServico {
 
     $btnCancelarForm = New-Object System.Windows.Forms.Button
     $btnCancelarForm.Text = "CANCELAR"
-    $btnCancelarForm.Location = New-Object System.Drawing.Point(350,585)
+    $btnCancelarForm.Location = New-Object System.Drawing.Point(350,635)
     $btnCancelarForm.Size = New-Object System.Drawing.Size(120,40)
     $btnCancelarForm.BackColor = [System.Drawing.Color]::FromArgb(42,42,42)
     $btnCancelarForm.ForeColor = [System.Drawing.Color]::White
@@ -2732,7 +2763,7 @@ function Gerar-RelatorioServico {
 
     $btnGerarForm = New-Object System.Windows.Forms.Button
     $btnGerarForm.Text = "GERAR RELATORIO"
-    $btnGerarForm.Location = New-Object System.Drawing.Point(480,585)
+    $btnGerarForm.Location = New-Object System.Drawing.Point(480,635)
     $btnGerarForm.Size = New-Object System.Drawing.Size(125,40)
     $btnGerarForm.BackColor = [System.Drawing.Color]::FromArgb(255,106,0)
     $btnGerarForm.ForeColor = [System.Drawing.Color]::White
@@ -2784,7 +2815,9 @@ function Gerar-RelatorioServico {
 
         $telefoneRaw = $txtTelefoneForm.Text
         $servicoRaw = $txtServicoForm.Text
-        $valorRaw = $txtValorForm.Text
+        $valorPecasRaw = $txtValorPecasForm.Text
+        $valorServicoRaw = $txtValorServicoForm.Text
+        $descontoRaw = $txtDescontoForm.Text
         $custoRaw = $txtCustoForm.Text
         $pagamentoRaw = $cmbPagamentoForm.SelectedItem.ToString()
         $observacoesRaw = $txtObservacoesForm.Text
@@ -2792,7 +2825,6 @@ function Gerar-RelatorioServico {
         $cliente = [System.Net.WebUtility]::HtmlEncode($clienteRaw)
         $telefone = [System.Net.WebUtility]::HtmlEncode($telefoneRaw)
         $servico = [System.Net.WebUtility]::HtmlEncode($servicoRaw)
-        $valor = [System.Net.WebUtility]::HtmlEncode($valorRaw)
         $pagamento = [System.Net.WebUtility]::HtmlEncode($pagamentoRaw)
         $observacoes = [System.Net.WebUtility]::HtmlEncode($observacoesRaw)
 
@@ -2839,8 +2871,23 @@ function Gerar-RelatorioServico {
         # ------------------------------------------------------------
 
         $dataHoraIso = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        $valorNumerico = ConvertTo-ValorNumerico -Texto $valorRaw
+        $valorPecasNumerico = ConvertTo-ValorNumerico -Texto $valorPecasRaw
+        $valorServicoNumerico = ConvertTo-ValorNumerico -Texto $valorServicoRaw
+        $descontoNumerico = ConvertTo-ValorNumerico -Texto $descontoRaw
         $custoNumerico = ConvertTo-ValorNumerico -Texto $custoRaw
+
+        $valorNumerico = $valorPecasNumerico + $valorServicoNumerico - $descontoNumerico
+        if ($valorNumerico -lt 0) { $valorNumerico = 0 }
+
+        $valorPecasFormatado = $valorPecasNumerico.ToString("F2", [Globalization.CultureInfo]::InvariantCulture).Replace(".", ",")
+        $valorServicoFormatado = $valorServicoNumerico.ToString("F2", [Globalization.CultureInfo]::InvariantCulture).Replace(".", ",")
+        $descontoFormatado = $descontoNumerico.ToString("F2", [Globalization.CultureInfo]::InvariantCulture).Replace(".", ",")
+        $totalFormatado = $valorNumerico.ToString("F2", [Globalization.CultureInfo]::InvariantCulture).Replace(".", ",")
+
+        $descontoHtml = ""
+        if ($descontoNumerico -gt 0) {
+            $descontoHtml = '<div class="card"><span class="label">Desconto:</span><br>-R$ ' + $descontoFormatado + '</div>'
+        }
 
         $salvouPlanilha = Enviar-RelatorioParaPlanilha `
             -DataHoraIso $dataHoraIso `
@@ -2850,6 +2897,9 @@ function Gerar-RelatorioServico {
             -Servico $servicoRaw `
             -Valor $valorNumerico `
             -Custo $custoNumerico `
+            -ValorPecas $valorPecasNumerico `
+            -ValorServico $valorServicoNumerico `
+            -Desconto $descontoNumerico `
             -Pagamento $pagamentoRaw `
             -Observacoes $observacoesRaw `
             -Computador "$($computer.Manufacturer) $($computer.Model)" `
@@ -2962,7 +3012,7 @@ td { border:1px solid #ddd; padding:10px; }
 <h1>SKALON</h1>
 <p class="slogan">Performance para quem trabalha. Potência para quem joga.</p>
 <p>RELATORIO DE SERVICO TECNICO</p>
-<p>Cleaner Pro v0.7</p>
+<p>Cleaner Pro v0.8</p>
 $seloNumeroOS
 </div>
 <h2>ATENDIMENTO</h2>
@@ -2976,9 +3026,12 @@ $seloNumeroOS
 <div class="servico">$servico</div>
 <h2>VALOR E PAGAMENTO</h2>
 <div class="info">
-<div class="card"><span class="label">Valor:</span><div class="valor">R$ $valor</div></div>
+<div class="card"><span class="label">Valor das Pecas:</span><br>R$ $valorPecasFormatado</div>
+<div class="card"><span class="label">Valor do Servico:</span><br>R$ $valorServicoFormatado</div>
+$descontoHtml
 <div class="card"><span class="label">Pagamento:</span><br><br>$pagamento</div>
 </div>
+<div class="card" style="margin-top:12px;"><span class="label">TOTAL A PAGAR:</span><div class="valor">R$ $totalFormatado</div></div>
 <h2>INFORMACOES DO COMPUTADOR</h2>
 <div class="info">
 <div class="card"><span class="label">Sistema:</span><br>$osEnc</div>
@@ -2999,7 +3052,7 @@ $diskHealthHtml
 <div class="garantia">$garantiaHtml</div>
 <div class="footer">
 SKALON - Performance para quem trabalha. Potência para quem joga.<br>
-Relatorio gerado automaticamente pelo Cleaner Pro v0.7.
+Relatorio gerado automaticamente pelo Cleaner Pro v0.8.
 </div>
 </div>
 </body>
