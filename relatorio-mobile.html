@@ -326,31 +326,54 @@
         <label id="labelServico">Descrição do serviço</label>
         <textarea id="campoServico" placeholder="Ex: Limpeza interna, troca de pasta térmica..."></textarea>
 
-        <div class="linha-dupla">
-            <div>
-                <label id="labelValor">Valor (R$)</label>
-                <input type="text" inputmode="decimal" id="campoValor" placeholder="Ex: 150,00">
+        <!-- ORCAMENTO: valor unico -->
+        <div id="blocoValorUnico" style="display:none;">
+            <div class="linha-dupla">
+                <div>
+                    <label id="labelValor">Valor estimado (R$)</label>
+                    <input type="text" inputmode="decimal" id="campoValor" placeholder="Ex: 150,00">
+                </div>
+                <div id="blocoValidade">
+                    <label>Validade (dias)</label>
+                    <input type="number" id="campoValidade" value="7" min="1">
+                </div>
             </div>
-            <div id="blocoPagamento">
-                <label>Pagamento</label>
-                <select id="campoPagamento">
-                    <option>PIX</option>
-                    <option>Dinheiro</option>
-                    <option>Cartão de Crédito</option>
-                    <option>Cartão de Débito</option>
-                    <option>Transferência</option>
-                    <option>Não informado</option>
-                </select>
+        </div>
+
+        <!-- RELATORIO: pecas + servico + desconto -->
+        <div id="blocoValorDetalhado">
+            <div class="linha-dupla">
+                <div>
+                    <label>Valor das Peças (R$)</label>
+                    <input type="text" inputmode="decimal" id="campoValorPecas" placeholder="Ex: 80,00" value="0">
+                </div>
+                <div>
+                    <label>Valor do Serviço (R$)</label>
+                    <input type="text" inputmode="decimal" id="campoValorServico" placeholder="Ex: 70,00" value="0">
+                </div>
             </div>
-            <div id="blocoValidade" style="display:none;">
-                <label>Validade (dias)</label>
-                <input type="number" id="campoValidade" value="7" min="1">
+            <div class="linha-dupla">
+                <div>
+                    <label>Desconto (R$)</label>
+                    <input type="text" inputmode="decimal" id="campoDesconto" placeholder="Ex: 0" value="0">
+                </div>
+                <div id="blocoPagamento">
+                    <label>Pagamento</label>
+                    <select id="campoPagamento">
+                        <option>PIX</option>
+                        <option>Dinheiro</option>
+                        <option>Cartão de Crédito</option>
+                        <option>Cartão de Débito</option>
+                        <option>Transferência</option>
+                        <option>Não informado</option>
+                    </select>
+                </div>
             </div>
         </div>
 
         <div id="blocoCusto">
             <label>Custo de peças (R$) — uso interno, não aparece no relatório do cliente</label>
-            <input type="text" inputmode="decimal" id="campoCusto" placeholder="Ex: 60,00 (deixe em branco se não houve)">
+            <input type="text" inputmode="decimal" id="campoCusto" placeholder="Ex: 60,00 (deixe em branco se não houve)" value="0">
         </div>
 
         <div class="botoes">
@@ -512,7 +535,8 @@
         document.getElementById("subtituloEtapa2").textContent = cfg.subtituloEtapa2;
         document.getElementById("labelServico").textContent = cfg.labelServico;
         document.getElementById("labelValor").textContent = cfg.labelValor;
-        document.getElementById("blocoPagamento").style.display = cfg.mostrarPagamento ? "block" : "none";
+        document.getElementById("blocoValorUnico").style.display = (tipo === "orcamento") ? "block" : "none";
+        document.getElementById("blocoValorDetalhado").style.display = (tipo === "relatorio") ? "block" : "none";
         document.getElementById("blocoValidade").style.display = cfg.mostrarValidade ? "block" : "none";
         document.getElementById("blocoCusto").style.display = (tipo === "relatorio") ? "block" : "none";
         document.getElementById("botaoGerarFinal").textContent = cfg.botaoGerar;
@@ -585,21 +609,33 @@
     function mostrarResumo() {
         var cfg = CONFIG[tipoDocumento];
         var area = document.getElementById("areaResumo");
-        var valorNum = converterValor(pegar("campoValor"));
 
-        var linhaValor = 'R$ ' + valorNum.toFixed(2).replace(".", ",");
-        if (cfg.mostrarPagamento) {
-            linhaValor += ' — ' + pegar("campoPagamento");
-        }
-        if (cfg.mostrarValidade) {
-            linhaValor += ' (válido por ' + (pegar("campoValidade") || "7") + ' dias)';
-        }
-
+        var linhaValor;
         var cardCusto = "";
+
         if (tipoDocumento === "relatorio") {
+
+            var valorPecas = converterValor(pegar("campoValorPecas"));
+            var valorServico = converterValor(pegar("campoValorServico"));
+            var desconto = converterValor(pegar("campoDesconto"));
+            var total = Math.max(0, valorPecas + valorServico - desconto);
+
+            linhaValor = 'Peças: R$ ' + valorPecas.toFixed(2).replace(".", ",") +
+                '  |  Serviço: R$ ' + valorServico.toFixed(2).replace(".", ",");
+            if (desconto > 0) {
+                linhaValor += '  |  Desconto: -R$ ' + desconto.toFixed(2).replace(".", ",");
+            }
+            linhaValor += '\nTOTAL A PAGAR: R$ ' + total.toFixed(2).replace(".", ",") + ' — ' + pegar("campoPagamento");
+
             var custoNum = converterValor(pegar("campoCusto"));
-            var lucroNum = valorNum - custoNum;
+            var lucroNum = total - custoNum;
             cardCusto = '<div class="resumo-card"><div class="rotulo">Custo de peças / Lucro estimado</div><div class="valor-texto">R$ ' + custoNum.toFixed(2).replace(".", ",") + ' — Lucro: R$ ' + lucroNum.toFixed(2).replace(".", ",") + '</div></div>';
+
+        } else {
+
+            var valorNum = converterValor(pegar("campoValor"));
+            linhaValor = 'R$ ' + valorNum.toFixed(2).replace(".", ",") + ' (válido por ' + (pegar("campoValidade") || "7") + ' dias)';
+
         }
 
         area.innerHTML =
@@ -648,8 +684,11 @@
         '<div class="card"><span class="label">Computador:</span><br>' + dados.computador + '</div></div>' +
         '<h2>SERVICO REALIZADO</h2><div class="servico">' + dados.servico.replace(/\n/g, "<br>") + '</div>' +
         '<h2>VALOR E PAGAMENTO</h2><div class="info">' +
-        '<div class="card"><span class="label">Valor:</span><div class="valor">R$ ' + dados.valor.toFixed(2).replace(".", ",") + '</div></div>' +
+        '<div class="card"><span class="label">Valor das Pecas:</span><br>R$ ' + dados.valorPecas.toFixed(2).replace(".", ",") + '</div>' +
+        '<div class="card"><span class="label">Valor do Servico:</span><br>R$ ' + dados.valorServico.toFixed(2).replace(".", ",") + '</div>' +
+        (dados.desconto > 0 ? '<div class="card"><span class="label">Desconto:</span><br>-R$ ' + dados.desconto.toFixed(2).replace(".", ",") + '</div>' : '') +
         '<div class="card"><span class="label">Pagamento:</span><br><br>' + dados.pagamento + '</div></div>' +
+        '<div class="card" style="margin-top:12px;"><span class="label">TOTAL A PAGAR:</span><div class="valor">R$ ' + dados.valor.toFixed(2).replace(".", ",") + '</div></div>' +
         '<h2>INFORMACOES DO COMPUTADOR</h2><div class="info">' +
         '<div class="card"><span class="label">Sistema:</span><br>' + dados.sistema + '</div>' +
         '<div class="card"><span class="label">Processador:</span><br>' + dados.processador + '</div>' +
@@ -721,11 +760,22 @@
         var agora = new Date();
         var pad = function (n) { return n < 10 ? "0" + n : n; };
 
+        var valorPecas = converterValor(pegar("campoValorPecas"));
+        var valorServico = converterValor(pegar("campoValorServico"));
+        var desconto = converterValor(pegar("campoDesconto"));
+
+        var valorTotal = (tipoDocumento === "relatorio")
+            ? Math.max(0, valorPecas + valorServico - desconto)
+            : converterValor(pegar("campoValor"));
+
         return {
             cliente: pegar("campoCliente") || "Cliente nao informado",
             telefone: pegar("campoTelefone"),
             servico: pegar("campoServico"),
-            valor: converterValor(pegar("campoValor")),
+            valor: valorTotal,
+            valorPecas: valorPecas,
+            valorServico: valorServico,
+            desconto: desconto,
             custo: converterValor(pegar("campoCusto")),
             pagamento: pegar("campoPagamento"),
             validade: pegar("campoValidade") || "7",
@@ -758,6 +808,9 @@
                 servico: dados.servico,
                 valor: dados.valor,
                 custo: dados.custo,
+                valorPecas: dados.valorPecas,
+                valorServico: dados.valorServico,
+                desconto: dados.desconto,
                 pagamento: dados.pagamento,
                 observacoes: dados.observacoes,
                 computador: dados.computador + " | " + dados.sistema + " | " + dados.processador + " | RAM " + dados.ram + " | " + dados.armazenamento,
@@ -1010,7 +1063,13 @@
                     textoLivre(dados.servico);
 
                     tituloSecao("VALOR E PAGAMENTO");
-                    linhaDupla("Valor", "R$ " + dados.valor.toFixed(2).replace(".", ","), "Pagamento", dados.pagamento, [255, 106, 0]);
+                    linhaDupla("Valor das Pecas", "R$ " + dados.valorPecas.toFixed(2).replace(".", ","), "Valor do Servico", "R$ " + dados.valorServico.toFixed(2).replace(".", ","));
+                    if (dados.desconto > 0) {
+                        linhaDupla("Desconto", "-R$ " + dados.desconto.toFixed(2).replace(".", ","), "Pagamento", dados.pagamento);
+                    } else {
+                        campoCaixa("Pagamento", dados.pagamento);
+                    }
+                    campoCaixa("TOTAL A PAGAR", "R$ " + dados.valor.toFixed(2).replace(".", ","), [255, 106, 0]);
 
                     tituloSecao("INFORMACOES DO COMPUTADOR");
                     linhaDupla("Sistema", dados.sistema, "Processador", dados.processador);
