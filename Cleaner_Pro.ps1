@@ -10,7 +10,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction S
 
 # ============================================================
 # SKALON - CLEANER PRO
-# VERSAO 0.7
+# VERSAO 1.0
 # ============================================================
 # NOTA: removemos o $ErrorActionPreference = "SilentlyContinue"
 # global. Ele estava mascarando erros reais em todo o script,
@@ -18,6 +18,139 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction S
 # realmente pode falhar de forma esperada (ex: pasta que nao
 # existe) ja usa -ErrorAction SilentlyContinue individualmente.
 # ============================================================
+
+# ============================================================
+# CONFIGURACAO CENTRAL
+# ============================================================
+# Toda configuracao editavel do programa fica concentrada aqui.
+# Altere os caminhos, a planilha central e o log neste unico bloco.
+# ============================================================
+
+$Global:VersaoAplicativo = "1.0"
+$Global:NomeAplicativo = "SKALON - Cleaner Pro v$Global:VersaoAplicativo"
+
+$Global:CaminhoPastaRelatorios = "C:\Relatorio Skalon Informática"
+$Global:CaminhoBancoDados = Join-Path $Global:CaminhoPastaRelatorios "relatorios.sqlite"
+$Global:CaminhoLog = Join-Path $Global:CaminhoPastaRelatorios "cleaner_pro.log"
+
+$Global:UrlPlanilhaRelatorios = "https://script.google.com/macros/s/AKfycbzWP44HXJm3DuBdK8x1mIY5FwfFGFakUUtMiAp8PpDlDXDIPZ5XA2ZZWilVgSR3sacr/exec"
+$Global:ChavePlanilhaRelatorios = "techinfobelem"
+
+$Global:UltimoErroPlanilha = ""
+$Global:UltimoNumeroOS = $null
+
+# ============================================================
+# LOG DO PROGRAMA
+# ============================================================
+# Registra todas as acoes importantes (limpeza, diagnostico,
+# relatorios) em um arquivo de texto dentro da pasta de
+# relatorios. Facilita auditar o que foi feito em cada maquina.
+# ============================================================
+
+function Write-LogCleaner {
+
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Mensagem
+    )
+
+    try {
+
+        if (-not (Test-Path -LiteralPath $Global:CaminhoPastaRelatorios)) {
+            New-Item -Path $Global:CaminhoPastaRelatorios -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+        }
+
+        $linha = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Mensagem"
+
+        Add-Content -LiteralPath $Global:CaminhoLog -Value $linha -Encoding UTF8 -ErrorAction SilentlyContinue
+
+    }
+    catch {
+    }
+
+}
+
+# ============================================================
+# TAMANHO DE PASTA (versao rapida, sem Get-ChildItem -Recurse)
+# ============================================================
+# Usa System.IO.Directory (stack) em vez de recursao nativa do
+# PowerShell. Muito mais rapido em pastas grandes e continua
+# ignorando arquivos/pastas sem permissao.
+# ============================================================
+
+function Get-FolderSize {
+
+    param(
+        [string]$Path
+    )
+
+    $total = [long]0
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return 0
+    }
+
+    try {
+
+        $pilha = New-Object System.Collections.Generic.Stack[string]
+        $pilha.Push($Path)
+
+        while ($pilha.Count -gt 0) {
+
+            $dir = $pilha.Pop()
+
+            try {
+
+                foreach ($arquivo in [System.IO.Directory]::EnumerateFiles($dir)) {
+                    try {
+                        $total += [System.IO.FileInfo]::new($arquivo).Length
+                    }
+                    catch {
+                    }
+                }
+
+                foreach ($sub in [System.IO.Directory]::EnumerateDirectories($dir)) {
+                    $pilha.Push($sub)
+                }
+
+            }
+            catch {
+            }
+
+        }
+
+    }
+    catch {
+    }
+
+    return $total
+
+}
+
+# ============================================================
+# NAVEGADORES EM EXECUCAO
+# ============================================================
+# Caches em uso por um navegador aberto nao podem ser apagados
+# (ficam travados pelo processo). Antes de limpar, verificamos
+# se algum navegador esta rodando e avisamos o usuario.
+
+function Get-NavegadoresEmExecucao {
+
+    $nomes = @("chrome", "msedge", "brave", "opera", "firefox", "vivaldi")
+
+    $encontrados = @()
+
+    foreach ($nome in $nomes) {
+
+        if (Get-Process -Name $nome -ErrorAction SilentlyContinue) {
+            $encontrados += $nome
+        }
+
+    }
+
+    return $encontrados
+
+}
 
 function Test-Administrator {
 
@@ -37,8 +170,8 @@ function Test-Administrator {
 if (-not (Test-Administrator)) {
 
     [System.Windows.MessageBox]::Show(
-        "O Cleaner Pro nao esta sendo executado como Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente.`n`nRecomendamos executar o PowerShell como Administrador.",
-        "SKALON - Cleaner Pro v0.8",
+        "O Cleaner Pro nao esta sendo executado como Administrador.`n`nAlgumas funcoes podem nao funcionar corretamente (ex: limpeza de caches do sistema e diagnostico do Windows).`n`nRecomendamos fechar e executar o PowerShell como Administrador.",
+        $Global:NomeAplicativo,
         "OK",
         "Warning"
     )
@@ -52,7 +185,7 @@ if (-not (Test-Administrator)) {
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="SKALON - Cleaner Pro v0.8"
+    Title="SKALON - Cleaner Pro v$($Global:VersaoAplicativo)"
     Height="760"
     Width="1200"
     WindowStartupLocation="CenterScreen"
@@ -609,7 +742,7 @@ if (-not (Test-Administrator)) {
             <TextBlock
                 Name="txtRodape"
                 Grid.Row="3"
-                Text="SKALON - Cleaner Pro v0.8"
+                Text="SKALON - Cleaner Pro v$($Global:VersaoAplicativo)"
                 Foreground="#8A8A8A"
                 HorizontalAlignment="Right"
                 Margin="0,20,0,0"/>
@@ -865,141 +998,6 @@ function Atualizar-Informacoes {
 }
 
 # ============================================================
-# TAMANHO DE PASTA (helper - usado apenas fora de jobs)
-# ============================================================
-
-function Get-FolderSize {
-
-    param(
-        [string]$Path
-    )
-
-    $total = 0
-
-    if (Test-Path $Path) {
-
-        try {
-
-            $files =
-                Get-ChildItem `
-                -Path $Path `
-                -File `
-                -Recurse `
-                -Force `
-                -ErrorAction SilentlyContinue
-
-            foreach ($file in $files) {
-
-                $total += $file.Length
-
-            }
-
-        }
-        catch {
-
-        }
-
-    }
-
-    return $total
-
-}
-
-# ============================================================
-# DETECTAR NAVEGADORES (helper - usado apenas fora de jobs)
-# ============================================================
-
-function Get-BrowserCachePaths {
-
-    $paths = @()
-
-    $chrome =
-        "$env:LOCALAPPDATA\Google\Chrome\User Data"
-
-    if (Test-Path $chrome) {
-
-        $paths += [PSCustomObject]@{
-            Name = "Google Chrome"
-            Path = $chrome
-        }
-
-    }
-
-    $edge =
-        "$env:LOCALAPPDATA\Microsoft\Edge\User Data"
-
-    if (Test-Path $edge) {
-
-        $paths += [PSCustomObject]@{
-            Name = "Microsoft Edge"
-            Path = $edge
-        }
-
-    }
-
-    $brave =
-        "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data"
-
-    if (Test-Path $brave) {
-
-        $paths += [PSCustomObject]@{
-            Name = "Brave"
-            Path = $brave
-        }
-
-    }
-
-    $opera =
-        "$env:APPDATA\Opera Software\Opera Stable"
-
-    if (Test-Path $opera) {
-
-        $paths += [PSCustomObject]@{
-            Name = "Opera"
-            Path = $opera
-        }
-
-    }
-
-    $operaGX =
-        "$env:APPDATA\Opera Software\Opera GX Stable"
-
-    if (Test-Path $operaGX) {
-
-        $paths += [PSCustomObject]@{
-            Name = "Opera GX"
-            Path = $operaGX
-        }
-
-    }
-
-    $firefox =
-        "$env:APPDATA\Mozilla\Firefox\Profiles"
-
-    if (Test-Path $firefox) {
-
-        $profiles =
-            Get-ChildItem `
-            $firefox `
-            -Directory `
-            -ErrorAction SilentlyContinue
-
-        foreach ($profile in $profiles) {
-
-            $paths += [PSCustomObject]@{
-                Name = "Firefox"
-                Path = $profile.FullName
-            }
-
-        }
-
-    }
-
-    return $paths
-
-}
-
-# ============================================================
 # ANALISAR SISTEMA (ASSINCRONO)
 # ============================================================
 
@@ -1009,42 +1007,81 @@ function Analisar-Sistema {
 
         function Get-FolderSizeJob {
             param([string]$Path)
-            $total = 0
-            if (Test-Path $Path) {
-                $files = Get-ChildItem -Path $Path -File -Recurse -Force -ErrorAction SilentlyContinue
-                foreach ($file in $files) { $total += $file.Length }
+            $total = [long]0
+            if (-not (Test-Path -LiteralPath $Path)) { return 0 }
+            try {
+                $pilha = New-Object System.Collections.Generic.Stack[string]
+                $pilha.Push($Path)
+                while ($pilha.Count -gt 0) {
+                    $dir = $pilha.Pop()
+                    try {
+                        foreach ($arquivo in [System.IO.Directory]::EnumerateFiles($dir)) {
+                            try { $total += [System.IO.FileInfo]::new($arquivo).Length } catch { }
+                        }
+                        foreach ($sub in [System.IO.Directory]::EnumerateDirectories($dir)) {
+                            $pilha.Push($sub)
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            return $total
+        }
+
+        function Get-CacheJob {
+            param([string]$BasePath)
+            $total = [long]0
+            if (-not (Test-Path -LiteralPath $BasePath)) { return 0 }
+            $perfis = Get-ChildItem -LiteralPath $BasePath -Directory -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq "Default" -or $_.Name -like "Profile*" }
+            foreach ($perfil in $perfis) {
+                foreach ($sub in @("Cache", "Code Cache", "GPUCache")) {
+                    $cache = Join-Path $perfil.FullName $sub
+                    if (Test-Path -LiteralPath $cache) {
+                        $total += Get-FolderSizeJob $cache
+                    }
+                }
             }
             return $total
         }
 
-        # Temporarios
+        # Temporarios (inclui caches de sistema novos: WinUpdate, etc.)
         $tempSize = 0
-        $tempSize += Get-FolderSizeJob $env:TEMP
-        $tempSize += Get-FolderSizeJob "$env:SystemRoot\Temp"
-        $tempSize += Get-FolderSizeJob "$env:LOCALAPPDATA\Microsoft\Windows\INetCache"
-
-        # Navegadores
-        $browserSize = 0
-        $browserPaths = @()
-
-        $candidatos = @(
-            @{ Name = "Chrome";   Path = "$env:LOCALAPPDATA\Google\Chrome\User Data" },
-            @{ Name = "Edge";     Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data" },
-            @{ Name = "Brave";    Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data" },
-            @{ Name = "Opera";    Path = "$env:APPDATA\Opera Software\Opera Stable" },
-            @{ Name = "OperaGX";  Path = "$env:APPDATA\Opera Software\Opera GX Stable" }
+        $alvosTemp = @(
+            $env:TEMP,
+            "$env:SystemRoot\Temp",
+            "$env:LOCALAPPDATA\Microsoft\Windows\INetCache",
+            "$env:SystemRoot\SoftwareDistribution\Download",
+            "$env:SystemRoot\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache",
+            "$env:LOCALAPPDATA\Microsoft\Windows\Explorer",
+            "$env:LOCALAPPDATA\D3DSCache",
+            "$env:LOCALAPPDATA\Microsoft\Windows\WER",
+            "$env:LOCALAPPDATA\CrashDumps"
         )
-
-        foreach ($c in $candidatos) {
-            if (Test-Path $c.Path) {
-                foreach ($folder in @("Default\Cache", "Default\Code Cache", "Default\GPUCache")) {
-                    $browserSize += Get-FolderSizeJob (Join-Path $c.Path $folder)
-                }
-            }
+        foreach ($alvo in $alvosTemp) {
+            $tempSize += Get-FolderSizeJob $alvo
         }
 
+        # Navegadores (cobre Default + Profile 1, 2, ...)
+        $browserSize = 0
+
+        $candidatos = @(
+            "$env:LOCALAPPDATA\Google\Chrome\User Data",
+            "$env:LOCALAPPDATA\Microsoft\Edge\User Data",
+            "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data",
+            "$env:LOCALAPPDATA\Vivaldi\User Data",
+            "$env:APPDATA\Opera Software\Opera Stable",
+            "$env:APPDATA\Opera Software\Opera GX Stable"
+        )
+
+        foreach ($base in $candidatos) {
+            $browserSize += Get-CacheJob $base
+        }
+
+        # Firefox (cache2 de todos os perfis)
         $firefoxProfiles = "$env:APPDATA\Mozilla\Firefox\Profiles"
-        if (Test-Path $firefoxProfiles) {
+        if (Test-Path -LiteralPath $firefoxProfiles) {
             $profiles = Get-ChildItem $firefoxProfiles -Directory -ErrorAction SilentlyContinue
             foreach ($profile in $profiles) {
                 $browserSize += Get-FolderSizeJob (Join-Path $profile.FullName "cache2")
@@ -1081,10 +1118,12 @@ function Analisar-Sistema {
 
         $txtStatus.Text = "Analise concluida"
 
+        Write-LogCleaner -Mensagem "Analise concluida: Temp=$([math]::Round($resultado.TempSize/1MB,2)) MB | Navegadores=$([math]::Round($resultado.BrowserSize/1MB,2)) MB | Lixeira=$([math]::Round($resultado.RecycleSize/1MB,2)) MB"
+
         [System.Windows.MessageBox]::Show(
 
             "ANALISE CONCLUIDA`n`n" +
-            "Arquivos temporarios: $([math]::Round($resultado.TempSize / 1MB, 2)) MB`n`n" +
+            "Arquivos temporarios e caches de sistema: $([math]::Round($resultado.TempSize / 1MB, 2)) MB`n`n" +
             "Cache dos navegadores: $([math]::Round($resultado.BrowserSize / 1MB, 2)) MB`n`n" +
             "Lixeira: $([math]::Round($resultado.RecycleSize / 1MB, 2)) MB`n`n" +
             "Total potencialmente recuperavel: $totalGB GB",
@@ -1108,21 +1147,30 @@ function Limpar-Temporarios {
 
     $work = {
 
-        try {
-            Get-ChildItem $env:TEMP -Force -ErrorAction SilentlyContinue |
-                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        $alvos = @(
+            $env:TEMP,
+            "$env:SystemRoot\Temp",
+            "$env:LOCALAPPDATA\Microsoft\Windows\INetCache",
+            "$env:SystemRoot\SoftwareDistribution\Download",
+            "$env:SystemRoot\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache",
+            "$env:LOCALAPPDATA\Microsoft\Windows\Explorer",
+            "$env:LOCALAPPDATA\D3DSCache",
+            "$env:LOCALAPPDATA\Microsoft\Windows\WER",
+            "$env:LOCALAPPDATA\CrashDumps"
+        )
 
-            Get-ChildItem "$env:SystemRoot\Temp" -Force -ErrorAction SilentlyContinue |
-                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        foreach ($alvo in $alvos) {
 
-            Get-ChildItem "$env:LOCALAPPDATA\Microsoft\Windows\INetCache" -Force -ErrorAction SilentlyContinue |
-                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $alvo) {
 
-            return $true
+                Get-ChildItem -LiteralPath $alvo -Force -ErrorAction SilentlyContinue |
+                    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+            }
+
         }
-        catch {
-            return $false
-        }
+
+        return $true
 
     }
 
@@ -1132,6 +1180,7 @@ function Limpar-Temporarios {
 
         if ($sucesso) {
             $txtStatus.Text = "Temporarios limpos"
+            Write-LogCleaner -Mensagem "Limpeza de temporarios concluida (Temp, INetCache, WinUpdate, DeliveryOpt, thumbnails, shaders, WER, dumps)."
         }
         else {
             $txtStatus.Text = "Erro ao limpar temporarios"
@@ -1149,21 +1198,36 @@ function Limpar-Temporarios {
 
 function Limpar-Navegadores {
 
-    $work = {
+    $navegadoresRodando = Get-NavegadoresEmExecucao
 
-        $candidatos = @(
-            @{ Name = "Chrome";   Path = "$env:LOCALAPPDATA\Google\Chrome\User Data" },
-            @{ Name = "Edge";     Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data" },
-            @{ Name = "Brave";    Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data" },
-            @{ Name = "Opera";    Path = "$env:APPDATA\Opera Software\Opera Stable" },
-            @{ Name = "OperaGX";  Path = "$env:APPDATA\Opera Software\Opera GX Stable" }
+    if ($navegadoresRodando.Count -gt 0) {
+
+        $lista = ($navegadoresRodando -join ", ")
+
+        $confirmacao = [System.Windows.MessageBox]::Show(
+            "Os seguintes navegadores estao em execucao:`n`n$lista`n`n" +
+            "Os caches em uso por eles NAO poderao ser apagados enquanto estiverem abertos.`n`n" +
+            "Deseja continuar mesmo assim? (Recomendado fechar e tentar de novo)",
+            "SKALON - Navegadores",
+            "YesNo",
+            "Warning"
         )
 
-        foreach ($c in $candidatos) {
-            if (Test-Path $c.Path) {
-                foreach ($folder in @("Default\Cache", "Default\Code Cache", "Default\GPUCache")) {
-                    $cache = Join-Path $c.Path $folder
-                    if (Test-Path $cache) {
+        if ($confirmacao -ne "Yes") { return }
+
+    }
+
+    $work = {
+
+        function Get-CachesJob {
+            param([string]$BasePath)
+            if (-not (Test-Path -LiteralPath $BasePath)) { return }
+            $perfis = Get-ChildItem -LiteralPath $BasePath -Directory -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq "Default" -or $_.Name -like "Profile*" }
+            foreach ($perfil in $perfis) {
+                foreach ($sub in @("Cache", "Code Cache", "GPUCache")) {
+                    $cache = Join-Path $perfil.FullName $sub
+                    if (Test-Path -LiteralPath $cache) {
                         Get-ChildItem $cache -Force -ErrorAction SilentlyContinue |
                             Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
                     }
@@ -1171,8 +1235,22 @@ function Limpar-Navegadores {
             }
         }
 
+        $candidatos = @(
+            "$env:LOCALAPPDATA\Google\Chrome\User Data",
+            "$env:LOCALAPPDATA\Microsoft\Edge\User Data",
+            "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data",
+            "$env:LOCALAPPDATA\Vivaldi\User Data",
+            "$env:APPDATA\Opera Software\Opera Stable",
+            "$env:APPDATA\Opera Software\Opera GX Stable"
+        )
+
+        foreach ($base in $candidatos) {
+            Get-CachesJob $base
+        }
+
+        # Firefox (cache2 de todos os perfis)
         $firefoxProfiles = "$env:APPDATA\Mozilla\Firefox\Profiles"
-        if (Test-Path $firefoxProfiles) {
+        if (Test-Path -LiteralPath $firefoxProfiles) {
             $profiles = Get-ChildItem $firefoxProfiles -Directory -ErrorAction SilentlyContinue
             foreach ($profile in $profiles) {
                 $cache = Join-Path $profile.FullName "cache2"
@@ -1192,6 +1270,7 @@ function Limpar-Navegadores {
         param($sucesso)
 
         $txtStatus.Text = "Caches dos navegadores limpos"
+        Write-LogCleaner -Mensagem "Caches dos navegadores limpos (Chrome/Edge/Brave/Vivaldi/Opera/Firefox, todos os perfis)."
 
     }
 
@@ -1246,9 +1325,13 @@ function Limpeza-Completa {
             "Deseja iniciar a limpeza completa?`n`n" +
             "Serão processados:`n" +
             "- Arquivos temporarios`n" +
+            "- Caches de sistema (Windows Update, Delivery Optimization)`n" +
+            "- Thumbnails e caches de shaders`n" +
             "- Cache seguro dos navegadores`n" +
             "- Lixeira`n`n" +
-            "Cookies, senhas, favoritos e historico nao serao removidos.",
+            "Cookies, senhas, favoritos e historico nao serao removidos." +
+            "`n`nATENCAO: feche os navegadores antes de continuar, caso contrario" +
+            " parte do cache deles ficara travada.",
 
             "SKALON - Limpeza Completa",
             "YesNo",
@@ -1262,33 +1345,61 @@ function Limpeza-Completa {
 
     $work = {
 
-        # Temporarios
-        Get-ChildItem $env:TEMP -Force -ErrorAction SilentlyContinue |
-            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-        Get-ChildItem "$env:SystemRoot\Temp" -Force -ErrorAction SilentlyContinue |
-            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-        Get-ChildItem "$env:LOCALAPPDATA\Microsoft\Windows\INetCache" -Force -ErrorAction SilentlyContinue |
-            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-
-        # Navegadores
-        $candidatos = @(
-            @{ Name = "Chrome";   Path = "$env:LOCALAPPDATA\Google\Chrome\User Data" },
-            @{ Name = "Edge";     Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data" },
-            @{ Name = "Brave";    Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data" },
-            @{ Name = "Opera";    Path = "$env:APPDATA\Opera Software\Opera Stable" },
-            @{ Name = "OperaGX";  Path = "$env:APPDATA\Opera Software\Opera GX Stable" }
+        # Temporarios e caches de sistema
+        $alvos = @(
+            $env:TEMP,
+            "$env:SystemRoot\Temp",
+            "$env:LOCALAPPDATA\Microsoft\Windows\INetCache",
+            "$env:SystemRoot\SoftwareDistribution\Download",
+            "$env:SystemRoot\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache",
+            "$env:LOCALAPPDATA\Microsoft\Windows\Explorer",
+            "$env:LOCALAPPDATA\D3DSCache",
+            "$env:LOCALAPPDATA\Microsoft\Windows\WER",
+            "$env:LOCALAPPDATA\CrashDumps"
         )
-        foreach ($c in $candidatos) {
-            if (Test-Path $c.Path) {
-                foreach ($folder in @("Default\Cache", "Default\Code Cache", "Default\GPUCache")) {
-                    $cache = Join-Path $c.Path $folder
-                    if (Test-Path $cache) {
-                        Get-ChildItem $cache -Force -ErrorAction SilentlyContinue |
-                            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+        foreach ($alvo in $alvos) {
+
+            if (Test-Path -LiteralPath $alvo) {
+
+                Get-ChildItem -LiteralPath $alvo -Force -ErrorAction SilentlyContinue |
+                    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+            }
+
+        }
+
+        # Navegadores (todos os perfis)
+        $candidatos = @(
+            "$env:LOCALAPPDATA\Google\Chrome\User Data",
+            "$env:LOCALAPPDATA\Microsoft\Edge\User Data",
+            "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data",
+            "$env:LOCALAPPDATA\Vivaldi\User Data",
+            "$env:APPDATA\Opera Software\Opera Stable",
+            "$env:APPDATA\Opera Software\Opera GX Stable"
+        )
+
+        foreach ($base in $candidatos) {
+
+            if (Test-Path -LiteralPath $base) {
+
+                $perfis = Get-ChildItem -LiteralPath $base -Directory -Force -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -eq "Default" -or $_.Name -like "Profile*" }
+
+                foreach ($perfil in $perfis) {
+                    foreach ($sub in @("Cache", "Code Cache", "GPUCache")) {
+                        $cache = Join-Path $perfil.FullName $sub
+                        if (Test-Path -LiteralPath $cache) {
+                            Get-ChildItem $cache -Force -ErrorAction SilentlyContinue |
+                                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                        }
                     }
                 }
+
             }
+
         }
+
         $firefoxProfiles = "$env:APPDATA\Mozilla\Firefox\Profiles"
         if (Test-Path $firefoxProfiles) {
             $profiles = Get-ChildItem $firefoxProfiles -Directory -ErrorAction SilentlyContinue
@@ -1323,13 +1434,15 @@ function Limpeza-Completa {
         $txtAnalise.Text = "$freedGB GB liberados"
         $txtStatus.Text = "Limpeza completa concluida"
 
+        Write-LogCleaner -Mensagem "Limpeza completa concluida: $freedMB MB liberados."
+
         [System.Windows.MessageBox]::Show(
 
             "LIMPEZA COMPLETA FINALIZADA`n`n" +
             "Espaco liberado: $freedMB MB`n`n" +
             "O Cleaner Pro concluiu a manutencao.",
 
-            "SKALON - Cleaner Pro v0.8",
+            $Global:NomeAplicativo,
             "OK",
             "Information"
         )
@@ -1375,6 +1488,8 @@ function Diagnosticar-Windows {
             "OK",
             "Information"
         )
+
+        Write-LogCleaner -Mensagem "Diagnostico Windows concluido: DISM=$($resultado.DismExitCode) | SFC=$($resultado.SfcExitCode)."
 
     }
 
@@ -1434,6 +1549,8 @@ function Reparar-Windows {
             "OK",
             "Information"
         )
+
+        Write-LogCleaner -Mensagem "Reparo Windows concluido: DISM=$($resultado.DismExitCode) | SFC=$($resultado.SfcExitCode)."
 
     }
 
@@ -1500,6 +1617,8 @@ function Verificar-SaudeDiscos {
         $txtSaudeDisco.Text = "Analise concluida"
         $txtStatus.Text = "Diagnostico de armazenamento concluido"
 
+        Write-LogCleaner -Mensagem "Diagnostico de armazenamento concluido ($($resultado.Discos.Count) disco(s) identificados)."
+
         [System.Windows.MessageBox]::Show(
             $resultadoTexto,
             "SKALON - Saude SSD / HD",
@@ -1542,6 +1661,8 @@ function Testar-Memoria {
     $txtStatusMemoria.Text = "Aguardando teste do Windows"
     $txtStatus.Text = "Diagnostico de memoria aberto"
 
+    Write-LogCleaner -Mensagem "Teste de memoria (mdsched.exe) agendado."
+
     [System.Windows.MessageBox]::Show(
         "O Diagnostico de Memoria do Windows foi aberto.`n`nEscolha uma das opcoes disponiveis para iniciar o teste.`n`nO resultado sera apresentado pelo Windows apos a verificacao.",
         "SKALON - Teste de RAM",
@@ -1577,6 +1698,8 @@ function Mostrar-Hardware {
         }
 
         $txtStatus.Text = "Informacoes de hardware coletadas"
+
+        Write-LogCleaner -Mensagem "Informacoes de hardware coletadas."
 
         [System.Windows.MessageBox]::Show(
             $resultado,
@@ -1666,6 +1789,8 @@ function Verificar-StatusLicenca {
 
         $txtStatus.Text = "Status da licenca verificado"
 
+        Write-LogCleaner -Mensagem "Status da licenca verificado via slmgr /xpr."
+
         [System.Windows.MessageBox]::Show(
             $resultado.Trim(),
             "SKALON - Status da Licenca",
@@ -1698,10 +1823,9 @@ function Verificar-StatusLicenca {
 # de internet no primeiro uso). Se nao conseguir, o relatorio
 # HTML continua sendo salvo normalmente - so o registro no banco
 # fica pendente, com aviso claro para o tecnico.
+# Os caminhos (pasta, banco, log) sao definidos no bloco de
+# CONFIGURACAO CENTRAL no inicio do script.
 # ============================================================
-
-$Global:CaminhoPastaRelatorios = "C:\Relatorio Skalon Informática"
-$Global:CaminhoBancoDados = Join-Path $Global:CaminhoPastaRelatorios "relatorios.sqlite"
 
 # ============================================================
 # PLANILHA CENTRAL (Google Sheets) - historico consolidado
@@ -1711,13 +1835,8 @@ $Global:CaminhoBancoDados = Join-Path $Global:CaminhoPastaRelatorios "relatorios
 # ela (em vez do banco SQLite local), para que o tecnico veja
 # todos os atendimentos de todas as maquinas, de qualquer lugar.
 # O SQLite local continua existindo como copia de seguranca.
+# A URL e a chave sao definidas no bloco CONFIGURACAO CENTRAL.
 # ============================================================
-
-$Global:UrlPlanilhaRelatorios = "https://script.google.com/macros/s/AKfycbzWP44HXJm3DuBdK8x1mIY5FwfFGFakUUtMiAp8PpDlDXDIPZ5XA2ZZWilVgSR3sacr/exec"
-$Global:ChavePlanilhaRelatorios = "techinfobelem"
-
-$Global:UltimoErroPlanilha = ""
-$Global:UltimoNumeroOS = $null
 
 function Get-MensagemErroHttp {
 
@@ -2470,12 +2589,12 @@ function Abrir-HistoricoServicos {
 }
 
 # ============================================================
-# CONVERSAO HTML -> PDF (via Microsoft Edge headless)
+# CONVERSAO HTML -> PDF (via Edge/Chrome headless)
 # ============================================================
 # O Edge ja vem instalado por padrao no Windows 10/11, entao nao
 # precisamos baixar/instalar nada extra. Se por algum motivo nao
-# for encontrado (versao antiga do Windows, Edge removido, etc.),
-# a funcao retorna $null e o programa segue usando o HTML normal.
+# for encontrado, tentamos o Google Chrome como fallback. Se ambos
+# falharem, a funcao retorna $null e o programa segue com o HTML.
 # ============================================================
 
 function Find-EdgePath {
@@ -2483,7 +2602,10 @@ function Find-EdgePath {
     $caminhos = @(
         "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
         "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
-        "$env:LOCALAPPDATA\Microsoft\Edge\Application\msedge.exe"
+        "$env:LOCALAPPDATA\Microsoft\Edge\Application\msedge.exe",
+        "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+        "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+        "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
     )
 
     foreach ($caminho in $caminhos) {
@@ -2492,7 +2614,7 @@ function Find-EdgePath {
         }
     }
 
-    $comando = Get-Command msedge.exe -ErrorAction SilentlyContinue
+    $comando = Get-Command msedge.exe, chrome.exe -ErrorAction SilentlyContinue
     if ($comando) {
         return $comando.Source
     }
@@ -2514,6 +2636,15 @@ function Convert-HtmlParaPdf {
         return $false
     }
 
+    # Remove um PDF parcial que possa ter sobrado de uma tentativa anterior
+    if (Test-Path -LiteralPath $CaminhoPdf) {
+        Remove-Item -LiteralPath $CaminhoPdf -Force -ErrorAction SilentlyContinue
+    }
+
+    # Perfil temporario proprio: evita conflito com o Edge aberto do usuario
+    # (o modo headless reutiliza o perfil padrao se nao for especificado).
+    $perfilTemp = Join-Path $env:TEMP "skalon_edge_pdf_$PID"
+
     try {
 
         $htmlUri = "file:///" + ($CaminhoHtml -replace '\\', '/')
@@ -2521,10 +2652,13 @@ function Convert-HtmlParaPdf {
         $argumentos = @(
             "--headless"
             "--disable-gpu"
-            "--print-to-pdf=`"$CaminhoPdf`""
+            "--no-sandbox"
+            "--disable-extensions"
+            "--user-data-dir=$perfilTemp"
+            "--print-to-pdf=$CaminhoPdf"
             "--no-pdf-header-footer"
             "--no-margins"
-            "`"$htmlUri`""
+            "$htmlUri"
         )
 
         $processo = Start-Process -FilePath $edge -ArgumentList $argumentos -Wait -PassThru -WindowStyle Hidden -ErrorAction Stop
@@ -2539,6 +2673,13 @@ function Convert-HtmlParaPdf {
     catch {
 
         return $false
+
+    }
+    finally {
+
+        if (Test-Path -LiteralPath $perfilTemp) {
+            Remove-Item -LiteralPath $perfilTemp -Recurse -Force -ErrorAction SilentlyContinue
+        }
 
     }
 
@@ -2833,7 +2974,7 @@ function Gerar-RelatorioServico {
         $observacoes = $observacoes -replace "`r`n","<br>"
         $observacoes = $observacoes -replace "`n","<br>"
 
-        $reportFolder = "C:\Relatorio Skalon Informática"
+        $reportFolder = $Global:CaminhoPastaRelatorios
 
         if (!(Test-Path -LiteralPath $reportFolder)) {
             New-Item -Path $reportFolder -ItemType Directory -Force -ErrorAction Stop | Out-Null
@@ -3012,7 +3153,7 @@ td { border:1px solid #ddd; padding:10px; }
 <h1>SKALON</h1>
 <p class="slogan">Performance para quem trabalha. Potência para quem joga.</p>
 <p>RELATORIO DE SERVICO TECNICO</p>
-<p>Cleaner Pro v0.8</p>
+<p>Cleaner Pro v$Global:VersaoAplicativo</p>
 $seloNumeroOS
 </div>
 <h2>ATENDIMENTO</h2>
@@ -3052,7 +3193,7 @@ $diskHealthHtml
 <div class="garantia">$garantiaHtml</div>
 <div class="footer">
 SKALON - Performance para quem trabalha. Potência para quem joga.<br>
-Relatorio gerado automaticamente pelo Cleaner Pro v0.8.
+Relatorio gerado automaticamente pelo Cleaner Pro v$Global:VersaoAplicativo.
 </div>
 </div>
 </body>
@@ -3117,6 +3258,13 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.8.
 
         $linhaArquivo = if ($gerouPdf) { "Arquivo (PDF):`n$pdfFile" } else { "Arquivo (HTML):`n$reportFile`n`nObs: nao foi possivel gerar o PDF automaticamente (Microsoft Edge nao encontrado nesta maquina)." }
 
+        $statusLog =
+            if ($salvouPlanilha) { "sincronizado com planilha central (OS $Global:UltimoNumeroOS)" }
+            elseif ($salvouBanco) { "salvo apenas no banco local" }
+            else { "banco de dados indisponivel" }
+
+        Write-LogCleaner -Mensagem "Relatorio de servico gerado: $reportFile (status: $statusLog)."
+
         [System.Windows.MessageBox]::Show(
             "Relatorio criado com sucesso!$tituloOS`n`n$linhaArquivo$avisoBanco",
             "SKALON",
@@ -3128,6 +3276,8 @@ Relatorio gerado automaticamente pelo Cleaner Pro v0.8.
     catch {
 
         $txtStatus.Text = "Erro ao gerar relatorio"
+
+        Write-LogCleaner -Mensagem "Erro ao gerar relatorio: $($_.Exception.Message)"
 
         [System.Windows.MessageBox]::Show(
             "ERRO AO GERAR RELATORIO:`n`n$($_.Exception.Message)",
