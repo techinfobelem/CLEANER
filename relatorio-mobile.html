@@ -1080,37 +1080,93 @@
 
                     tituloSecao("CONDICOES DE GARANTIA");
 
+                    // ---- Passo 1: monta a lista "achatada" de linhas ja
+                    // quebradas (sem desenhar nada ainda), pra saber com
+                    // antecedencia onde cada pagina vai comecar/terminar -
+                    // assim da pra desenhar a caixa cinza de fundo ANTES
+                    // do texto (senao o texto ficaria escondido atras dela).
+                    var paddingCaixa = 5;
+                    var linhasGarantia = [];
+
                     TEXTOS_GARANTIA.forEach(function (item) {
                         if (item.tipo === "h3") {
-                            novaPaginaSeNecessario(8);
-                            doc.setFont("helvetica", "bold");
-                            doc.setFontSize(10.5);
-                            doc.setTextColor(255, 106, 0);
-                            doc.text(item.texto, margem, y);
-                            doc.setTextColor(17, 17, 17);
-                            y += 6;
+                            linhasGarantia.push({ texto: item.texto, tipo: "h3", altura: 6.5 });
                         } else if (item.tipo === "li") {
                             doc.setFont("helvetica", "normal");
                             doc.setFontSize(9);
-                            var linhasLi = doc.splitTextToSize("• " + item.texto, largura - 4);
+                            var linhasLi = doc.splitTextToSize("• " + item.texto, largura - paddingCaixa * 2 - 2);
                             linhasLi.forEach(function (linha, indice) {
-                                novaPaginaSeNecessario(5);
-                                doc.text(linha, margem + 2, y);
-                                y += 4.5;
+                                var altura = 4.5 + (indice === linhasLi.length - 1 ? 1 : 0);
+                                linhasGarantia.push({ texto: linha, tipo: "li", altura: altura });
                             });
-                            y += 1;
                         } else {
                             doc.setFont("helvetica", "normal");
                             doc.setFontSize(9);
-                            var linhasP = doc.splitTextToSize(item.texto, largura);
-                            linhasP.forEach(function (linha) {
-                                novaPaginaSeNecessario(5);
-                                doc.text(linha, margem, y);
-                                y += 4.5;
+                            var linhasP = doc.splitTextToSize(item.texto, largura - paddingCaixa * 2);
+                            linhasP.forEach(function (linha, indice) {
+                                var altura = 4.5 + (indice === linhasP.length - 1 ? 3 : 0);
+                                linhasGarantia.push({ texto: linha, tipo: "p", altura: altura });
                             });
-                            y += 3;
                         }
                     });
+
+                    // ---- Passo 2: desenha pagina por pagina - primeiro a
+                    // caixa cinza (do tamanho exato do que cabe naquela
+                    // pagina), depois o texto por cima.
+                    var indiceGarantia = 0;
+
+                    while (indiceGarantia < linhasGarantia.length) {
+
+                        var yInicioBloco = y;
+                        var linhasDestaPagina = [];
+                        var ySimulado = y;
+
+                        while (indiceGarantia < linhasGarantia.length) {
+                            var proximaLinha = linhasGarantia[indiceGarantia];
+                            if (yInicioBloco !== ySimulado && ySimulado + proximaLinha.altura > alturaPagina - margem) {
+                                break;
+                            }
+                            linhasDestaPagina.push(proximaLinha);
+                            ySimulado += proximaLinha.altura;
+                            indiceGarantia++;
+                        }
+
+                        doc.setDrawColor(221, 221, 221);
+                        doc.setFillColor(249, 250, 251);
+                        doc.rect(margem, yInicioBloco - 4, largura, (ySimulado - yInicioBloco) + 6, "FD");
+
+                        var yDesenho = yInicioBloco;
+
+                        linhasDestaPagina.forEach(function (linha) {
+                            if (linha.tipo === "h3") {
+                                doc.setFont("helvetica", "bold");
+                                doc.setFontSize(10.5);
+                                doc.setTextColor(255, 106, 0);
+                                doc.text(linha.texto, margem + paddingCaixa, yDesenho);
+                            } else if (linha.tipo === "li") {
+                                doc.setFont("helvetica", "normal");
+                                doc.setFontSize(9);
+                                doc.setTextColor(17, 17, 17);
+                                doc.text(linha.texto, margem + paddingCaixa + 2, yDesenho);
+                            } else {
+                                doc.setFont("helvetica", "normal");
+                                doc.setFontSize(9);
+                                doc.setTextColor(17, 17, 17);
+                                doc.text(linha.texto, margem + paddingCaixa, yDesenho);
+                            }
+                            yDesenho += linha.altura;
+                        });
+
+                        y = ySimulado;
+
+                        if (indiceGarantia < linhasGarantia.length) {
+                            doc.addPage();
+                            y = margem;
+                        }
+
+                    }
+
+                    doc.setTextColor(17, 17, 17);
 
                 }
                 else {
