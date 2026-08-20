@@ -1039,6 +1039,31 @@
                     y += 4;
                 }
 
+                function caixaTexto(texto, tamanho) {
+                    var padding = 5;
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(tamanho || 10);
+                    var linhas = doc.splitTextToSize(String(texto || "-"), largura - padding * 2);
+                    var alturaLinha = 5.2;
+                    var altura = padding * 2 + (linhas.length * alturaLinha);
+
+                    novaPaginaSeNecessario(altura + 4);
+
+                    var yTopo = y;
+                    doc.setDrawColor(221, 221, 221);
+                    doc.setFillColor(249, 250, 251);
+                    doc.rect(margem, yTopo, largura, altura, "FD");
+
+                    doc.setTextColor(17, 17, 17);
+                    var yTexto = yTopo + padding + 3.5;
+                    linhas.forEach(function (linha) {
+                        doc.text(linha, margem + padding, yTexto);
+                        yTexto += alturaLinha;
+                    });
+
+                    y = yTopo + altura + 4;
+                }
+
                 function linhaSeparadora() {
                     doc.setDrawColor(255, 106, 0);
                     doc.setLineWidth(0.8);
@@ -1090,7 +1115,7 @@
                     linhaDupla("Data", dados.dataFormatada, "Computador", dados.computador);
 
                     tituloSecao("SERVICO REALIZADO");
-                    textoLivre(dados.servico);
+                    caixaTexto(dados.servico);
 
                     tituloSecao("VALOR E PAGAMENTO");
                     linhaDupla("Valor das Pecas", "R$ " + dados.valorPecas.toFixed(2).replace(".", ","), "Valor do Servico", "R$ " + dados.valorServico.toFixed(2).replace(".", ","));
@@ -1106,7 +1131,7 @@
                     linhaDupla("Memoria RAM", dados.ram, "Armazenamento", dados.armazenamento);
 
                     tituloSecao("OBSERVACOES");
-                    textoLivre(dados.observacoes);
+                    caixaTexto(dados.observacoes);
 
                     tituloSecao("CONDICOES DE GARANTIA");
 
@@ -1126,7 +1151,7 @@
 
                         bloco.itens.forEach(function (item) {
                             if (item.tipo === "li") {
-                                var quebrasLi = doc.splitTextToSize("• " + item.texto, largura - paddingCaixa * 2 - 2);
+                                var quebrasLi = doc.splitTextToSize("- " + item.texto, largura - paddingCaixa * 2 - 2);
                                 quebrasLi.forEach(function (linha) {
                                     linhasBloco.push({ texto: linha, tipo: "li" });
                                 });
@@ -1183,7 +1208,7 @@
                     linhaDupla("Data", dados.dataFormatada, "Validade da proposta", dados.validade + " dias");
 
                     tituloSecao("SERVICO PROPOSTO");
-                    textoLivre(dados.servico);
+                    caixaTexto(dados.servico);
 
                     tituloSecao("VALOR ESTIMADO");
                     campoCaixa("Valor", "R$ " + dados.valor.toFixed(2).replace(".", ","), [255, 106, 0]);
@@ -1193,7 +1218,7 @@
                     linhaDupla("Processador", dados.processador, "Memoria RAM", dados.ram);
 
                     tituloSecao("OBSERVACOES");
-                    textoLivre(dados.observacoes);
+                    caixaTexto(dados.observacoes);
 
                     novaPaginaSeNecessario(20);
                     doc.setFont("helvetica", "italic");
