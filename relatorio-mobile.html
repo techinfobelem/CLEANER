@@ -873,36 +873,66 @@
     // de peculiaridades de renderizacao de CSS de cada aparelho.
     // ============================================================
 
-    var TEXTOS_GARANTIA = [
-        { tipo: "p", texto: "A Skalon Informática oferece 90 (noventa) dias de garantia, contados a partir da data de conclusão do serviço, conforme previsto no Código de Defesa do Consumidor, exclusivamente para os serviços executados e para as peças fornecidas pela assistência técnica." },
-        { tipo: "h3", texto: "A garantia cobre:" },
-        { tipo: "li", texto: "Defeitos relacionados ao serviço executado;" },
-        { tipo: "li", texto: "Falhas na instalação, montagem ou aplicação do reparo realizado pela assistência;" },
-        { tipo: "li", texto: "Defeitos de fabricação das peças fornecidas pela assistência, quando aplicável." },
-        { tipo: "h3", texto: "Peças fornecidas pelo cliente" },
-        { tipo: "p", texto: "Quando o cliente fornecer peças, componentes ou acessórios adquiridos por conta própria, a Skalon Informática será responsável exclusivamente pela correta instalação e pelo serviço executado." },
-        { tipo: "p", texto: "A garantia das peças, componentes ou acessórios fornecidos pelo cliente é de responsabilidade do fabricante ou da loja onde foram adquiridos. Em caso de defeito de fabricação, troca em garantia ou necessidade de substituição dessas peças, o cliente deverá acionar diretamente o fornecedor." },
-        { tipo: "p", texto: "Caso seja necessário realizar nova desmontagem, testes, reinstalação ou substituição de componentes em razão de defeitos apresentados nas peças fornecidas pelo cliente, poderá ser cobrada nova mão de obra, mediante orçamento prévio." },
-        { tipo: "h3", texto: "A garantia não cobre:" },
-        { tipo: "li", texto: "Danos causados por mau uso, quedas, impactos ou pressão excessiva;" },
-        { tipo: "li", texto: "Contato com líquidos, umidade, oxidação ou corrosão;" },
-        { tipo: "li", texto: "Surtos elétricos, descargas atmosféricas, oscilações de energia ou problemas na rede elétrica;" },
-        { tipo: "li", texto: "Defeitos decorrentes de vírus, softwares de terceiros, atualizações de sistema operacional ou alterações de configuração realizadas após a entrega do equipamento;" },
-        { tipo: "li", texto: "Perda, corrupção, bloqueio ou recuperação de dados. É de responsabilidade do cliente manter cópia de segurança (backup) de seus arquivos;" },
-        { tipo: "li", texto: "Defeitos diferentes daqueles descritos na Ordem de Serviço ou surgidos posteriormente ao reparo;" },
-        { tipo: "li", texto: "Defeitos de fabricação em peças fornecidas pelo cliente;" },
-        { tipo: "li", texto: "Custos relacionados à garantia, troca, envio ou devolução de peças adquiridas pelo cliente em lojas físicas ou online;" },
-        { tipo: "li", texto: "Peças ou componentes quebrados, riscados ou danificados após a entrega do equipamento;" },
-        { tipo: "li", texto: "Equipamentos que tenham sido abertos, violados, modificados ou reparados por terceiros durante o período de garantia;" },
-        { tipo: "li", texto: "Equipamentos fora do prazo de garantia." },
-        { tipo: "h3", texto: "Equipamentos usados" },
-        { tipo: "p", texto: "Equipamentos eletrônicos estão sujeitos ao desgaste natural de seus componentes. Em aparelhos com sinais de desgaste, oxidação, adaptações, manutenção anterior ou reparos realizados por terceiros, poderão surgir defeitos não relacionados ao serviço executado." },
-        { tipo: "p", texto: "Nessas situações, a garantia permanece restrita exclusivamente ao reparo descrito na Ordem de Serviço, não abrangendo outros componentes do equipamento." },
-        { tipo: "h3", texto: "Observações" },
-        { tipo: "li", texto: "A garantia é limitada exclusivamente ao serviço executado e às peças substituídas pela assistência técnica, não abrangendo o equipamento como um todo." },
-        { tipo: "li", texto: "Caso seja constatado que o defeito apresentado não possui relação com o serviço anteriormente realizado, poderá ser cobrada uma nova avaliação técnica e, se necessário, um novo orçamento." },
-        { tipo: "li", texto: "Para atendimento em garantia, poderá ser solicitada a apresentação do Relatório de Serviço ou da Ordem de Serviço correspondente." },
-        { tipo: "li", texto: "A garantia terá início na data de conclusão do serviço, seja na retirada do equipamento pelo cliente ou na finalização do atendimento em domicílio." }
+    var BLOCOS_GARANTIA = [
+        {
+            titulo: null,
+            itens: [
+                { tipo: "p", texto: "A Skalon Informática oferece 90 (noventa) dias de garantia, contados a partir da data de conclusão do serviço, conforme previsto no Código de Defesa do Consumidor, exclusivamente para os serviços executados e para as peças fornecidas pela assistência técnica." }
+            ]
+        },
+        {
+            titulo: "A garantia cobre:",
+            itens: [
+                { tipo: "li", texto: "Defeitos relacionados ao serviço executado;" },
+                { tipo: "li", texto: "Falhas na instalação, montagem ou aplicação do reparo realizado pela assistência;" },
+                { tipo: "li", texto: "Defeitos de fabricação das peças fornecidas pela assistência, quando aplicável." }
+            ]
+        },
+        {
+            titulo: "Peças fornecidas pelo cliente",
+            itens: [
+                { tipo: "p", texto: "Quando o cliente fornecer peças, componentes ou acessórios adquiridos por conta própria, a Skalon Informática será responsável exclusivamente pela correta instalação e pelo serviço executado." },
+                { tipo: "p", texto: "A garantia das peças, componentes ou acessórios fornecidos pelo cliente é de responsabilidade do fabricante ou da loja onde foram adquiridos. Em caso de defeito de fabricação, troca em garantia ou necessidade de substituição dessas peças, o cliente deverá acionar diretamente o fornecedor." },
+                { tipo: "p", texto: "Caso seja necessário realizar nova desmontagem, testes, reinstalação ou substituição de componentes em razão de defeitos apresentados nas peças fornecidas pelo cliente, poderá ser cobrada nova mão de obra, mediante orçamento prévio." }
+            ]
+        },
+        {
+            titulo: "A garantia não cobre (parte 1):",
+            itens: [
+                { tipo: "li", texto: "Danos causados por mau uso, quedas, impactos ou pressão excessiva;" },
+                { tipo: "li", texto: "Contato com líquidos, umidade, oxidação ou corrosão;" },
+                { tipo: "li", texto: "Surtos elétricos, descargas atmosféricas, oscilações de energia ou problemas na rede elétrica;" },
+                { tipo: "li", texto: "Defeitos decorrentes de vírus, softwares de terceiros, atualizações de sistema operacional ou alterações de configuração realizadas após a entrega do equipamento;" },
+                { tipo: "li", texto: "Perda, corrupção, bloqueio ou recuperação de dados. É de responsabilidade do cliente manter cópia de segurança (backup) de seus arquivos;" }
+            ]
+        },
+        {
+            titulo: "A garantia não cobre (parte 2):",
+            itens: [
+                { tipo: "li", texto: "Defeitos diferentes daqueles descritos na Ordem de Serviço ou surgidos posteriormente ao reparo;" },
+                { tipo: "li", texto: "Defeitos de fabricação em peças fornecidas pelo cliente;" },
+                { tipo: "li", texto: "Custos relacionados à garantia, troca, envio ou devolução de peças adquiridas pelo cliente em lojas físicas ou online;" },
+                { tipo: "li", texto: "Peças ou componentes quebrados, riscados ou danificados após a entrega do equipamento;" },
+                { tipo: "li", texto: "Equipamentos que tenham sido abertos, violados, modificados ou reparados por terceiros durante o período de garantia;" },
+                { tipo: "li", texto: "Equipamentos fora do prazo de garantia." }
+            ]
+        },
+        {
+            titulo: "Equipamentos usados",
+            itens: [
+                { tipo: "p", texto: "Equipamentos eletrônicos estão sujeitos ao desgaste natural de seus componentes. Em aparelhos com sinais de desgaste, oxidação, adaptações, manutenção anterior ou reparos realizados por terceiros, poderão surgir defeitos não relacionados ao serviço executado." },
+                { tipo: "p", texto: "Nessas situações, a garantia permanece restrita exclusivamente ao reparo descrito na Ordem de Serviço, não abrangendo outros componentes do equipamento." }
+            ]
+        },
+        {
+            titulo: "Observações",
+            itens: [
+                { tipo: "li", texto: "A garantia é limitada exclusivamente ao serviço executado e às peças substituídas pela assistência técnica, não abrangendo o equipamento como um todo." },
+                { tipo: "li", texto: "Caso seja constatado que o defeito apresentado não possui relação com o serviço anteriormente realizado, poderá ser cobrada uma nova avaliação técnica e, se necessário, um novo orçamento." },
+                { tipo: "li", texto: "Para atendimento em garantia, poderá ser solicitada a apresentação do Relatório de Serviço ou da Ordem de Serviço correspondente." },
+                { tipo: "li", texto: "A garantia terá início na data de conclusão do serviço, seja na retirada do equipamento pelo cliente ou na finalização do atendimento em domicílio." }
+            ]
+        }
     ];
 
     function gerarArquivoPdf() {
@@ -1080,93 +1110,70 @@
 
                     tituloSecao("CONDICOES DE GARANTIA");
 
-                    // ---- Passo 1: monta a lista "achatada" de linhas ja
-                    // quebradas (sem desenhar nada ainda), pra saber com
-                    // antecedencia onde cada pagina vai comecar/terminar -
-                    // assim da pra desenhar a caixa cinza de fundo ANTES
-                    // do texto (senao o texto ficaria escondido atras dela).
                     var paddingCaixa = 5;
-                    var linhasGarantia = [];
+                    var alturaLinhaGarantia = 4.6;
 
-                    TEXTOS_GARANTIA.forEach(function (item) {
-                        if (item.tipo === "h3") {
-                            linhasGarantia.push({ texto: item.texto, tipo: "h3", altura: 6.5 });
-                        } else if (item.tipo === "li") {
-                            doc.setFont("helvetica", "normal");
-                            doc.setFontSize(9);
-                            var linhasLi = doc.splitTextToSize("• " + item.texto, largura - paddingCaixa * 2 - 2);
-                            linhasLi.forEach(function (linha, indice) {
-                                var altura = 4.5 + (indice === linhasLi.length - 1 ? 1 : 0);
-                                linhasGarantia.push({ texto: linha, tipo: "li", altura: altura });
-                            });
-                        } else {
-                            doc.setFont("helvetica", "normal");
-                            doc.setFontSize(9);
-                            var linhasP = doc.splitTextToSize(item.texto, largura - paddingCaixa * 2);
-                            linhasP.forEach(function (linha, indice) {
-                                var altura = 4.5 + (indice === linhasP.length - 1 ? 3 : 0);
-                                linhasGarantia.push({ texto: linha, tipo: "p", altura: altura });
-                            });
-                        }
-                    });
+                    BLOCOS_GARANTIA.forEach(function (bloco) {
 
-                    // ---- Passo 2: desenha pagina por pagina - primeiro a
-                    // caixa cinza (do tamanho exato do que cabe naquela
-                    // pagina), depois o texto por cima.
-                    var indiceGarantia = 0;
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(9);
 
-                    while (indiceGarantia < linhasGarantia.length) {
+                        // Monta as linhas ja quebradas deste bloco especifico
+                        // (bloco pequeno, nunca chega perto da altura de uma
+                        // pagina inteira - por isso da pra tratar cada bloco
+                        // como uma unidade so, sem dividir no meio).
+                        var linhasBloco = [];
 
-                        var yInicioBloco = y;
-                        var linhasDestaPagina = [];
-                        var ySimulado = y;
-
-                        while (indiceGarantia < linhasGarantia.length) {
-                            var proximaLinha = linhasGarantia[indiceGarantia];
-                            if (yInicioBloco !== ySimulado && ySimulado + proximaLinha.altura > alturaPagina - margem) {
-                                break;
+                        bloco.itens.forEach(function (item) {
+                            if (item.tipo === "li") {
+                                var quebrasLi = doc.splitTextToSize("• " + item.texto, largura - paddingCaixa * 2 - 2);
+                                quebrasLi.forEach(function (linha) {
+                                    linhasBloco.push({ texto: linha, tipo: "li" });
+                                });
+                            } else {
+                                var quebrasP = doc.splitTextToSize(item.texto, largura - paddingCaixa * 2);
+                                quebrasP.forEach(function (linha) {
+                                    linhasBloco.push({ texto: linha, tipo: "p" });
+                                });
                             }
-                            linhasDestaPagina.push(proximaLinha);
-                            ySimulado += proximaLinha.altura;
-                            indiceGarantia++;
-                        }
+                        });
+
+                        var alturaTitulo = bloco.titulo ? 7 : 0;
+                        var alturaCaixa = paddingCaixa * 2 + alturaTitulo + (linhasBloco.length * alturaLinhaGarantia);
+
+                        // Se nao couber no que resta da pagina, o BLOCO INTEIRO
+                        // pula pra proxima pagina (nunca desenha pela metade).
+                        novaPaginaSeNecessario(alturaCaixa + 4);
+
+                        var yTopo = y;
 
                         doc.setDrawColor(221, 221, 221);
                         doc.setFillColor(249, 250, 251);
-                        doc.rect(margem, yInicioBloco - 4, largura, (ySimulado - yInicioBloco) + 6, "FD");
+                        doc.rect(margem, yTopo, largura, alturaCaixa, "FD");
 
-                        var yDesenho = yInicioBloco;
+                        var yTexto = yTopo + paddingCaixa + 4;
 
-                        linhasDestaPagina.forEach(function (linha) {
-                            if (linha.tipo === "h3") {
-                                doc.setFont("helvetica", "bold");
-                                doc.setFontSize(10.5);
-                                doc.setTextColor(255, 106, 0);
-                                doc.text(linha.texto, margem + paddingCaixa, yDesenho);
-                            } else if (linha.tipo === "li") {
-                                doc.setFont("helvetica", "normal");
-                                doc.setFontSize(9);
-                                doc.setTextColor(17, 17, 17);
-                                doc.text(linha.texto, margem + paddingCaixa + 2, yDesenho);
-                            } else {
-                                doc.setFont("helvetica", "normal");
-                                doc.setFontSize(9);
-                                doc.setTextColor(17, 17, 17);
-                                doc.text(linha.texto, margem + paddingCaixa, yDesenho);
-                            }
-                            yDesenho += linha.altura;
-                        });
-
-                        y = ySimulado;
-
-                        if (indiceGarantia < linhasGarantia.length) {
-                            doc.addPage();
-                            y = margem;
+                        if (bloco.titulo) {
+                            doc.setFont("helvetica", "bold");
+                            doc.setFontSize(10.5);
+                            doc.setTextColor(255, 106, 0);
+                            doc.text(bloco.titulo, margem + paddingCaixa, yTexto);
+                            yTexto += alturaTitulo;
                         }
 
-                    }
+                        doc.setTextColor(17, 17, 17);
 
-                    doc.setTextColor(17, 17, 17);
+                        linhasBloco.forEach(function (linha) {
+                            doc.setFont("helvetica", "normal");
+                            doc.setFontSize(9);
+                            var xTexto = margem + paddingCaixa + (linha.tipo === "li" ? 2 : 0);
+                            doc.text(linha.texto, xTexto, yTexto);
+                            yTexto += alturaLinhaGarantia;
+                        });
+
+                        y = yTopo + alturaCaixa + 4;
+
+                    });
 
                 }
                 else {
