@@ -897,18 +897,13 @@
             ]
         },
         {
-            titulo: "A garantia não cobre (parte 1):",
+            titulo: "A garantia não cobre:",
             itens: [
                 { tipo: "li", texto: "Danos causados por mau uso, quedas, impactos ou pressão excessiva;" },
                 { tipo: "li", texto: "Contato com líquidos, umidade, oxidação ou corrosão;" },
                 { tipo: "li", texto: "Surtos elétricos, descargas atmosféricas, oscilações de energia ou problemas na rede elétrica;" },
                 { tipo: "li", texto: "Defeitos decorrentes de vírus, softwares de terceiros, atualizações de sistema operacional ou alterações de configuração realizadas após a entrega do equipamento;" },
-                { tipo: "li", texto: "Perda, corrupção, bloqueio ou recuperação de dados. É de responsabilidade do cliente manter cópia de segurança (backup) de seus arquivos;" }
-            ]
-        },
-        {
-            titulo: "A garantia não cobre (parte 2):",
-            itens: [
+                { tipo: "li", texto: "Perda, corrupção, bloqueio ou recuperação de dados. É de responsabilidade do cliente manter cópia de segurança (backup) de seus arquivos;" },
                 { tipo: "li", texto: "Defeitos diferentes daqueles descritos na Ordem de Serviço ou surgidos posteriormente ao reparo;" },
                 { tipo: "li", texto: "Defeitos de fabricação em peças fornecidas pelo cliente;" },
                 { tipo: "li", texto: "Custos relacionados à garantia, troca, envio ou devolução de peças adquiridas pelo cliente em lojas físicas ou online;" },
@@ -1151,14 +1146,14 @@
 
                         bloco.itens.forEach(function (item) {
                             if (item.tipo === "li") {
-                                var quebrasLi = doc.splitTextToSize("- " + item.texto, largura - paddingCaixa * 2 - 2);
-                                quebrasLi.forEach(function (linha) {
-                                    linhasBloco.push({ texto: linha, tipo: "li" });
+                                var quebrasLi = doc.splitTextToSize(item.texto, largura - paddingCaixa * 2 - 4);
+                                quebrasLi.forEach(function (linha, indice) {
+                                    linhasBloco.push({ texto: linha, tipo: "li", primeira: indice === 0 });
                                 });
                             } else {
                                 var quebrasP = doc.splitTextToSize(item.texto, largura - paddingCaixa * 2);
                                 quebrasP.forEach(function (linha) {
-                                    linhasBloco.push({ texto: linha, tipo: "p" });
+                                    linhasBloco.push({ texto: linha, tipo: "p", primeira: false });
                                 });
                             }
                         });
@@ -1191,7 +1186,14 @@
                         linhasBloco.forEach(function (linha) {
                             doc.setFont("helvetica", "normal");
                             doc.setFontSize(9);
-                            var xTexto = margem + paddingCaixa + (linha.tipo === "li" ? 2 : 0);
+                            var xTexto = margem + paddingCaixa + (linha.tipo === "li" ? 4 : 0);
+                            if (linha.tipo === "li" && linha.primeira) {
+                                // marcador desenhado como forma geometrica (circulo),
+                                // nao como caractere de fonte - assim nunca quebra,
+                                // independente do navegador/celular.
+                                doc.setFillColor(255, 106, 0);
+                                doc.circle(margem + paddingCaixa + 1.3, yTexto - 1.3, 0.6, "F");
+                            }
                             doc.text(linha.texto, xTexto, yTexto);
                             yTexto += alturaLinhaGarantia;
                         });
