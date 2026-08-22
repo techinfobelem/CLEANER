@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SKALON ERP - Em Breve</title>
+<style>
+    :root {
+        --laranja: #FF6A00;
+        --fundo: #111111;
+        --card: #1c1c1c;
+        --borda: #2e2e2e;
+        --texto: #f2f2f2;
+        --texto-suave: #9a9a9a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--fundo);
+        color: var(--texto);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .caixa {
+        max-width: 420px;
+        text-align: center;
+        background: var(--card);
+        border: 1px solid var(--borda);
+        border-radius: 14px;
+        padding: 36px 26px;
+    }
+
+    .icone {
+        font-size: 44px;
+        margin-bottom: 14px;
+    }
+
+    h1 {
+        color: var(--laranja);
+        font-size: 20px;
+        margin: 0 0 6px 0;
+    }
+
+    #nomeModulo {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 14px;
+    }
+
+    p {
+        color: var(--texto-suave);
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 0 0 22px 0;
+    }
+
+    a.voltar {
+        display: inline-block;
+        background: var(--laranja);
+        color: white;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+
+<div class="caixa">
+    <div class="icone">🚧</div>
+    <h1>Módulo em construção</h1>
+    <div id="nomeModulo">Carregando...</div>
+    <p>Este recurso do SKALON ERP depende de integração com serviços externos (ou de uma etapa futura de desenvolvimento) e ainda não está disponível nesta versão. Ele chega em uma próxima atualização.</p>
+    <a class="voltar" href="erp.html">Voltar ao menu</a>
+</div>
+
+<script>
+    var parametros = new URLSearchParams(window.location.search);
+    var nome = parametros.get("modulo") || "Este módulo";
+    document.getElementById("nomeModulo").textContent = nome;
+    document.title = "SKALON ERP - " + nome + " (Em Breve)";
+</script>
+
+</body>
+</html>
