@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SKALON ERP - Cadastros</title>
+<style>
+    :root {
+        --laranja: #FF6A00;
+        --fundo: #111111;
+        --card: #1c1c1c;
+        --borda: #2e2e2e;
+        --texto: #f2f2f2;
+        --texto-suave: #9a9a9a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--fundo);
+        color: var(--texto);
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+
+    header {
+        padding: 20px 20px 0 20px;
+        border-bottom: 3px solid var(--laranja);
+        padding-bottom: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    header h1 {
+        margin: 0;
+        color: var(--laranja);
+        font-size: 18px;
+    }
+
+    header a {
+        color: var(--texto-suave);
+        text-decoration: none;
+        font-size: 13px;
+        border: 1px solid var(--borda);
+        padding: 6px 12px;
+        border-radius: 8px;
+    }
+
+    .abas {
+        display: flex;
+        gap: 6px;
+        padding: 14px 16px 0 16px;
+        overflow-x: auto;
+    }
+
+    .aba {
+        flex-shrink: 0;
+        padding: 9px 14px;
+        border-radius: 20px;
+        background: var(--card);
+        border: 1px solid var(--borda);
+        color: var(--texto-suave);
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .aba.ativa {
+        background: var(--laranja);
+        color: white;
+        border-color: var(--laranja);
+    }
+
+    main {
+        padding: 16px 20px;
+        max-width: 560px;
+        margin: 0 auto;
+    }
+
+    .barra-busca {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border-radius: 8px;
+        border: 1px solid var(--borda);
+        background: var(--card);
+        color: var(--texto);
+        font-size: 14px;
+        font-family: inherit;
+    }
+
+    textarea { min-height: 70px; resize: vertical; }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--laranja);
+    }
+
+    .btn-novo {
+        flex-shrink: 0;
+        background: var(--laranja);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0 18px;
+        font-weight: bold;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .item-lista {
+        background: var(--card);
+        border: 1px solid var(--borda);
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 8px;
+        cursor: pointer;
+    }
+
+    .item-lista .principal {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .item-lista .secundario {
+        color: var(--texto-suave);
+        font-size: 12px;
+        margin-top: 3px;
+    }
+
+    .vazio {
+        text-align: center;
+        color: var(--texto-suave);
+        font-size: 13px;
+        padding: 40px 20px;
+    }
+
+    .overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: var(--fundo);
+        z-index: 100;
+        overflow-y: auto;
+    }
+
+    .overlay.visivel { display: block; }
+
+    .overlay-conteudo {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .overlay-topo {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .overlay-topo h2 {
+        margin: 0;
+        font-size: 17px;
+        color: var(--laranja);
+    }
+
+    .fechar {
+        background: var(--card);
+        border: 1px solid var(--borda);
+        color: var(--texto);
+        border-radius: 8px;
+        padding: 8px 14px;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    label {
+        display: block;
+        font-size: 11px;
+        font-weight: bold;
+        color: var(--laranja);
+        margin: 14px 0 6px 0;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    label:first-of-type { margin-top: 0; }
+
+    .botoes-form {
+        display: flex;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .botoes-form button {
+        flex: 1;
+        padding: 14px;
+        border-radius: 8px;
+        border: none;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .btn-salvar { background: var(--laranja); color: white; }
+    .btn-cancelar { background: var(--card); color: var(--texto); border: 1px solid var(--borda) !important; }
+
+    .aviso-baixo-estoque {
+        color: #ff6a6a;
+        font-weight: bold;
+    }
+
+    .status-mensagem {
+        text-align: center;
+        color: var(--texto-suave);
+        font-size: 13px;
+        padding: 20px;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>SKALON ERP</h1>
+    <a href="erp.html">← Menu</a>
+</header>
+
+<div class="abas" id="barraAbas"></div>
+
+<main>
+    <div class="barra-busca">
+        <input type="text" id="campoBusca" placeholder="Buscar...">
+        <button class="btn-novo" onclick="abrirFormulario(null)">+</button>
+    </div>
+
+    <div id="areaLista"><div class="status-mensagem">Carregando...</div></div>
+</main>
+
+<div class="overlay" id="overlayForm">
+    <div class="overlay-conteudo">
+        <div class="overlay-topo">
+            <h2 id="tituloForm">Novo registro</h2>
+            <button class="fechar" onclick="fecharFormulario()">Fechar</button>
+        </div>
+        <div id="camposForm"></div>
+        <div class="botoes-form">
+            <button class="btn-cancelar" onclick="fecharFormulario()">Cancelar</button>
+            <button class="btn-salvar" onclick="salvarRegistro()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    // ============================================================
+    // CONFIGURACAO - mesma planilha central do restante do sistema
+    // ============================================================
+    var URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzWP44HXJm3DuBdK8x1mIY5FwfFGFakUUtMiAp8PpDlDXDIPZ5XA2ZZWilVgSR3sacr/exec";
+    var CHAVE_PLANILHA = "techinfobelem";
+
+    var ABAS = [
+        { tipo: "clientes", titulo: "Clientes/Fornec." },
+        { tipo: "produtos", titulo: "Produtos" },
+        { tipo: "servicos", titulo: "Serviços" },
+        { tipo: "tecnicos", titulo: "Técnicos" }
+    ];
+
+    var TITULOS = {
+        clientes: "Clientes / Fornecedores",
+        produtos: "Produtos / Estoque",
+        servicos: "Tabela de Serviços",
+        tecnicos: "Técnicos"
+    };
+
+    var CAMPOS = {
+        clientes: [
+            { chave: "tipo", label: "Tipo", tipo: "select", opcoes: ["Cliente", "Fornecedor", "Ambos"] },
+            { chave: "nome", label: "Nome", tipo: "text", obrigatorio: true },
+            { chave: "telefone", label: "Telefone / WhatsApp", tipo: "tel" },
+            { chave: "email", label: "E-mail", tipo: "email" },
+            { chave: "documento", label: "CPF / CNPJ", tipo: "text" },
+            { chave: "endereco", label: "Endereço", tipo: "text" },
+            { chave: "bairro", label: "Bairro", tipo: "text" },
+            { chave: "cidade", label: "Cidade", tipo: "text" },
+            { chave: "estado", label: "Estado (UF)", tipo: "text" },
+            { chave: "observacoes", label: "Observações", tipo: "textarea" }
+        ],
+        produtos: [
+            { chave: "nome", label: "Nome do Produto", tipo: "text", obrigatorio: true },
+            { chave: "partNumber", label: "Part Number", tipo: "text" },
+            { chave: "numeroSerie", label: "Número de Série", tipo: "text" },
+            { chave: "categoria", label: "Categoria", tipo: "text" },
+            { chave: "valorCompra", label: "Valor de Compra (R$)", tipo: "decimal" },
+            { chave: "valorFrete", label: "Valor do Frete da Compra (R$)", tipo: "decimal" },
+            { chave: "valorVenda", label: "Valor de Venda (R$)", tipo: "decimal" },
+            { chave: "estoqueAtual", label: "Estoque Atual", tipo: "number" },
+            { chave: "estoqueMinimo", label: "Estoque Mínimo (alerta de reposição)", tipo: "number" },
+            { chave: "observacoes", label: "Observações", tipo: "textarea" }
+        ],
+        servicos: [
+            { chave: "nome", label: "Nome do Serviço", tipo: "text", obrigatorio: true },
+            { chave: "categoria", label: "Categoria", tipo: "text" },
+            { chave: "valorPadrao", label: "Valor Padrão (R$)", tipo: "decimal" },
+            { chave: "observacoes", label: "Observações", tipo: "textarea" }
+        ],
+        tecnicos: [
+            { chave: "nome", label: "Nome do Técnico", tipo: "text", obrigatorio: true },
+            { chave: "telefone", label: "Telefone / WhatsApp", tipo: "tel" },
+            { chave: "email", label: "E-mail", tipo: "email" },
+            { chave: "percentualComissao", label: "Comissão (%)", tipo: "decimal" },
+            { chave: "ativo", label: "Ativo", tipo: "select", opcoes: ["Sim", "Não"] }
+        ]
+    };
+
+    var tipoAtual = "clientes";
+    var itensAtuais = [];
+    var idEmEdicao = null;
+
+    function pegarTipoDaUrl() {
+        var parametros = new URLSearchParams(window.location.search);
+        var tipo = parametros.get("tipo");
+        return CAMPOS[tipo] ? tipo : "clientes";
+    }
+
+    function montarAbas() {
+        var barra = document.getElementById("barraAbas");
+        barra.innerHTML = "";
+        ABAS.forEach(function (aba) {
+            var botao = document.createElement("div");
+            botao.className = "aba" + (aba.tipo === tipoAtual ? " ativa" : "");
+            botao.textContent = aba.titulo;
+            botao.onclick = function () { trocarAba(aba.tipo); };
+            barra.appendChild(botao);
+        });
+    }
+
+    function trocarAba(tipo) {
+        tipoAtual = tipo;
+        document.getElementById("campoBusca").value = "";
+        montarAbas();
+        carregarLista();
+    }
+
+    function rotuloItem(tipo, item) {
+        if (tipo === "clientes") {
+            return { principal: item.nome, secundario: [item.tipo, item.telefone, item.cidade].filter(Boolean).join(" · ") };
+        }
+        if (tipo === "produtos") {
+            var estoqueTexto = "Estoque: " + (item.estoqueAtual || "0");
+            var baixo = parseFloat(item.estoqueAtual) <= parseFloat(item.estoqueMinimo || 0) && item.estoqueMinimo;
+            return {
+                principal: item.nome,
+                secundario: [item.partNumber, estoqueTexto].filter(Boolean).join(" · "),
+                alerta: baixo
+            };
+        }
+        if (tipo === "servicos") {
+            var valorTexto = item.valorPadrao ? "R$ " + parseFloat(item.valorPadrao).toFixed(2).replace(".", ",") : "";
+            return { principal: item.nome, secundario: [item.categoria, valorTexto].filter(Boolean).join(" · ") };
+        }
+        if (tipo === "tecnicos") {
+            return { principal: item.nome, secundario: [item.telefone, item.ativo].filter(Boolean).join(" · ") };
+        }
+        return { principal: item.nome || "-", secundario: "" };
+    }
+
+    function carregarLista() {
+        var area = document.getElementById("areaLista");
+        area.innerHTML = '<div class="status-mensagem">Carregando...</div>';
+
+        var url = URL_PLANILHA + "?" + new URLSearchParams({
+            chave: CHAVE_PLANILHA,
+            acao: "listarCadastro",
+            tipo: tipoAtual
+        }).toString();
+
+        fetch(url)
+            .then(function (resp) { return resp.json(); })
+            .then(function (resposta) {
+                if (resposta.sucesso) {
+                    itensAtuais = resposta.dados || [];
+                    renderizarLista();
+                } else {
+                    area.innerHTML = '<div class="status-mensagem">Erro ao carregar: ' + (resposta.erro || "desconhecido") + '</div>';
+                }
+            })
+            .catch(function (erro) {
+                area.innerHTML = '<div class="status-mensagem">Erro de conexão: ' + erro.message + '</div>';
+            });
+    }
+
+    function renderizarLista() {
+        var area = document.getElementById("areaLista");
+        var termo = document.getElementById("campoBusca").value.trim().toLowerCase();
+
+        var filtrados = itensAtuais.filter(function (item) {
+            if (!termo) { return true; }
+            return Object.values(item).join(" ").toLowerCase().indexOf(termo) !== -1;
+        });
+
+        if (filtrados.length === 0) {
+            area.innerHTML = '<div class="vazio">Nenhum registro encontrado.<br>Toque em "+" para cadastrar.</div>';
+            return;
+        }
+
+        area.innerHTML = "";
+        filtrados.forEach(function (item) {
+            var rotulo = rotuloItem(tipoAtual, item);
+            var div = document.createElement("div");
+            div.className = "item-lista";
+            div.innerHTML =
+                '<div class="principal">' + (rotulo.principal || "-") + '</div>' +
+                '<div class="secundario' + (rotulo.alerta ? ' aviso-baixo-estoque' : '') + '">' +
+                (rotulo.secundario || "-") + (rotulo.alerta ? ' ⚠️ Repor estoque' : '') + '</div>';
+            div.onclick = function () { abrirFormulario(item); };
+            area.appendChild(div);
+        });
+    }
+
+    document.getElementById("campoBusca").addEventListener("input", renderizarLista);
+
+    function abrirFormulario(item) {
+        idEmEdicao = item ? item.id : null;
+        document.getElementById("tituloForm").textContent = item ? "Editar registro" : "Novo registro";
+
+        var camposDiv = document.getElementById("camposForm");
+        camposDiv.innerHTML = "";
+
+        CAMPOS[tipoAtual].forEach(function (campo) {
+            var label = document.createElement("label");
+            label.textContent = campo.label + (campo.obrigatorio ? " *" : "");
+            camposDiv.appendChild(label);
+
+            var elemento;
+
+            if (campo.tipo === "select") {
+                elemento = document.createElement("select");
+                campo.opcoes.forEach(function (opcao) {
+                    var optEl = document.createElement("option");
+                    optEl.value = opcao;
+                    optEl.textContent = opcao;
+                    elemento.appendChild(optEl);
+                });
+            } else if (campo.tipo === "textarea") {
+                elemento = document.createElement("textarea");
+            } else {
+                elemento = document.createElement("input");
+                elemento.type = (campo.tipo === "decimal") ? "text" : campo.tipo;
+                if (campo.tipo === "decimal") { elemento.setAttribute("inputmode", "decimal"); }
+            }
+
+            elemento.id = "campo_" + campo.chave;
+            elemento.value = item && item[campo.chave] !== undefined ? item[campo.chave] : "";
+            camposDiv.appendChild(elemento);
+        });
+
+        document.getElementById("overlayForm").classList.add("visivel");
+    }
+
+    function fecharFormulario() {
+        document.getElementById("overlayForm").classList.remove("visivel");
+    }
+
+    function converterValor(texto) {
+        if (!texto) { return 0; }
+        var limpo = String(texto).replace(/[^\d,\.]/g, "");
+        if (/,\d{1,2}$/.test(limpo)) {
+            limpo = limpo.replace(/\./g, "").replace(",", ".");
+        } else {
+            limpo = limpo.replace(/,/g, "");
+        }
+        var valor = parseFloat(limpo);
+        return isNaN(valor) ? 0 : valor;
+    }
+
+    function salvarRegistro() {
+        var dados = {};
+
+        if (idEmEdicao) { dados.id = idEmEdicao; }
+
+        var camposObrigatoriosFaltando = [];
+
+        CAMPOS[tipoAtual].forEach(function (campo) {
+            var elemento = document.getElementById("campo_" + campo.chave);
+            var valor = elemento.value.trim();
+
+            if (campo.obrigatorio && !valor) {
+                camposObrigatoriosFaltando.push(campo.label);
+            }
+
+            if (campo.tipo === "decimal") {
+                dados[campo.chave] = converterValor(valor);
+            } else if (campo.tipo === "number") {
+                dados[campo.chave] = parseInt(valor, 10) || 0;
+            } else {
+                dados[campo.chave] = valor;
+            }
+        });
+
+        if (camposObrigatoriosFaltando.length > 0) {
+            alert("Preencha: " + camposObrigatoriosFaltando.join(", "));
+            return;
+        }
+
+        var url = URL_PLANILHA + "?" + new URLSearchParams({
+            chave: CHAVE_PLANILHA,
+            acao: "salvarCadastro",
+            tipo: tipoAtual,
+            dados: JSON.stringify(dados)
+        }).toString();
+
+        fetch(url)
+            .then(function (resp) { return resp.json(); })
+            .then(function (resposta) {
+                if (resposta.sucesso) {
+                    fecharFormulario();
+                    carregarLista();
+                } else {
+                    alert("Erro ao salvar: " + (resposta.erro || "desconhecido"));
+                }
+            })
+            .catch(function (erro) {
+                alert("Erro de conexão: " + erro.message);
+            });
+    }
+
+    tipoAtual = pegarTipoDaUrl();
+    montarAbas();
+    carregarLista();
+
+</script>
+
+</body>
+</html>
