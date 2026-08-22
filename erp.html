@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SKALON ERP</title>
+<style>
+    :root {
+        --laranja: #FF6A00;
+        --fundo: #111111;
+        --card: #1c1c1c;
+        --borda: #2e2e2e;
+        --texto: #f2f2f2;
+        --texto-suave: #9a9a9a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--fundo);
+        color: var(--texto);
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+
+    header {
+        padding: 28px 20px 16px 20px;
+        border-bottom: 3px solid var(--laranja);
+    }
+
+    header h1 {
+        margin: 0;
+        color: var(--laranja);
+        font-size: 24px;
+        letter-spacing: 1px;
+    }
+
+    header p {
+        margin: 4px 0 0 0;
+        font-size: 12px;
+        color: var(--texto-suave);
+        font-style: italic;
+    }
+
+    main {
+        padding: 20px;
+        max-width: 560px;
+        margin: 0 auto;
+    }
+
+    .secao {
+        margin-bottom: 28px;
+    }
+
+    .secao h2 {
+        font-size: 13px;
+        color: var(--texto-suave);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0 0 10px 4px;
+    }
+
+    .grade {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .modulo {
+        display: block;
+        text-decoration: none;
+        background: var(--card);
+        border: 1px solid var(--borda);
+        border-radius: 12px;
+        padding: 16px 14px;
+        color: var(--texto);
+        position: relative;
+        min-height: 78px;
+    }
+
+    .modulo:active {
+        border-color: var(--laranja);
+    }
+
+    .modulo .icone {
+        font-size: 22px;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .modulo .titulo {
+        font-size: 13px;
+        font-weight: bold;
+        line-height: 1.3;
+    }
+
+    .modulo.em-breve {
+        opacity: 0.55;
+    }
+
+    .modulo .selo {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #3a2a10;
+        color: #ffd699;
+        font-size: 9px;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 10px;
+        letter-spacing: 0.5px;
+    }
+
+    .rodape {
+        text-align: center;
+        color: var(--texto-suave);
+        font-size: 11px;
+        margin-top: 30px;
+        line-height: 1.6;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>SKALON ERP</h1>
+    <p>Performance para quem trabalha. Potência para quem joga.</p>
+</header>
+
+<main>
+
+    <div class="secao">
+        <h2>Atendimento</h2>
+        <div class="grade">
+            <a class="modulo" href="relatorio-mobile.html">
+                <span class="icone">📋</span>
+                <span class="titulo">Relatório de Serviço</span>
+            </a>
+            <a class="modulo" href="relatorio-mobile.html">
+                <span class="icone">💰</span>
+                <span class="titulo">Orçamento</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="secao">
+        <h2>Operação &amp; Cadastros</h2>
+        <div class="grade">
+            <a class="modulo" href="cadastros.html?tipo=clientes">
+                <span class="icone">👤</span>
+                <span class="titulo">Clientes / Fornecedores</span>
+            </a>
+            <a class="modulo" href="cadastros.html?tipo=produtos">
+                <span class="icone">📦</span>
+                <span class="titulo">Produtos / Estoque</span>
+            </a>
+            <a class="modulo" href="cadastros.html?tipo=servicos">
+                <span class="icone">🛠️</span>
+                <span class="titulo">Tabela de Serviços</span>
+            </a>
+            <a class="modulo" href="cadastros.html?tipo=tecnicos">
+                <span class="icone">🧑‍🔧</span>
+                <span class="titulo">Técnicos</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=Vendas%20%26%20Compras%20%2F%20Pedidos">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">🧾</span>
+                <span class="titulo">Vendas &amp; Compras</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=PDV%20%2F%20Frente%20de%20Caixa">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">🖥️</span>
+                <span class="titulo">PDV / Frente de Caixa</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=Compra%20de%20Seminovos">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">♻️</span>
+                <span class="titulo">Compra de Seminovos</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=Checklist%20Avan%C3%A7ado%20de%20OS%20e%20Testes%20S.M.A.R.T.">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">✅</span>
+                <span class="titulo">Checklist Avançado de OS</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="secao">
+        <h2>Financeiro &amp; Fiscal</h2>
+        <div class="grade">
+            <a class="modulo em-breve" href="em-breve.html?modulo=Hist%C3%B3rico%20%2F%20Faturamento%20(vers%C3%A3o%20mobile)">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">📊</span>
+                <span class="titulo">Histórico / Faturamento</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=Lan%C3%A7amentos%20%2F%20Financeiro%20Completo">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">💵</span>
+                <span class="titulo">Financeiro Completo</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=Fiscal%20(NFe%20%2F%20NFCe%20%2F%20NFSe)">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">🧮</span>
+                <span class="titulo">Fiscal (NFe/NFCe/NFSe)</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=Cobran%C3%A7as%20%26%20Asaas">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">💳</span>
+                <span class="titulo">Cobranças &amp; Asaas</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=Busca%20NF-e%20SEFAZ%20(Compras)">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">🔎</span>
+                <span class="titulo">Busca NF-e SEFAZ</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="secao">
+        <h2>Marketing &amp; Atendimento</h2>
+        <div class="grade">
+            <a class="modulo em-breve" href="em-breve.html?modulo=%C3%81rea%20do%20Cliente%20(Conecte)">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">🌐</span>
+                <span class="titulo">Área do Cliente</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=WhatsApp%20(Notifica%C3%A7%C3%B5es%20Evolution)">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">📲</span>
+                <span class="titulo">Notificações WhatsApp</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=WhatsMassa%20(Campanhas)">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">📢</span>
+                <span class="titulo">WhatsMassa (Campanhas)</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="secao">
+        <h2>Loja &amp; IA</h2>
+        <div class="grade">
+            <a class="modulo em-breve" href="em-breve.html?modulo=IA%20Assistente%20de%20Bancada">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">🤖</span>
+                <span class="titulo">IA Assistente de Bancada</span>
+            </a>
+            <a class="modulo em-breve" href="em-breve.html?modulo=Cat%C3%A1logo%20Online%20%2F%20E-commerce">
+                <span class="selo">EM BREVE</span>
+                <span class="icone">🛒</span>
+                <span class="titulo">Catálogo Online</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="rodape">
+        SKALON ERP — construído sob medida para assistência técnica de TI.<br>
+        Módulos "em breve" dependem de integrações externas e chegam em atualizações futuras.
+    </div>
+
+</main>
+
+</body>
+</html>
